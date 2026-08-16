@@ -1,0 +1,133 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ForgeFlow Project Config",
+    "description": "Project settings for ForgeFlow CLI and IDE adapters. All fields are optional; missing keys use defaults.",
+    "type": "object",
+    "properties": {
+        "adapter": {
+            "description": "LLM adapter host. Controls which prompt templates are loaded from .forgeflow/adapter/<name>/.",
+            "type": "string",
+            "enum": ["copilot", "codex", "gemini", "claude"],
+            "default": "copilot"
+        },
+        "mode": {
+            "description": "Execution mode. 'auto' loops until TERMINAL or blocked; 'manual' runs one step at a time.",
+            "type": "string",
+            "enum": ["auto", "manual"],
+            "default": "manual"
+        },
+        "auto_parallel": {
+            "description": "When true, enables parallel execution of independent workflow stages (future feature).",
+            "type": "boolean",
+            "default": false
+        },
+        "blocker_timeout_minutes": {
+            "description": "How long (in minutes) a BLOCKED state persists before auto-resolving or requiring user intervention.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440,
+            "default": 30
+        },
+        "root_artifact_dir": {
+            "description": "Path to the artifact root where all workflow outputs are stored. Must be a directory path.",
+            "type": "string",
+            "default": ".forgeflow/artifacts"
+        },
+        "workflows": {
+            "description": "Workflow definitions. Each key is a workflow name with settings for prompt file, artifact naming, and transitions.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "plan": { "$ref": "#/$defs/workflow" },
+                "grill": { "$ref": "#/$defs/workflow" },
+                "solution": { "$ref": "#/$defs/workflow" },
+                "slice": { "$ref": "#/$defs/workflow" },
+                "tdd": { "$ref": "#/$defs/workflow" },
+                "review": { "$ref": "#/$defs/workflow" }
+            }
+        },
+        "transitions": {
+            "description": "Global fallback transition rules evaluated when handoff parsing fails.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/transition" }
+        }
+    },
+    "allOf": [
+        {
+            "properties": {
+                "plan": { "$ref": "#/$defs/workflow" },
+                "grill": { "$ref": "#/$defs/workflow" },
+                "solution": { "$ref": "#/$defs/workflow" },
+                "slice": { "$ref": "#/$defs/workflow" },
+                "tdd": { "$ref": "#/$defs/workflow" },
+                "review": { "$ref": "#/$defs/workflow" }
+            }
+        }
+    ],
+    "$defs": {
+        "workflow": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Workflow identifier matching the key in workflows object.",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Human-readable name shown in status/output.",
+                    "type": "string"
+                },
+                "prompt_file": {
+                    "description": "Relative path to the prompt file (resolved under .forgeflow/adapter/<adapter>/).",
+                    "type": "string"
+                },
+                "artifact": {
+                    "description": "Canonical filename template for artifacts produced by this workflow.",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "Execution scope: Project, Feature, or Slice.",
+                    "type": "string",
+                    "enum": ["Project", "Feature", "Slice"]
+                },
+                "auto_next": {
+                    "description": "Name of the workflow to forward to when this one completes successfully.",
+                    "type": ["string", "null"]
+                },
+                "loops": {
+                    "description": "When true, allows returning to this workflow after blockers are resolved.",
+                    "type": "boolean"
+                },
+                "on_blocker_return": {
+                    "description": "Map of Blocker Categories to Return Workflow names (e.g., BUSINESS_GAP -> plan).",
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "transition": {
+            "type": "object",
+            "properties": {
+                "rule_id": {
+                    "description": "Unique identifier for the transition rule.",
+                    "type": "string"
+                },
+                "condition": {
+                    "description": "Natural language description of when this rule applies.",
+                    "type": "string"
+                },
+                "forward": {
+                    "description": "Target workflow name to forward to (null means no forward).",
+                    "type": ["string", "null"]
+                },
+                "return_to": {
+                    "description": "Target workflow to return to on failure (null means no return).",
+                    "type": ["string", "null"]
+                },
+                "loops_back": {
+                    "description": "Whether this transition creates a loop back to an earlier stage.",
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

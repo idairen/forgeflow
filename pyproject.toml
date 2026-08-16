@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgeflow"
+version = "0.1.0"
+description = "AI-driven development workflow orchestrator"
+authors = [{ name = "Dairen" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+forge = "forgeflow.cli.main:main_cli"
