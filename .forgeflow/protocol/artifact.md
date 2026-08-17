@@ -184,7 +184,8 @@ current Solution Plan artifact's own Version.
 
 Planning represents an explicitly approved empty Feature list with the exact value
 `NONE`; a blank metadata value is never an empty list. When `Feature IDs` is `NONE`,
-Planning MUST include `Empty Feature Approval` rendered as
+`Feature Contract Versions` MUST also be `NONE`, and Planning MUST include
+`Empty Feature Approval` rendered as
 `APPROVED: <non-empty user approval evidence>`. That field is forbidden when any
 Feature is declared. `NONE` cannot be combined with Feature identifiers. A READY
 empty Planning is valid only when it is the sole active artifact; any Requirement,

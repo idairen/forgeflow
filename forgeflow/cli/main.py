@@ -27,9 +27,22 @@ def _make_runner():
 def cmd_plan(args):
     """Execute Plan workflow."""
     intent = getattr(args, "intent", None)
-    logger.info("Executing plan%s", " with User Intent" if intent else "")
+    incremental = getattr(args, "incremental", False)
+    if incremental and not (intent or "").strip():
+        raise ValueError("--incremental requires --intent")
+    logger.info(
+        "Executing plan%s%s",
+        " with User Intent" if intent else "",
+        " in incremental mode" if incremental else "",
+    )
     runner = _make_runner()
-    result = asyncio.run(runner.execute_single("plan", user_input=intent))
+    result = asyncio.run(
+        runner.execute_single(
+            "plan",
+            user_input=intent,
+            incremental=incremental,
+        )
+    )
     print(result)
     return _single_exit_code(runner)
 
@@ -151,6 +164,12 @@ def main_cli(argv=None):
     # plan
     p_plan = subparsers.add_parser("plan", help="Execute Plan workflow")
     p_plan.add_argument("--intent", "-i", help="Project intent description")
+    p_plan.add_argument(
+        "--incremental",
+        action="store_true",
+        default=False,
+        help="Add or change same-project scope without rotating evidence",
+    )
     p_plan.set_defaults(func=cmd_plan)
 
     # run

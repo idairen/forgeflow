@@ -108,7 +108,7 @@ class StateResolver:
             requirements[feature] = artifact["version"]
 
         solution = artifacts.get("solution-plan.md")
-        if not cls._solution_is_usable(solution, requirements):
+        if not cls._solution_is_usable(solution, requirements, features):
             return cls._active(
                 "solution", "Project", "rule_6_solution_required"
             )
@@ -151,10 +151,15 @@ class StateResolver:
                     f"{slice_id.removeprefix('S-')}"
                 )
                 tdd = artifacts.get(f"tdd-feature-{artifact_scope}.md")
-                if not cls._current_tdd(tdd, solution, slice_plan):
+                if not cls._current_tdd(tdd, solution, slice_plan, feature):
                     return cls._active("tdd", scope, "rule_10_tdd_required")
                 review = cls._matching_review(
-                    artifacts, artifact_scope, tdd, solution, slice_plan
+                    artifacts,
+                    artifact_scope,
+                    tdd,
+                    solution,
+                    slice_plan,
+                    feature,
                 )
                 if review is None:
                     return cls._active("review", scope, "rule_9_review_required")
@@ -167,6 +172,70 @@ class StateResolver:
                     )
 
         return cls._terminal("COMPLETE", "rule_11_project_complete")
+
+    @classmethod
+    def has_current_failed_review(cls, artifact_state):
+        """Return whether any active Feature has a current FAIL Review."""
+        if artifact_state.get("status") == "invalid":
+            return False
+        artifacts = artifact_state.get("artifacts", {})
+        planning = artifacts.get("planning.md")
+        if planning is None:
+            return False
+        features = cls._planning_features(
+            planning["metadata"].get("Feature IDs", "")
+        )
+        if not cls._planning_is_usable(planning, features) or not features:
+            return False
+        requirement_versions = cls._current_requirement_versions(
+            artifacts,
+            planning,
+            features,
+        )
+        if requirement_versions is None:
+            return False
+        solution = artifacts.get("solution-plan.md")
+        if not cls._solution_is_usable(
+            solution,
+            requirement_versions,
+            features,
+        ):
+            return False
+
+        for feature in features:
+            slice_plan = artifacts.get(
+                f"slice-plan-feature-{feature.removeprefix('F-')}.md"
+            )
+            if not cls._slice_plan_is_usable(
+                slice_plan,
+                feature,
+                solution,
+                features,
+            ):
+                continue
+            slice_ids = cls._identifier_list(
+                slice_plan["metadata"].get("Slice IDs", ""),
+                cls._SLICE,
+            )
+            for slice_id in slice_ids:
+                artifact_scope = (
+                    f"{feature.removeprefix('F-')}-slice-"
+                    f"{slice_id.removeprefix('S-')}"
+                )
+                tdd = artifacts.get(f"tdd-feature-{artifact_scope}.md")
+                if not cls._current_tdd(tdd, solution, slice_plan, feature):
+                    continue
+                review = cls._matching_review(
+                    artifacts,
+                    artifact_scope,
+                    tdd,
+                    solution,
+                    slice_plan,
+                    feature,
+                )
+                if review is not None and review["metadata"]["Decision"] == "FAIL":
+                    return True
+        return False
 
     @classmethod
     def _graph_contradiction(cls, artifacts, features):
@@ -356,27 +425,37 @@ class StateResolver:
         return "artifact_invalid"
 
     @classmethod
-    def _matching_review(cls, artifacts, artifact_scope, tdd, solution, slice_plan):
+    def _matching_review(
+        cls,
+        artifacts,
+        artifact_scope,
+        tdd,
+        solution,
+        slice_plan,
+        feature,
+    ):
         attempt = int(tdd["metadata"]["Attempt"])
         filename = f"review-feature-{artifact_scope}-attempt-{attempt:02d}.md"
         review = artifacts.get(filename)
         if review is None:
             return None
         metadata = review["metadata"]
+        engineering_version = cls._feature_engineering_version(solution, feature)
         if (
-            metadata["Solution Version"] != solution["version"]
+            metadata["Solution Version"] != engineering_version
             or metadata["Slice Plan Version"] != slice_plan["version"]
         ):
             return None
         return review
 
-    @staticmethod
-    def _current_tdd(tdd, solution, slice_plan):
+    @classmethod
+    def _current_tdd(cls, tdd, solution, slice_plan, feature):
         if tdd is None or tdd["status"] != "READY_FOR_REVIEW":
             return False
         metadata = tdd["metadata"]
         return (
-            metadata["Solution Version"] == solution["version"]
+            metadata["Solution Version"]
+            == cls._feature_engineering_version(solution, feature)
             and metadata["Slice Plan Version"] == slice_plan["version"]
         )
 
@@ -431,9 +510,22 @@ class StateResolver:
             }
         return feature_positions, slice_positions
 
-    @staticmethod
-    def _planning_is_usable(planning, features):
-        return planning["status"] == "READY" and features is not None
+    @classmethod
+    def _planning_is_usable(cls, planning, features):
+        if planning["status"] != "READY" or features is None:
+            return False
+        versions = planning["metadata"].get("Feature Contract Versions", "")
+        if not features:
+            return versions == cls._EMPTY_FEATURES
+        parsed = cls._version_map(versions)
+        return parsed is not None and list(parsed) == features
+
+    @classmethod
+    def _feature_contract_version(cls, planning, feature):
+        versions = cls._version_map(
+            planning["metadata"].get("Feature Contract Versions", "")
+        )
+        return versions.get(feature) if versions is not None else None
 
     @classmethod
     def _requirement_is_usable(
@@ -449,7 +541,8 @@ class StateResolver:
             and requirement is not None
             and requirement["status"] == "READY"
             and requirement["metadata"]["Feature ID"] == feature
-            and requirement["metadata"]["Planning Version"] == planning["version"]
+            and requirement["metadata"]["Planning Version"]
+            == cls._feature_contract_version(planning, feature)
         )
 
     @classmethod
@@ -470,15 +563,27 @@ class StateResolver:
         return versions
 
     @classmethod
-    def _solution_is_usable(cls, solution, requirement_versions):
-        return (
-            solution is not None
-            and solution["status"] == "READY"
-            and cls._version_map(
-                solution["metadata"].get("Based On Requirements", "")
-            )
-            == requirement_versions
+    def _solution_is_usable(cls, solution, requirement_versions, features):
+        if solution is None or solution["status"] != "READY":
+            return False
+        based_on = cls._version_map(
+            solution["metadata"].get("Based On Requirements", "")
         )
+        engineering_versions = cls._version_map(
+            solution["metadata"].get("Feature Engineering Versions", "")
+        )
+        return (
+            based_on == requirement_versions
+            and engineering_versions is not None
+            and list(engineering_versions) == features
+        )
+
+    @classmethod
+    def _feature_engineering_version(cls, solution, feature):
+        versions = cls._version_map(
+            solution["metadata"].get("Feature Engineering Versions", "")
+        )
+        return versions.get(feature) if versions is not None else None
 
     @classmethod
     def _slice_plan_is_usable(
@@ -494,7 +599,8 @@ class StateResolver:
             and slice_plan is not None
             and slice_plan["status"] == "READY"
             and slice_plan["metadata"]["Feature ID"] == feature
-            and slice_plan["metadata"]["Based On Solution"] == solution["version"]
+            and slice_plan["metadata"]["Based On Solution"]
+            == cls._feature_engineering_version(solution, feature)
             and cls._identifier_list(
                 slice_plan["metadata"].get("Slice IDs", ""),
                 cls._SLICE,
@@ -551,9 +657,11 @@ class StateResolver:
         if not cls._planning_is_usable(planning, features):
             return False
         if artifact_type == "Requirement":
+            feature = metadata["Feature ID"]
             return (
-                metadata["Feature ID"] in features
-                and metadata["Planning Version"] == planning["version"]
+                feature in features
+                and metadata["Planning Version"]
+                == cls._feature_contract_version(planning, feature)
             )
 
         requirement_versions = cls._current_requirement_versions(
@@ -570,12 +678,14 @@ class StateResolver:
             )
 
         solution = artifacts.get("solution-plan.md")
-        if not cls._solution_is_usable(solution, requirement_versions):
+        if not cls._solution_is_usable(solution, requirement_versions, features):
             return False
         if artifact_type == "Slice Plan":
+            feature = metadata["Feature ID"]
             return (
-                metadata["Feature ID"] in features
-                and metadata["Based On Solution"] == solution["version"]
+                feature in features
+                and metadata["Based On Solution"]
+                == cls._feature_engineering_version(solution, feature)
             )
         if artifact_type == "TDD Record":
             feature = metadata["Feature ID"]
@@ -596,7 +706,8 @@ class StateResolver:
             )
             return (
                 slice_id in slice_ids
-                and metadata["Solution Version"] == solution["version"]
+                and metadata["Solution Version"]
+                == cls._feature_engineering_version(solution, feature)
                 and metadata["Slice Plan Version"] == slice_plan["version"]
             )
         return False

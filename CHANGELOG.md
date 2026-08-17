@@ -9,9 +9,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- Added `Incremental Intent Entry` for IDE Plan invocations. An explicit
+- Added `Incremental Intent Entry` for IDE and CLI Plan invocations. An explicit
   same-project addition or change can now authorize Plan without an incoming
   Handoff, Bootstrap state, or persisted blocker.
+- Added `forge plan --incremental --intent "..."` as the CLI entry for explicit
+  same-project additions and changes. The command preserves active project evidence
+  and lets a later `forge run` resume from the earliest affected scope.
 - Added `Feature Contract Versions` to Planning. Each active Feature carries its own
   business-contract version so a later Planning artifact does not automatically
   invalidate Requirements for unchanged Features.
@@ -49,6 +52,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   explicitly preserve project evidence during same-project increments.
 - Review plugin execution now archives an existing same-path supplemental report
   before writing its replacement.
+- The CLI artifact parser now validates Planning Feature Contract Versions and
+  Solution Feature Engineering Versions. The state resolver uses those scoped
+  versions when deciding whether Requirement, Slice, TDD, Review, and blocker
+  evidence remains current.
+- Incremental CLI execution treats an unchanged Artifact Graph as a valid waiting
+  response, while rejecting partial graph changes that omit a valid Handoff or
+  remain after an execution error.
 
 ### Safety
 
@@ -82,6 +92,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   every active Feature.
 - Existing Requirement, Slice Plan, TDD, and Review version fields retain their
   names, but their matching semantics are now Feature-scoped as described above.
-- This change documents and implements the IDE Markdown framework behavior only.
-  Python CLI parsing and state resolution are not included in this incremental-model
-  change.
+- Existing CLI projects must refresh their installed `.forgeflow` files and migrate
+  active Planning and Solution metadata before using `forge plan --incremental`.

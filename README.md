@@ -93,7 +93,7 @@ Slice]
 | Command | Description |
 |---------|-------------|
 | `forge --help` | Show help message |
-| `forge plan [--intent TEXT]` | Execute and validate one Plan workflow response |
+| `forge plan [--intent TEXT] [--incremental]` | Execute Plan; use `--incremental` with an explicit same-project intent |
 | `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | Run using the configured mode or an explicit one-time override. |
 | `forge status` | Show current pipeline state, active artifact graph, and handoff data |
 | `forge reset [--force]` | Rotate active artifacts and supplemental reports (dry-run by default) |
@@ -124,6 +124,7 @@ ForgeFlow is designed to work natively inside AI coding assistants:
 - **Manual vs Auto Mode**:  
   - `auto-mode`: The engine resolves each step from the active Artifact Graph and accepts a Handoff only when its transition, scope, and evidence versions match that graph.
   - `manual-mode`: The CLI executes Plan once only when the active Artifact Graph authorizes Plan, then validates any emitted Handoff against the updated graph. `--no-auto` remains an alias for `--manual`.
+  - `incremental Plan`: Run `forge plan --incremental --intent "..."` for an explicit same-project addition or change, then run `forge run` to continue from the scoped graph result. This preserves active artifacts, reports, and both history roots; it cannot bypass an invalid graph, persisted blocker, or current failed Review.
 
 You can switch the active adapter by editing `forgeflow.json` or running `forge init -a <adapter> --force`. Forced refresh overwrites managed framework files while preserving artifacts, runtime state, custom plugins, and supported project configuration values.
 

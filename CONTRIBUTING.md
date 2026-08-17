@@ -256,6 +256,8 @@ When creating a PR, use this template:
 1. Run `forge plan --intent "..."`
 2. Check that artifact is generated correctly
 3. Verify handoff block parses correctly
+4. For same-project additions, run `forge plan --incremental --intent "..."`
+   and verify unaffected Feature evidence remains current
 
 ## Checklist
 - [ ] Code follows style guidelines

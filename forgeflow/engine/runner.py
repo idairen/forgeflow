@@ -368,10 +368,19 @@ class ForgeRunner:
             history_start,
         )
 
-    async def execute_single(self, workflow_name, user_input=None):
+    async def execute_single(
+        self,
+        workflow_name,
+        user_input=None,
+        incremental=False,
+    ):
         """Manual-mode: execute one workflow."""
         if workflow_name not in self._WORKFLOW_TITLES:
             raise ValueError(f"Unknown workflow: {workflow_name}")
+        if incremental and workflow_name != "plan":
+            raise ValueError("Incremental entry is supported only for Plan")
+        if incremental and not (user_input or "").strip():
+            raise ValueError("Incremental Plan requires a non-empty User Intent")
         title = self._WORKFLOW_TITLES[workflow_name]
 
         logger.info(
@@ -382,10 +391,24 @@ class ForgeRunner:
             self.artifacts_dir,
              )
         workflow_resolution = StateResolver.resolve(artifact_state)
+        incremental_error = None
+        if incremental:
+            incremental_error = self._incremental_plan_error(
+                artifact_state,
+                workflow_resolution,
+            )
+            if incremental_error is None:
+                workflow_resolution = {
+                    "pipeline_status": "ACTIVE",
+                    "current_workflow": "plan",
+                    "target_scope": "Project",
+                    "resolution_rule": "incremental_intent",
+                    "entry_mode": "incremental",
+                }
         status = artifact_state.get("status", "unknown")
         logger.debug("Artifacts status: %s", status)
 
-        if (
+        if incremental_error is not None or (
             workflow_resolution["pipeline_status"] != "ACTIVE"
             or workflow_resolution["current_workflow"] != workflow_name
         ):
@@ -394,13 +417,18 @@ class ForgeRunner:
                 "workflow": workflow_name,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "result": "STEP_REJECTED",
-                "error": (
+                "error": "incremental_entry_not_authorized"
+                if incremental_error is not None
+                else (
                     "pipeline_not_active"
                     if workflow_resolution["pipeline_status"] != "ACTIVE"
                     else "workflow_not_authorized_by_artifact_graph"
                 ),
                 "graph_resolution": workflow_resolution,
             }
+            if incremental_error is not None:
+                entry["entry_mode"] = "incremental"
+                entry["validation_errors"] = [incremental_error]
             await self._record_step(entry)
             logger.warning(
                 "[manual] Rejected %s; graph authorizes %s",
@@ -424,7 +452,10 @@ class ForgeRunner:
             await self._record_interruption(workflow_name, source_scope)
             raise
         except Exception as e:
-            post_resolution = self._resolve_pipeline_state()
+            post_artifact_state = ArtifactParser.detect_artifact_state(
+                self.artifacts_dir
+            )
+            post_resolution = StateResolver.resolve(post_artifact_state)
             entry = {
                 "iteration": len(self.history) + 1,
                 "workflow": workflow_name,
@@ -437,10 +468,14 @@ class ForgeRunner:
             }
             if workflow_resolution.get("entry_mode") is not None:
                 entry["entry_mode"] = workflow_resolution["entry_mode"]
-            graph_changed = not self._same_authorization(
-                post_resolution,
-                workflow_name,
-                source_scope,
+            graph_changed = (
+                post_artifact_state != artifact_state
+                if incremental
+                else not self._same_authorization(
+                    post_resolution,
+                    workflow_name,
+                    source_scope,
+                )
             )
             if graph_changed:
                 entry["result"] = "STEP_BLOCKED"
@@ -484,8 +519,12 @@ class ForgeRunner:
                 entry["result"] = "STEP_BLOCKED"
                 entry["error"] = "invalid_handoff"
                 entry["validation_errors"] = ["invalid_handoff"]
-            elif self._same_authorization(
-                post_resolution, workflow_name, source_scope
+            elif (
+                post_artifact_state == artifact_state
+                if incremental
+                else self._same_authorization(
+                    post_resolution, workflow_name, source_scope
+                )
             ):
                 entry["result"] = "STEP_WAITING"
                 entry["output"] = llm_output
@@ -556,6 +595,22 @@ class ForgeRunner:
             and resolution["current_workflow"] == workflow
             and resolution["target_scope"] == scope
         )
+
+    @staticmethod
+    def _incremental_plan_error(artifact_state, resolution):
+        artifacts = artifact_state.get("artifacts", {})
+        planning = artifacts.get("planning.md")
+        if artifact_state.get("status") == "invalid":
+            return "incremental_intent_requires_valid_artifact_graph"
+        if planning is None or planning.get("status") != "READY":
+            return "incremental_intent_requires_ready_planning"
+        if resolution.get("resolution_rule") == "rule_3_persisted_blocker":
+            return "incremental_intent_cannot_bypass_persisted_blocker"
+        if StateResolver.has_current_failed_review(artifact_state):
+            return "incremental_intent_cannot_bypass_failed_review"
+        if resolution.get("pipeline_status") == "HALTED":
+            return "incremental_intent_requires_valid_artifact_graph"
+        return None
 
     @classmethod
     def _handoff_graph_errors(

@@ -239,6 +239,14 @@ Supplemental report replacements are archived under
 suffixes before the current report path is replaced. Reports History is immutable,
 excluded from current Review evidence, and preserved inside Reports Root rotation.
 
+The CLI exposes the same incremental entry contract through
+`forge plan --incremental --intent "..."`. The flag is the explicit same-project
+authorization; it never invokes Project Evidence Rotation. After Plan updates the
+active Planning artifact, the resolver compares Feature-scoped contract and
+engineering versions so `forge run` resumes at the earliest affected Feature or
+Slice while retaining compatible evidence. Review continues to use the shared
+Reports History replacement procedure.
+
 ### Project Evidence Rotation Procedure
 
 When an explicit new-project or reset operation is authorized, the Artifact Root and
@@ -598,7 +606,7 @@ The `copilot` adapter is the recommended default. Use `codex` when running from 
 | Command | Description | Parameters |
 |---------|-------------|------------|
 | `forge --help` | Show help message | None |
-| `forge plan` | Execute Plan workflow (Project scope) | `--intent TEXT` |
+| `forge plan` | Execute Plan workflow (Project scope) | `--intent TEXT`; add `--incremental` for explicit same-project scope |
 | `forge run [--auto\|--manual] [--reset]` | Start pipeline | See below |
 | `forge status` | Show current state, artifacts, handoff data | None |
 | `forge reset [--force]` | Rotate artifacts and supplemental reports (dry-run by default) | `--force` to archive and rotate |
@@ -619,6 +627,11 @@ and `130` means the user interrupted execution.
 | `--reset` | Rotate artifacts and reports before running | Start fresh without mixing project evidence |
 | `--force` | Authorize `forge reset` rotation or `forge init` refresh | Explicit state-changing action |
 
+`forge plan --incremental` requires a non-empty `--intent`. It is accepted only
+when Planning is READY, the Artifact Graph is valid, and neither a persisted blocker
+nor a current failed Review owns recovery. It can enter Plan even when the normal
+resolver currently authorizes a downstream workflow or reports project completion.
+
 ### Example CLI Session
 
 ```bash
@@ -634,7 +647,11 @@ forge run --manual
 # 4. Check status at any time
 forge status
 
-# 5. Reset and start fresh
+# 5. Add another module to the same project, then continue the pipeline
+forge plan --incremental --intent "Add organization-level audit logging"
+forge run
+
+# 6. Reset and start fresh
 forge reset --force
 ```
 

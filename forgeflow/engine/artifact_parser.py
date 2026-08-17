@@ -8,7 +8,7 @@ logger = get_logger()
 
 
 class ArtifactParser:
-    """Build the active artifact set defined by Artifact Protocol 2.4."""
+    """Build the active artifact set defined by Artifact Protocol 2.5."""
 
     _FILE_RULES = (
         (re.compile(r"planning\.md"), "Planning", "Plan"),
@@ -37,9 +37,12 @@ class ArtifactParser:
         "Review Report": {"READY"},
     }
     _TYPE_FIELDS = {
-        "Planning": ("Feature IDs",),
+        "Planning": ("Feature IDs", "Feature Contract Versions", "Change Set"),
         "Requirement": ("Feature ID", "Planning Version"),
-        "Solution Plan": ("Based On Requirements",),
+        "Solution Plan": (
+            "Based On Requirements",
+            "Feature Engineering Versions",
+        ),
         "Slice Plan": ("Feature ID", "Based On Solution", "Slice IDs"),
         "TDD Record": (
             "Feature ID",
@@ -455,8 +458,13 @@ class ArtifactParser:
     def _validate_type_metadata(cls, metadata, artifact_type, errors):
         if artifact_type == "Planning":
             feature_ids = metadata.get("Feature IDs", "")
+            feature_versions = metadata.get("Feature Contract Versions", "")
             empty_approval = metadata.get("Empty Feature Approval")
             if feature_ids == cls._EMPTY_FEATURES:
+                if feature_versions != cls._EMPTY_FEATURES:
+                    errors.append(
+                        "NONE Feature IDs require NONE Feature Contract Versions"
+                    )
                 if empty_approval is None:
                     errors.append(
                         "NONE Feature IDs require Empty Feature Approval"
@@ -472,13 +480,26 @@ class ArtifactParser:
                 cls._validate_identifier_list(
                     feature_ids, cls._FEATURE, "Feature IDs", errors
                 )
+                cls._validate_version_map(
+                    feature_versions,
+                    "Feature Contract Versions",
+                    errors,
+                    expected_features=feature_ids.split("; "),
+                )
                 if empty_approval is not None:
                     errors.append(
                         "Empty Feature Approval is forbidden with declared Features"
                     )
         elif artifact_type == "Solution Plan":
             cls._validate_version_map(
-                metadata.get("Based On Requirements", ""), errors
+                metadata.get("Based On Requirements", ""),
+                "Based On Requirements",
+                errors,
+            )
+            cls._validate_version_map(
+                metadata.get("Feature Engineering Versions", ""),
+                "Feature Engineering Versions",
+                errors,
             )
         elif artifact_type == "Slice Plan":
             cls._validate_identifier_list(
@@ -534,9 +555,15 @@ class ArtifactParser:
             errors.append(f"duplicate identifier in {field}")
 
     @classmethod
-    def _validate_version_map(cls, value, errors):
+    def _validate_version_map(
+        cls,
+        value,
+        field,
+        errors,
+        expected_features=None,
+    ):
         entries = value.split("; ")
-        features = set()
+        features = []
         for entry in entries:
             parts = entry.split(" = ")
             if (
@@ -544,12 +571,14 @@ class ArtifactParser:
                 or cls._FEATURE.fullmatch(parts[0]) is None
                 or cls._VERSION.fullmatch(parts[1]) is None
             ):
-                errors.append("invalid Based On Requirements")
+                errors.append(f"invalid {field}")
                 return
             if parts[0] in features:
-                errors.append("duplicate Feature ID in Based On Requirements")
+                errors.append(f"duplicate Feature ID in {field}")
                 return
-            features.add(parts[0])
+            features.append(parts[0])
+        if expected_features is not None and features != expected_features:
+            errors.append(f"{field} does not match Feature IDs")
 
     @classmethod
     def _validate_blocker(cls, metadata, errors):
