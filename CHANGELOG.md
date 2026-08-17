@@ -78,6 +78,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Documentation
 
+- Added comprehensive public-facing English and Chinese Concept & Architecture
+  Guides under `docs/`. The guides explain ForgeFlow's mental model, six-workflow
+  lifecycle, Artifact Graph, deterministic transitions, Review architecture,
+  incremental development, IDE and CLI execution paths, and current capability
+  boundaries without requiring prior knowledge of the normative specifications.
 - Updated the Framework, Artifact Protocol, Handoff Protocol, all six workflow
   specifications, Codex and Copilot Plan launchers, Review plugin registry,
   architecture guide, and plugin guide for the incremental model.
