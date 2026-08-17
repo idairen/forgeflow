@@ -83,7 +83,7 @@ def cmd_status(args):
 
 
 def cmd_reset(args):
-    """Rotate the active Artifact Root."""
+    """Rotate active project evidence."""
     force = getattr(args, "force", False)
     if force:
         rotation = _make_runner().reset_artifacts()
@@ -91,7 +91,7 @@ def cmd_reset(args):
         print(json.dumps(rotation, indent=2))
     else:
         logger.info("[reset] Dry-run mode. Use --force to rotate.")
-        print("[info] Use --force to rotate the active Artifact Root.")
+        print("[info] Use --force to rotate active artifacts and reports.")
     return EXIT_SUCCESS
 
 
@@ -172,7 +172,7 @@ def main_cli(argv=None):
      )
     p_run.add_argument(
         "--reset", action="store_true", default=False,
-        help="Rotate the active Artifact Root before running"
+        help="Rotate active artifacts and supplemental reports before running"
      )
     p_run.add_argument(
         "--intent", "-i",
@@ -187,10 +187,12 @@ def main_cli(argv=None):
     p_status.set_defaults(func=cmd_status)
 
     # reset
-    p_reset = subparsers.add_parser("reset", help="Rotate the active Artifact Root")
+    p_reset = subparsers.add_parser(
+        "reset", help="Rotate active artifacts and supplemental reports"
+    )
     p_reset.add_argument(
         "--force", action="store_true", default=False,
-        help="Archive the active graph and create an empty Artifact Root"
+        help="Archive active project evidence and create empty evidence roots"
      )
     p_reset.set_defaults(func=cmd_reset)
 

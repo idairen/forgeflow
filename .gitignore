@@ -51,6 +51,7 @@ Thumbs.db
 .forgeflow/artifacts/*.json
 .forgeflow/logs/*.log
 .forgeflow/reports/
+.forgeflow/reports.*/
 *.forgeflow.zip
 
 # Config overrides / local testing

@@ -38,6 +38,9 @@ class ForgeRunner:
         if not artifacts_path.is_absolute():
             artifacts_path = plib.Path(self.project_root) / artifacts_path
         self.artifacts_dir = str(artifacts_path)
+        self.reports_dir = str(
+            plib.Path(self.project_root) / ".forgeflow" / "reports"
+        )
         self.runtime_dir = str(plib.Path(self.project_root) / ".forgeflow" / "runtime")
         self.steps_dir = str(plib.Path(self.runtime_dir) / "steps")
         self.runs_dir = str(plib.Path(self.runtime_dir) / "runs")
@@ -629,51 +632,111 @@ class ForgeRunner:
             print(f"           {i:3d}. {wf}: {result}{extra}")
 
     def reset_artifacts(self, now=None):
-        """Rotate the Artifact Root without deleting prior project state."""
+        """Rotate project artifacts and supplemental reports as one transaction."""
         root = plib.Path(self.artifacts_dir)
+        reports_root = plib.Path(self.reports_dir)
         self._validate_latest_handoff_target()
-        if root.is_symlink():
-            raise RuntimeError(f"Artifact Root must not be a symbolic link: {root}")
-        if root.exists() and not root.is_dir():
-            raise RuntimeError(f"Artifact Root is not a directory: {root}")
-        if not root.exists():
-            root.mkdir(parents=True)
+        roots = (
+            ("Artifact Root", root),
+            ("Reports Root", reports_root),
+        )
+        existed = {}
+        non_empty = {}
+        for label, path in roots:
+            if path.is_symlink():
+                raise RuntimeError(f"{label} must not be a symbolic link: {path}")
+            if path.exists() and not path.is_dir():
+                raise RuntimeError(f"{label} is not a directory: {path}")
+            existed[path] = path.exists()
+            non_empty[path] = path.exists() and any(path.iterdir())
+
+        if not any(non_empty.values()):
+            created = []
+            try:
+                for _, path in roots:
+                    if not existed[path]:
+                        path.mkdir(parents=True)
+                        created.append(path)
+            except OSError as error:
+                for path in reversed(created):
+                    path.rmdir()
+                raise RuntimeError(
+                    "Failed to prepare empty project evidence roots"
+                ) from error
             self._clear_latest_handoff()
-            logger.info("[reset] Created empty Artifact Root: %s", root)
-            return {"action": "created", "root": str(root), "backup": None}
-        if not any(root.iterdir()):
-            self._clear_latest_handoff()
-            logger.info("[reset] Artifact Root is already empty: %s", root)
-            return {"action": "unchanged", "root": str(root), "backup": None}
+            action = "created" if created else "unchanged"
+            logger.info("[reset] Project evidence roots are empty")
+            return {
+                "action": action,
+                "root": str(root),
+                "backup": None,
+                "reports_root": str(reports_root),
+                "reports_backup": None,
+            }
 
         timestamp = now or datetime.now(timezone.utc)
         if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
         stamp = timestamp.astimezone(timezone.utc).strftime("%Y%m%d%H%M%S")
-        backup = root.with_name(f"{root.name}.{stamp}")
-        if backup.exists():
-            raise FileExistsError(
-                f"Artifact backup already exists; rotation aborted: {backup}"
-            )
+        backups = {
+            path: path.with_name(f"{path.name}.{stamp}")
+            for _, path in roots
+            if non_empty[path]
+        }
+        for backup in backups.values():
+            if backup.exists() or backup.is_symlink():
+                raise FileExistsError(
+                    f"Project evidence backup already exists; rotation aborted: {backup}"
+                )
 
-        root.rename(backup)
+        moved = []
+        created = []
         try:
-            root.mkdir()
+            for _, path in roots:
+                backup = backups.get(path)
+                if backup is not None:
+                    path.rename(backup)
+                    moved.append((path, backup))
+            for _, path in roots:
+                if not path.exists():
+                    path.mkdir(parents=True)
+                    created.append(path)
         except OSError as error:
-            try:
-                backup.rename(root)
-            except OSError as rollback_error:
+            rollback_errors = []
+            for path in reversed(created):
+                try:
+                    path.rmdir()
+                except OSError as rollback_error:
+                    rollback_errors.append(str(rollback_error))
+            for path, backup in reversed(moved):
+                try:
+                    backup.rename(path)
+                except OSError as rollback_error:
+                    rollback_errors.append(str(rollback_error))
+            if rollback_errors:
                 raise RuntimeError(
-                    f"Failed to create new Artifact Root after rotating to {backup}; "
-                    f"rollback also failed: {rollback_error}"
+                    "Failed to rotate project evidence; rollback also failed: "
+                    + "; ".join(rollback_errors)
                 ) from error
             raise RuntimeError(
-                f"Failed to create new Artifact Root; prior state restored from {backup}"
+                "Failed to rotate project evidence; prior state restored"
             ) from error
 
         self._clear_latest_handoff()
-        logger.info("[reset] Rotated %s to %s", root, backup)
-        return {"action": "rotated", "root": str(root), "backup": str(backup)}
+        artifact_backup = backups.get(root)
+        reports_backup = backups.get(reports_root)
+        logger.info(
+            "[reset] Rotated project evidence | artifacts=%s | reports=%s",
+            artifact_backup,
+            reports_backup,
+        )
+        return {
+            "action": "rotated",
+            "root": str(root),
+            "backup": str(artifact_backup) if artifact_backup else None,
+            "reports_root": str(reports_root),
+            "reports_backup": str(reports_backup) if reports_backup else None,
+        }
 
     # --- internal helpers ---
 

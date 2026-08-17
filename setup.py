@@ -21,6 +21,8 @@ class BuildPy(_build_py):
         super().run()
         project_root = Path(__file__).parent
         target_root = Path(self.build_lib) / "forgeflow" / "_template"
+        if target_root.exists():
+            shutil.rmtree(target_root)
         framework_target = target_root / ".forgeflow"
         framework_target.mkdir(parents=True, exist_ok=True)
         for entry in FRAMEWORK_ENTRIES:

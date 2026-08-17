@@ -13,7 +13,7 @@ class PromptResolver:
         adapter_path = os.path.join(
             self.project_root, ".forgeflow", "adapter", self.adapter_name
         )
-        return os.path.join(adapter_path, f"{workflow_name}{ext}")
+        return os.path.join(adapter_path, f"forge-{workflow_name}{ext}")
 
     def get_adapter_name(self):
         return self.adapter_name

@@ -15,20 +15,44 @@ An artifact-driven framework where **Markdown files are the single source of tru
 
 ---
 
+## Installation
+
+ForgeFlow is not currently published to PyPI. Install the CLI from a source
+checkout with [pipx](https://pipx.pypa.io/) so that `forge` runs in an isolated
+environment. Python 3.10 or newer is required.
+
+```bash
+git clone https://github.com/idairen/forgeflow-ai.git
+cd forgeflow-ai
+
+pipx install .
+forge --help
+```
+
+Do not use `pip install forgeflow`; no ForgeFlow distribution is currently
+published under that PyPI name. If `forge` is not found after installation, run
+`pipx ensurepath` and start a new shell.
+
+For an editable development installation:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e .
+```
+
 ## Quick Start
 
 ```bash
-# 1. Install from source (or pip)
-pip install -e .
-
-# 2. Initialize a new ForgeFlow project
+# 1. Initialize a new ForgeFlow project
 forge init --adapter copilot   # or codex
 forge init --adapter codex
 
-# 3. Run the full pipeline in auto-mode
+# 2. Run the full pipeline in auto-mode
 forge run                     # loops until all slices pass review or a blocker is hit
 forge run --manual            # execute only the Plan workflow
-forge run --reset             # rotate artifacts/ before running
+forge run --reset             # rotate artifacts/ and reports/ before running
 ```
 
 ---
@@ -72,7 +96,7 @@ Slice]
 | `forge plan [--intent TEXT]` | Execute and validate one Plan workflow response |
 | `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | Run using the configured mode or an explicit one-time override. |
 | `forge status` | Show current pipeline state, active artifact graph, and handoff data |
-| `forge reset [--force]` | Rotate the active Artifact Root (dry-run by default) |
+| `forge reset [--force]` | Rotate active artifacts and supplemental reports (dry-run by default) |
 | `forge init [-a copilot\|codex] [--force]` | Install or refresh the framework and create `forgeflow.json` |
 | `forge handoff` | Debug tool: display the latest validated CLI handoff snapshot |
 
@@ -158,12 +182,17 @@ Example structure:
 
 Each CLI step writes a human-readable Markdown summary and a structured JSON
 history entry. New CLI processes rebuild execution history from valid JSON entries;
-artifact rotation preserves this runtime history. Interrupted Agent executions are
-recorded before the CLI exits with status `130`.
+project evidence rotation preserves this runtime history. Interrupted Agent
+executions are recorded before the CLI exits with status `130`.
 Automatic runs also persist their final result independently from step history,
 including runs that stop because the iteration limit is reached.
 
-When you run `forge run --reset`, the current artifact graph is rotated into an archive directory (e.g., `artifacts.20241015093000`) before a fresh run begins. This ensures **zero state drift** between project versions.
+When you run `forge run --reset`, ForgeFlow captures one UTC timestamp and rotates
+the current artifact graph and any supplemental plugin reports into paired sibling
+directories such as `artifacts.20241015093000` and `reports.20241015093000`.
+An empty evidence root is recreated but does not receive an empty backup. The
+preflight and rollback rules treat both roots as one transaction, preventing reports
+from a prior project from being mixed into the next project.
 
 ---
 

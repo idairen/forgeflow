@@ -26,7 +26,7 @@ create it before writing that artifact.
 ### History Root
 
 The canonical History Root is `.forgeflow/artifacts/history/`. It is physically
-inside the Artifact Root so Artifact Root Rotation preserves project history, but
+inside the Artifact Root so Project Evidence Rotation preserves project history, but
 it is outside the active artifact graph. Transition resolution MUST ignore every
 file below the History Root.
 
@@ -51,36 +51,40 @@ different content, the owner stops with a persisted blocker and MUST NOT replace
 canonical current artifact. If identical content already exists, archival is
 already satisfied.
 
-## Artifact Root Rotation Procedure
+## Project Evidence Rotation Procedure
 
-This procedure archives the prior active artifact graph before a new Plan run. It
-is a platform-independent Markdown procedure performed by the active participant;
-it requires no platform-specific script or executable framework component.
+This procedure archives the prior active artifact graph and its supplemental Review
+plugin reports before a new Plan run. It is a platform-independent Markdown
+procedure performed by the active participant; it requires no platform-specific
+script or executable framework component.
 
 When invoked, the participant MUST apply these steps in order:
 
-1. Resolve the Artifact Root without reading or changing artifact contents.
-2. If the Artifact Root does not exist, create it as an empty directory and finish
-   the procedure without creating a backup.
-3. If the Artifact Root is empty, leave it in place and finish the procedure
-   without creating a backup.
-4. If the Artifact Root is non-empty, capture the current UTC time once and format
-   it as `yyyyMMddHHmmss`. Non-empty means that the directory contains any entry,
-   including a hidden file or nested directory.
-5. Form an Artifact Backup Path as a sibling of the Artifact Root whose directory
-   name is `artifacts.yyyyMMddHHmmss`, replacing the timestamp portion with the
-   captured value.
-6. If that Artifact Backup Path already exists, stop with a blocker. The participant
-   MUST NOT overwrite, merge with, or delete either directory.
-7. Move the entire Artifact Root to the Artifact Backup Path without selectively
-   copying, changing, or deleting its contents.
-8. Create a new empty Artifact Root before Plan reads or creates any project
-   artifact.
+1. Resolve the Artifact Root and the supplemental Reports Root at
+   `.forgeflow/reports/` without reading or changing their contents. Neither root
+   may be a symbolic link or a non-directory path.
+2. Treat each absent root as empty. If both roots are absent or empty, create any
+   absent root, leave each empty root in place, and finish without creating a backup.
+3. If either root is non-empty, capture the current UTC time once and format it as
+   `yyyyMMddHHmmss`. Non-empty means that a directory contains any entry, including
+   a hidden file or nested directory.
+4. For each non-empty root, form its sibling backup path with that same timestamp:
+   `artifacts.yyyyMMddHHmmss` for the Artifact Root and
+   `reports.yyyyMMddHHmmss` for the Reports Root.
+5. Before moving anything, validate every required backup path. If any path already
+   exists or is a symbolic link, stop with a blocker. The participant MUST NOT
+   overwrite, merge with, or delete any current or backup directory.
+6. Move each non-empty root in full to its backup path without selectively copying,
+   changing, or deleting its contents. An empty root does not need a backup.
+7. Create a new empty Artifact Root and Reports Root before Plan reads or creates
+   project evidence.
+8. Treat all moves and directory creation as one transaction. If any operation
+   fails, restore every successfully moved root and stop Plan. If rollback also
+   fails, report every retained current and backup path for manual recovery.
 
-An Artifact Backup Path is outside the active artifact graph and MUST NOT
-participate in transition resolution. If any move or directory creation fails, the
-participant MUST stop Plan, preserve all successfully retained data, report the
-exact failing step and paths, and MUST NOT write a new active artifact.
+Artifact and Reports Backup Paths are outside the active artifact graph and MUST NOT
+participate in transition resolution. Supplemental reports remain non-authoritative
+evidence even when their backup suffix associates them with one archived graph.
 
 ## Required metadata block
 

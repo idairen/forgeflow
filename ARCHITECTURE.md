@@ -54,7 +54,7 @@ project-root/
 │    ├── adapter/                    # LLM adapters per host
 │    │    ├── copilot/                # GitHub Copilot Chat prompts
 │    │    └── codex/                  # Codex CLI prompts
-│    │        └── <workflow>.prompt.md
+│    │        └── forge-<workflow>.prompt.md
 │    │
 │    ├── workflow/                   # Workflow specs (per-workflow.md)
 │    │    ├── plan.md                # Plan -> Planning artifact
@@ -83,6 +83,7 @@ project-root/
 │    │    ├── slice-plan-feature-01.md
 │    │    ├── tdd-feature-01-slice-01.md
 │    │    └── review-feature-01-slice-01-attempt-01.md
+│    ├── reports/                    # Supplemental plugin review evidence
 │    └── runtime/                    # Non-authoritative CLI step summaries
 │         └── steps/
 ```
@@ -92,6 +93,7 @@ project-root/
 | Directory | Purpose | Who Writes? | Git-Tracked? |
 |-----------|---------|-------------|--------------|
 | `artifacts/` | Generated workflow outputs | LLM via runner.py | Yes (tracked), but `.gitignore` excludes runtime `.md` files -- use `--reset` to rotate |
+| `reports/` | Supplemental, attempt-scoped plugin reports | Review workflow | No (`.gitignore`) |
 | `adapter/` | Host-specific prompt templates | Developer configures | Yes |
 | `workflow/` | Workflow spec Markdown | LLM reads, you edit | Yes |
 | `rules/reviews/` | Plugin rule definitions | You add | Yes |
@@ -222,19 +224,26 @@ requiring Requirement, Solution, Slice, TDD, or Review artifacts. Any such downs
 artifact beside an empty Planning makes the graph contradictory.
 
 Replaced contract versions are archived under `.forgeflow/artifacts/history/` using
-versioned filenames. The History Root is preserved by Artifact Root rotation but is
+versioned filenames. The History Root is preserved by Project Evidence Rotation but is
 excluded from the active artifact graph.
 
-### Root Rotation Procedure (Artifact Reset)
+### Project Evidence Rotation Procedure
 
-When an explicit new-project or reset operation is authorized, the Artifact Root undergoes rotation:
+When an explicit new-project or reset operation is authorized, the Artifact Root and
+supplemental Reports Root undergo one coordinated rotation:
 
-1. If the Artifact Root is absent, create it; if it is empty, leave it unchanged
-2. For a non-empty root, reject a pre-existing timestamped backup before changing anything
-3. Rename the whole root to `artifacts.YYYYMMDDHHMMSS` without filtering its contents
-4. Create a fresh empty `.forgeflow/artifacts/` directory, restoring the prior root if creation fails
+1. Validate both roots and determine independently whether each is non-empty
+2. Capture one UTC timestamp and preflight every required backup before moving either root
+3. Rename non-empty roots in full to paired `artifacts.YYYYMMDDHHMMSS` and `reports.YYYYMMDDHHMMSS` paths
+4. Create fresh empty `.forgeflow/artifacts/` and `.forgeflow/reports/` directories
+5. Restore every moved root if any move or directory creation fails
 
-This ensures **zero state drift** between project versions.
+An empty root does not receive an empty backup. Reports remain supplemental and do
+not participate in the active artifact graph. In IDE execution, an explicit
+new-project or reset request authorizes rotation; a request that merely appears
+unrelated requires user confirmation before either root is changed. A clean
+Bootstrap requires both evidence roots to be absent or empty; residual reports also
+require explicit reset authorization.
 
 ---
 
@@ -501,7 +510,7 @@ Artifact Root.
 
 When the engine calls `_execute_llm(name)`:
 
-1. Reads prompt from `.forgeflow/adapter/<adapter>/<name>.prompt.md`
+1. Reads prompt from `.forgeflow/adapter/<adapter>/forge-<name>.prompt.md`
 2. Appends engine-derived Bootstrap or Recovery Entry context when the current graph authorizes one
 3. Appends an optional Plan User Intent as escaped, non-normative JSON invocation data
 4. Invokes the matching non-interactive agent CLI from the project root
@@ -541,7 +550,7 @@ forgeflow.json has "adapter": "copilot"
      |    +- Uses the configured adapter, defaulting to copilot
      |
      +- PromptResolver resolves:
-             .forgeflow/adapter/<selected>/<workflow>.prompt.md
+             .forgeflow/adapter/<selected>/forge-<workflow>.prompt.md
 ```
 
 ### Adapter Differences
@@ -551,10 +560,10 @@ The copilot and codex adapters differ only in their **prompt templates** -- not 
 ```
 adapter/
     copilot/
-     |-- plan.prompt.md       # Copilot-specific system prompt for Plan
+     |-- forge-plan.prompt.md # Copilot-specific system prompt for Plan
      +-- ...
     codex/
-     |-- plan.prompt.md       # Codex-specific system prompt for Plan
+     |-- forge-plan.prompt.md # Codex-specific system prompt for Plan
      +-- ...
 ```
 
@@ -572,7 +581,7 @@ The `copilot` adapter is the recommended default. Use `codex` when running from 
 | `forge plan` | Execute Plan workflow (Project scope) | `--intent TEXT` |
 | `forge run [--auto\|--manual] [--reset]` | Start pipeline | See below |
 | `forge status` | Show current state, artifacts, handoff data | None |
-| `forge reset [--force]` | Rotate the Artifact Root (dry-run by default) | `--force` to archive and rotate |
+| `forge reset [--force]` | Rotate artifacts and supplemental reports (dry-run by default) | `--force` to archive and rotate |
 | `forge init [-a copilot\|codex]` | Install or refresh framework resources | `--adapter`, `--force` |
 | `forge handoff` | Debug latest handoff from artifacts/ | None |
 
@@ -587,7 +596,7 @@ and `130` means the user interrupted execution.
 | Default (no flags) | Use `forgeflow.json` `mode` | Project-configured behavior |
 | `--auto` | Override this invocation to auto mode | Loop until TERMINAL or blocked |
 | `--manual` | Override this invocation to manual mode | Execute Plan once; `--no-auto` is an alias |
-| `--reset` | Rotate artifacts before running | Start fresh with zero state drift |
+| `--reset` | Rotate artifacts and reports before running | Start fresh without mixing project evidence |
 | `--force` | Authorize `forge reset` rotation or `forge init` refresh | Explicit state-changing action |
 
 ### Example CLI Session

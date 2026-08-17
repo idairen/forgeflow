@@ -18,10 +18,18 @@ behavior or engineering design.
 ## Required process
 
 1. Classify entry before changing artifacts:
-   - Bootstrap Entry with an absent or empty Artifact Root creates the root if needed
-     and starts Planning without rotation.
+   - Bootstrap Entry requires both an absent or empty Artifact Root and an absent or
+     empty supplemental Reports Root. It creates either root if needed and starts
+     Planning without rotation.
    - An explicit user request to start a new project or reset the active project
-     executes the Artifact Root Rotation Procedure before Planning.
+     executes the Project Evidence Rotation Procedure before Planning.
+   - If the request appears unrelated to current Planning but does not explicitly
+     authorize a new project or reset, explain that the current Artifact Root and
+     supplemental Reports Root would be rotated together, then ask and wait for
+     confirmation. Semantic similarity alone MUST NOT authorize rotation.
+   - An empty Artifact Root with a non-empty Reports Root is not a clean Bootstrap
+     Entry. Ask and wait for explicit reset authorization before rotating the
+     residual reports or creating Planning.
    - A RETURN or Recovery Entry preserves the active Artifact Root and creates a new
      Planning version in place; it MUST NOT rotate the current graph. Recovery Entry
      is valid only when Rule 3 selects Plan at Project scope from a current PLAN_GAP.
