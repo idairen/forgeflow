@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -33,7 +33,8 @@ upstream contract gap by inventing behavior or engineering policy.
    Handoff Protocol. Without an incoming handoff, proceed only through Recovery Entry
    when a fresh Rule 3 result selects Slice at the exact Feature Target Scope from a
    current SLICE_VIOLATION. Validate that Target Scope identifies one planned Feature.
-2. Validate the Feature's Requirement and the project Solution Plan versions.
+2. Validate the Feature's Requirement and the current Solution Plan. Resolve this
+   Feature's Feature Engineering Version from the Solution Plan.
 3. Inspect existing implementation boundaries relevant to the Feature.
 4. Define ordered `S-XX` Slices that are independently implementable, testable,
    reviewable, and valuable.
@@ -43,7 +44,8 @@ upstream contract gap by inventing behavior or engineering policy.
 7. Perform the READY quality gate and record Requirement-and-Solution-to-Slice
    traceability in the Slice Plan.
 8. Persist an immutable Slice Plan version at its Canonical Artifact Path with
-   Feature ID and Based On Solution.
+   Feature ID and Based On Solution equal to this Feature's current Feature
+   Engineering Version.
 9. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
    final content of the response.

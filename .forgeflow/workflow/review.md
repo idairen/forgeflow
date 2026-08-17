@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -59,7 +59,9 @@ never replace or independently determine the core Review Report fields.
 2. Trace every Slice condition to tests, implementation, and recorded evidence.
 3. Run all enabled plugin-based automated checks (security, coding-standard,
    architecture, performance) defined in `.forgeflow/rules/reviews/_index.md`.
-   Follow each plugin's `rules.md` checklist for structured checking.
+   Follow each plugin's `rules.md` checklist for structured checking. Before writing
+   any supplemental report path that already exists, archive its exact prior content
+   through the Reports History Root procedure.
 4. Inspect correctness, regressions, scope discipline, security, maintainability,
    and conformance with the Solution Plan.
 5. For every finding, record severity, Owner Workflow, Affected Scope, observable
@@ -131,6 +133,8 @@ For each **enabled** plugin in the registry:
        NON_BLOCKING.
 4. Compile every configured report format.
 5. Save reports to `.forgeflow/reports/<plugin-name>/report-feature-XX-slice-XX-attempt-NN.<format>`.
+   Existing files at that exact path are archived first under
+   `.forgeflow/reports/history/<plugin-name>/` with the next revision suffix.
 
 After all plugins complete, aggregate verdicts:
 - one or more BLOCKING findings → Review FAIL;

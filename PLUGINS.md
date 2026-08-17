@@ -46,6 +46,9 @@ For each plugin:
 Aggregates BLOCKING findings -> decides PASS or FAIL
       |
       v
+Archives an existing same-path report under .forgeflow/reports/history/
+      |
+      v
 Saves attempt-scoped reports under .forgeflow/reports/<plugin-name>/
 ```
 
@@ -186,6 +189,14 @@ db_password = "admin123"    # Should use env var or Vault
 | `html` | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.html` | Dashboard / Wiki display |
 
 Review generates every format configured by the authoritative registry.
+
+Before replacing an existing file for the same plugin, Feature, Slice, attempt, and
+format, Review moves the exact prior report to
+`.forgeflow/reports/history/<plugin-name>/` and appends the first unused
+`-revision-RR` suffix. Reports History is immutable and excluded from the current
+Review evidence set. Same-project incremental planning preserves both current and
+historical supplemental reports; only explicit new-project/reset rotation moves the
+complete Reports Root to `reports.<timestamp>/`.
 
 ---
 

@@ -1,6 +1,6 @@
 # TDD Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -28,7 +28,8 @@ then:
 1. validate the typed handoff and confirm Next Workflow is TDD, or validate every
    Recovery Entry condition without inferring a handoff;
 2. validate `DELIVERY_READY` and the complete Requirement, Solution Plan, and
-   Slice Plan version chain;
+   Slice Plan version chain, including Solution Version equal to the targeted
+   Feature's current Feature Engineering Version;
 3. locate the exact Slice in the targeted current Slice Plan;
 4. reject stale inputs, a mismatched target, or work outside the Slice boundary;
 5. inspect the existing implementation and applicable repository instructions.

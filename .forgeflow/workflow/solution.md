@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -103,12 +103,18 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
 6. Define boundaries, interfaces, data and migration strategy, security and error
    handling, operational constraints, risks, and verification strategy.
 7. Record a Based On Requirements version mapping for every planned Feature.
-8. Perform the READY quality gate and record Requirement-to-engineering and
+8. Compare every Feature with the prior Solution Plan when present. Record a Feature
+   Engineering Versions map for every active Feature: retain the prior value when
+   the Feature's engineering contract is compatible, and use the new Solution Plan
+   Version for each added or materially affected Feature. Cross-cutting changes MUST
+   name and advance every affected Feature; uncertainty is an engineering decision
+   that must be resolved rather than treated as compatibility.
+9. Perform the READY quality gate and record Requirement-to-engineering and
    verification traceability in the Solution Plan.
-9. Persist the Solution Plan at its Canonical Artifact Path and mark it READY only
+10. Persist the Solution Plan at its Canonical Artifact Path and mark it READY only
    when all required engineering decisions are actionable and no business choice
    has been invented.
-10. Apply the Transition Resolution Procedure after the entry validation already
+11. Apply the Transition Resolution Procedure after the entry validation already
     required by the Entry barrier.
     If it requires a handoff, validate and render exactly one Canonical Handoff Block
     from the Handoff Protocol as the final content of the response.
@@ -126,6 +132,8 @@ After producing a current Solution Plan:
 
 ## Change impact
 
-Any normative Solution Plan change creates a new version. All Slice Plans, TDD
-Records, and Review Reports referencing the prior version become stale for
-authorization and completion. History is preserved.
+Any normative Solution Plan change creates a new artifact version. Only Features
+whose Feature Engineering Version advances have stale Slice Plans, TDD Records, and
+Review Reports. Evidence for a Feature whose engineering version is retained remains
+usable. History is preserved, and compatibility MUST be supported by the current
+Requirements, codebase evidence, and explicit cross-Feature impact analysis.

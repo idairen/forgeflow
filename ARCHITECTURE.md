@@ -152,7 +152,7 @@ Plan (Project) -> Grill (Feature) -> Solution (Project) -> Slice (Feature)
 
 | Workflow | Loops? | Meaning |
 |----------|--------|---------|
-| Plan | No | Single pass -- defines all Features upfront |
+| Plan | Yes (per approved increment) | Bootstrap defines the initial scope; Incremental Intent Entry merges later same-project modules |
 | Grill | Yes (per Feature) | Can loop back to Plan if Requirement needs re-planning |
 | Solution | No | Single pass after all Requirements are READY |
 | Slice | Yes (per Feature) | Can loop back to Solution if SlicePlan violates engineering contract |
@@ -226,6 +226,18 @@ artifact beside an empty Planning makes the graph contradictory.
 Replaced contract versions are archived under `.forgeflow/artifacts/history/` using
 versioned filenames. The History Root is preserved by Project Evidence Rotation but is
 excluded from the active artifact graph.
+
+Planning carries a Feature Contract Version for every active Feature. An incremental
+Planning version retains that value for unchanged Features and advances it only for
+added or business-affected Features. Requirements reference this Feature-scoped
+version. Solution similarly carries one Feature Engineering Version per active
+Feature; Slice, TDD, and Review evidence references that scoped value. A new Planning
+or Solution artifact version therefore does not invalidate an unaffected Feature.
+
+Supplemental report replacements are archived under
+`.forgeflow/reports/history/<plugin-name>/` with monotonically increasing revision
+suffixes before the current report path is replaced. Reports History is immutable,
+excluded from current Review evidence, and preserved inside Reports Root rotation.
 
 ### Project Evidence Rotation Procedure
 
@@ -352,13 +364,20 @@ Before emitting any handoff, the active workflow evaluates these rules in order 
 | **Rule 2** -- Graph contradiction | Active graph is structurally invalid, including unresolved Blocker or FAIL Review routing scopes | TERMINAL / HALTED |
 | **Rule 3** -- Persisted blocker | BLOCKED artifact has valid metadata and a complete usable current upstream chain | Select by owner priority, Planning Feature position, then Slice Plan position; RETURN or Recovery Entry |
 | **Rule 4** -- Planning not ready | Planning exists but is not usable | FORWARD to Plan at `Project` |
-| **Rule 5** -- Missing/stale Requirement | A declared first Feature lacks usable Requirement | FORWARD to Grill at `Feature: F-XX` |
+| **Rule 5** -- Missing/stale Requirement | A declared first Feature lacks a READY Requirement matching its Feature Contract Version | FORWARD to Grill at `Feature: F-XX` |
 | **Rule 6** -- Missing/stale Solution Plan | At least one Feature exists; Requirements ready; Solution Plan not usable | FORWARD to Solution at `Project` |
-| **Rule 7** -- Missing/stale Slice Plan | A declared first Feature lacks usable Slice Plan | FORWARD to Slice at `Feature: F-XX` |
+| **Rule 7** -- Missing/stale Slice Plan | A declared first Feature lacks a Slice Plan matching its Feature Engineering Version | FORWARD to Slice at `Feature: F-XX` |
 | **Rule 8** -- Current Review failure | Current TDD attempt has matching FAIL | RETURN per Review Report disposition |
 | **Rule 9** -- Review required | First incomplete Slice is READY_FOR_REVIEW without matching Review | FORWARD to Review at `Slice: F-XX/S-XX` |
 | **Rule 10** -- TDD required | Delivery ready and first incomplete Slice needs implementation | FORWARD to TDD at `Slice: F-XX/S-XX` |
 | **Rule 11** -- Project complete | Every Slice has a current matching PASS Review, or READY Planning is validly `NONE` and sole active artifact | TERMINAL / COMPLETE |
+
+IDE Plan also supports Incremental Intent Entry outside the numbered transition
+rules. It requires explicit same-project user intent, one valid READY Planning
+artifact, and no actionable blocker or current FAIL Review. It authorizes only Plan,
+never rotates project evidence, archives the replaced Planning, and records the
+exact Change Set before transition resolution resumes. Ambiguous project continuity
+requires user confirmation.
 
 ### Blocker Routing Rules
 
@@ -395,7 +414,8 @@ Review workflow
      |       +- Maps VIOLATION severity through Blocking Threshold
      |
      +-- Compiles results into structured report
-     |       +- Saves attempt-scoped reports under .forgeflow/reports/<plugin-name>/
+     |       +- Archives an existing same-path report under .forgeflow/reports/history/
+     |       +- Saves the new attempt-scoped report under .forgeflow/reports/<plugin-name>/
      |
      +- Aggregates plugin evidence into the core Review Report Findings table
              +- Core rows determine counts, PASS/FAIL, and RETURN disposition

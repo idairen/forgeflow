@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.4
+Version: 2.5
 
 ## Purpose
 
@@ -50,6 +50,25 @@ Historical files are immutable. If the required historical path already exists w
 different content, the owner stops with a persisted blocker and MUST NOT replace the
 canonical current artifact. If identical content already exists, archival is
 already satisfied.
+
+### Reports History Root
+
+The canonical Reports History Root is `.forgeflow/reports/history/`. Supplemental
+plugin reports outside this directory are the current report outputs for their
+Feature, Slice, attempt, plugin, and format. The Reports History Root is immutable
+history and MUST NOT be treated as current Review evidence.
+
+Before Review replaces an existing supplemental report at the same canonical report
+path, it MUST move the exact prior file under
+`.forgeflow/reports/history/<plugin-name>/` and append the first unused
+`-revision-RR` suffix before the format extension, starting at `01`. For example,
+replacing `report-feature-01-slice-02-attempt-03.html` archives the prior file as
+`report-feature-01-slice-02-attempt-03-revision-01.html`. An existing history path
+with different content is a blocker; Review MUST NOT overwrite or merge it.
+
+Project Evidence Rotation moves the complete Reports Root, including its History
+Root. Same-project incremental work never rotates either root; it archives only the
+specific artifact or supplemental report that is actually replaced.
 
 ## Project Evidence Rotation Procedure
 
@@ -127,9 +146,9 @@ graph contradiction rather than an actionable or stale route.
 
 | Artifact Type | Additional required fields |
 | --- | --- |
-| Planning | Feature IDs in declared order; Empty Feature Approval only for `NONE` |
+| Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Empty Feature Approval only for `NONE` |
 | Requirement | Feature ID; Planning Version |
-| Solution Plan | Based On Requirements: every `F-XX = version` |
+| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version` |
 | Slice Plan | Feature ID; Based On Solution; Slice IDs in declared order |
 | TDD Record | Feature ID; Slice ID; Attempt; Solution Version; Slice Plan Version |
 | Review Report | Feature ID; Slice ID; Attempt; Decision; Solution Version; Slice Plan Version; Blocking Findings; Non-blocking Findings; Return Workflow and Return Scope when Decision is FAIL |
@@ -140,6 +159,28 @@ Planning `Feature IDs` is the sole Feature order, and each Slice Plan's `Slice I
 is the sole Slice order within that Feature. Identifier numbers and filenames do not
 override these positions. The same Slice ID may appear under different Features, so
 a Slice position is always resolved together with its Feature context.
+
+Planning `Feature Contract Versions` MUST contain exactly one entry for every active
+Feature ID. A new Feature uses the Planning artifact's current Version. An unchanged
+Feature retains its prior contract version across later Planning versions. A Feature
+whose intent, boundary, dependency, exclusion, success condition, or applicable
+project constraint changes advances its contract version to the new Planning
+Version. Requirement `Planning Version` refers to this Feature-scoped contract
+version, not necessarily the current Planning artifact's own Version.
+
+Planning `Change Set` is `BASELINE` for the first Planning version. A later version
+records every added, modified, removed, or reordered Feature and whether project
+constraints changed. Stable Feature IDs MUST be preserved and retired identifiers
+MUST NOT be reused. A project-constraint change MUST advance every affected Feature
+Contract Version; it does not invalidate an unaffected Feature merely because the
+Planning artifact version changed.
+
+Solution Plan `Feature Engineering Versions` MUST contain exactly one entry for
+every active Feature ID. A new or engineering-affected Feature uses the current
+Solution Plan Version. An unaffected Feature retains its prior engineering version.
+`Based On Solution` and `Solution Version` fields in Feature- and Slice-scoped
+artifacts refer to the applicable Feature Engineering Version, not necessarily the
+current Solution Plan artifact's own Version.
 
 Planning represents an explicitly approved empty Feature list with the exact value
 `NONE`; a blank metadata value is never an empty list. When `Feature IDs` is `NONE`,
@@ -191,10 +232,10 @@ Blocker currentness depends on the complete upstream barrier chain:
 | BLOCKED Artifact Type | Required usable current upstream chain |
 | --- | --- |
 | Planning | None |
-| Requirement | READY Planning containing its Feature; matching Planning Version |
+| Requirement | READY Planning containing its Feature; Planning Version matching that Feature's current Feature Contract Version |
 | Solution Plan | READY Planning and every planned READY Requirement; exact Based On Requirements map |
-| Slice Plan | Current Planning and Requirements; READY current Solution Plan; declared Feature; matching Based On Solution |
-| TDD Record | Current Planning, Requirements, and Solution Plan; READY current Slice Plan containing its Slice; matching Solution and Slice Plan versions |
+| Slice Plan | Current Planning and Requirements; READY current Solution Plan; declared Feature; Based On Solution matching that Feature's current Feature Engineering Version |
+| TDD Record | Current Planning, Requirements, and Solution Plan; READY current Slice Plan containing its Slice; Solution Version matching that Feature's current Feature Engineering Version and matching Slice Plan Version |
 
 The BLOCKED artifact itself does not need READY status. Every artifact before it in
 the table's dependency chain does. Matching a direct version while an earlier
@@ -212,7 +253,9 @@ Review Report and required return metadata instead of using Status `BLOCKED`.
 ### Planning
 
 Planning contains project intent, constraints, exclusions, success measures, and
-the complete ordered Feature list. READY means the list covers approved scope.
+the complete ordered Feature list for the currently approved scope. READY means the
+list covers all intent approved so far; it does not assert that the user will never
+add another same-project module.
 
 ### Requirement
 
@@ -224,7 +267,10 @@ business decision can change observable behavior.
 
 A Solution Plan is Project-level. It analyzes all current READY Requirements and
 defines boundaries, interfaces, data and migration decisions, quality constraints,
-risks, and verification strategy.
+risks, and verification strategy. Its Feature Engineering Versions map records the
+smallest compatibility boundary for downstream reuse. Adding or changing one Feature
+does not invalidate another Feature unless Solution records a material cross-Feature
+engineering impact by advancing that Feature's engineering version.
 
 ### Slice Plan
 
@@ -296,3 +342,18 @@ files and Artifact Backup Paths are outside the active artifact graph.
 
 Downstream workflows MUST request a RETURN when an upstream contract change is
 needed. No workflow may change another workflow's artifact or status.
+
+### Feature retirement
+
+Removing a Feature from same-project Planning requires explicit user authorization.
+Before the new Planning version is written, the active participant MUST move every
+canonical Requirement, Slice Plan, TDD Record, and Review Report owned by that
+Feature, without changing content, below
+`.forgeflow/artifacts/history/retired-feature-XX/`. It MUST likewise move every
+matching supplemental plugin report below
+`.forgeflow/reports/history/retired-feature-XX/`, preserving the plugin directory and
+filename. Existing retirement targets are blockers and MUST NOT be overwritten or
+merged. Both moves and the new Planning write form one transaction; failure restores
+all moved evidence and stops Plan. Retirement is archival coordination, not a
+transfer of artifact ownership. The next Solution version removes the retired
+Feature from Based On Requirements and Feature Engineering Versions.

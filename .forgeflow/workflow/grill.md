@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -101,7 +101,8 @@ that assumes an answer violates the Question boundary.
 6. Resolve all questions that could change observable business behavior and
    complete the business contract without inventing stakeholder decisions.
 7. Persist a new Requirement version at its Canonical Artifact Path with its
-   Feature ID and Planning Version.
+   Feature ID and that Feature's current Feature Contract Version rendered as
+   Planning Version. The enclosing Planning artifact may have a later version.
 8. Mark it READY only when no unresolved business decision remains.
 9. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
@@ -122,7 +123,9 @@ reports a blocker.
 
 Completion concerns only the targeted Feature. The procedure selects the next
 missing Requirement; Solution is not eligible until every planned Requirement is
-current and READY.
+current and READY. An unchanged READY Requirement remains current across an
+incremental Planning version when its Planning Version still matches its Feature
+Contract Version.
 
 ### Emit conditions after Grill completes a Feature
 

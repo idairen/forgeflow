@@ -87,8 +87,11 @@ Review performs these steps in order:
 4. Resolve each applicable Rules File relative to `.forgeflow/rules/reviews/`.
 5. Evaluate rule applicability, then record PASS, VIOLATION, UNKNOWN, or N/A.
 6. Convert each VIOLATION to BLOCKING or NON_BLOCKING using its plugin threshold.
-7. Generate configured reports at `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.<format>`.
-8. Decide Review FAIL only when one or more BLOCKING findings remain.
+7. Before replacing an existing configured report path, archive its exact prior file
+   under `.forgeflow/reports/history/<name>/` using the Artifact Protocol's next
+   revision suffix.
+8. Generate configured reports at `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.<format>`.
+9. Decide Review FAIL only when one or more BLOCKING findings remain.
 
 UNKNOWN is non-blocking unless separate observable evidence independently satisfies
 the Framework definition of a blocking finding.
@@ -103,5 +106,8 @@ the Framework definition of a blocking finding.
 
 Plugin reports are supplemental evidence outside the active artifact graph. They
 are attempt-scoped and MUST NOT overwrite another Feature, Slice, or attempt. The
+Reports History Root is immutable and never participates in the current report set.
+Replacing the same Feature, Slice, attempt, plugin, and format requires archival;
+silent overwrite is forbidden. The
 immutable Review Report under the Artifact Root MUST contain the complete findings
 needed for PASS/FAIL and transition resolution.

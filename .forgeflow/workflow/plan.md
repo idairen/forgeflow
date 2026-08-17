@@ -1,6 +1,6 @@
 # Plan Workflow
 
-Version: 2.4
+Version: 2.5
 
 ## Contract
 
@@ -23,6 +23,9 @@ behavior or engineering design.
      Planning without rotation.
    - An explicit user request to start a new project or reset the active project
      executes the Project Evidence Rotation Procedure before Planning.
+   - An explicit same-project addition or change uses Incremental Intent Entry,
+     preserves both evidence roots, and merges the approved intent into a higher
+     Planning version.
    - If the request appears unrelated to current Planning but does not explicitly
      authorize a new project or reset, explain that the current Artifact Root and
      supplemental Reports Root would be rotated together, then ask and wait for
@@ -36,19 +39,33 @@ behavior or engineering design.
    - A non-empty Artifact Root without Planning is not Bootstrap Entry; Rule 2
      produces `TERMINAL / HALTED`. Do not rotate or repair it unless the user starts
      a separate explicit new-project/reset operation.
-2. Inspect existing project context and constraints.
-3. Define project goals, exclusions, assumptions, and success measures.
-4. Identify all independently valuable Features in dependency-aware order. If no
+2. On Incremental Intent Entry, execute every incremental validation check in the
+   Handoff Protocol. Read current Planning and classify the requested change as added,
+   modified, removed, reordered, or project-constraint impact before changing files.
+3. Inspect existing project context and constraints.
+4. Define project goals, exclusions, assumptions, and success measures.
+5. Identify all independently valuable Features in dependency-aware order. If no
    delivery objective exists, ask and wait for explicit user approval; do not infer
    an empty project from silence, ambiguity, missing context, or exclusions alone.
-5. Give every Feature a stable `F-XX` identifier and concise boundary. Only after
-   explicit empty-project approval, instead record `Feature IDs` as `NONE` and
-   persist `Empty Feature Approval` as `APPROVED: <approval evidence>`.
-6. Confirm that the Feature set covers the approved project intent without overlap.
-7. Persist a new Planning version at its Canonical Artifact Path and mark it READY
-   only when the list is complete.
-8. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Handoff Entry,
-   execute the Unified Entry Validation Procedure defined in the Handoff Protocol.
+6. Give every Feature a stable `F-XX` identifier and concise boundary. Preserve every
+   existing identifier; assign new Features previously unused identifiers and never
+   reuse a retired identifier. Only after explicit empty-project approval, instead
+   record `Feature IDs` as `NONE` and persist `Empty Feature Approval` as
+   `APPROVED: <approval evidence>`.
+7. Build Feature Contract Versions and the Change Set according to the Artifact
+   Protocol. Unchanged Features retain their prior contract versions. Added and
+   business-affected Features use the new Planning Version.
+8. Confirm that the Feature set covers the currently approved project intent without
+   overlap. A later module may extend that approved scope through another Incremental
+   Intent Entry.
+9. Before replacement, archive the prior Planning exactly. For explicit Feature
+   removal, complete the Artifact Protocol's Feature retirement transaction. Persist
+   the new Planning at its Canonical Artifact Path and mark it READY only when the
+   current approved scope and Change Set are complete.
+10. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Incremental Intent
+   Entry, retain its Plan-only authorization until the new Planning is persisted.
+   For Handoff Entry, execute the Unified Entry Validation Procedure defined in the
+   Handoff Protocol.
    For Recovery Entry, execute its persisted-blocker checks before changing Planning.
    Apply the Transition Resolution Procedure.
    If it requires a handoff, validate and render exactly one Canonical Handoff Block
@@ -65,6 +82,13 @@ changes the Feature list. An empty Feature list is READY only when the user
 explicitly approves that the project has no delivery objective. It uses the exact
 `NONE` representation and approval metadata defined by the Artifact Protocol; a
 blank Feature IDs value is invalid.
+
+For an incremental version, READY also requires an exact Change Set and one Feature
+Contract Version for every active Feature. Additive intent normally appends Features
+without changing earlier Feature versions or evidence. Modification advances only
+the affected Feature versions. Reordering alone preserves versions unless it changes
+a Feature dependency or contract. Removal requires explicit user authorization and
+the completed retirement transaction; omission alone never retires a Feature.
 
 ### Emit conditions after Plan completes
 

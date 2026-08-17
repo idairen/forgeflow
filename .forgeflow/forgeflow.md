@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.4
+Version: 2.5
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.4 | `forgeflow.md` |
-| Artifact Protocol | 2.4 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.6 | `protocol/handoff.md` |
+| Framework | 2.5 | `forgeflow.md` |
+| Artifact Protocol | 2.5 | `protocol/artifact.md` |
+| Handoff and Transition Protocol | 2.7 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -45,6 +45,8 @@ choosing a lower-precedence instruction.
 - Engineering decisions are created only by Solution and Slice.
 - Execution work is confined to one resolver-authorized Slice.
 - Upstream contracts are frozen before execution and versioned when changed.
+- Same-project increments preserve unaffected Feature evidence through explicit
+  Feature-scoped compatibility versions.
 - Existing system behavior is inspected before a solution is proposed.
 - Delivery advances only from immutable evidence, never an agent's claim.
 
@@ -161,7 +163,7 @@ determines which workflow runs next; the Handoff Protocol carries the decision.
 ## Canonical flow
 
 ```text
-Plan all Features
+Plan all currently approved Features
    -> Grill every Feature
    -> Solution analyzes every READY Requirement
    -> Slice every Feature
@@ -173,11 +175,12 @@ Plan all Features
 
 The barriers are strict:
 
-- `BUSINESS_READY`: every planned Feature has a current READY Requirement.
+- `BUSINESS_READY`: every planned Feature has a READY Requirement matching its
+  current Feature Contract Version.
 - `ENGINEERING_READY`: a current READY Solution Plan references all Requirement
-  versions.
+  versions and declares one Feature Engineering Version per active Feature.
 - `DELIVERY_READY`: every planned Feature has a current READY Slice Plan that
-  references the Solution Plan version.
+  references that Feature's current Feature Engineering Version.
 - `PROJECT_COMPLETE`: every planned Slice has a latest valid PASS Review Report.
 
 An explicitly approved project with no delivery objective uses `Feature IDs = NONE`
@@ -199,18 +202,22 @@ Edges between artifacts carry explicit versions. At minimum:
 
 ```text
 Planning
-   -> Requirement[Feature]
-   -> Solution Plan[Requirement version map]
-   -> Slice Plan[Feature, Solution Version]
-   -> TDD Record[Solution Version, Slice Plan Version]
-   -> Review Report[Solution Version, Slice Plan Version, Attempt]
+   -> Requirement[Feature Contract Version]
+   -> Solution Plan[Requirement version map, Feature Engineering Version map]
+   -> Slice Plan[Feature, Feature Engineering Version]
+   -> TDD Record[Feature Engineering Version, Slice Plan Version]
+   -> Review Report[Feature Engineering Version, Slice Plan Version, Attempt]
 ```
 
-If an upstream artifact gets a new version, dependent artifacts referencing an
-older version are stale. Stale artifacts remain historical evidence but MUST NOT
-authorize downstream execution or completion. This invalidation is transitive: a
+A new Planning or Solution Plan artifact version does not by itself invalidate every
+Feature. Planning advances the Feature Contract Version only for an added or
+business-affected Feature. Solution advances the Feature Engineering Version only
+for a new or engineering-affected Feature. Evidence is stale when its applicable
+Feature-scoped version or a directly referenced Slice Plan version no longer matches.
+Stale evidence remains history but MUST NOT authorize downstream execution or
+completion. Invalidation remains transitive within each affected Feature chain: a
 downstream BLOCKED artifact cannot authorize RETURN or Recovery merely because its
-direct version reference matches when any earlier barrier in its chain is unusable.
+direct version reference matches when an earlier barrier in that chain is unusable.
 
 No mutable "Project State" artifact is authoritative. Phase, Feature cursor,
 Slice cursor, and runtime Slice state are disposable projections produced from
@@ -256,10 +263,11 @@ workflow MUST reject a malformed handoff rather than infer or normalize it. An
 authorized same-Workflow/same-Scope continuation or a wait for required user input
 emits no handoff. A transition to the same Workflow at a different Target Scope is
 not a continuation and MUST emit a FORWARD handoff for the newly authorized scope.
-A fresh invocation may resume without an incoming handoff only through Bootstrap
-Entry or the Handoff Protocol's persisted-blocker Recovery Entry. Recovery authority
-comes from a fresh Rule 3 result and never permits a synthetic or same-authorization
-RETURN.
+A fresh invocation may proceed without an incoming handoff only through Bootstrap
+Entry, Plan's Incremental Intent Entry, or the Handoff Protocol's persisted-blocker
+Recovery Entry. Incremental authority comes only from explicit same-project user
+intent and never rotates project evidence. Recovery authority comes from a fresh
+Rule 3 result and never permits a synthetic or same-authorization RETURN.
 
 Runtime Slice state is derived as follows:
 
@@ -290,10 +298,11 @@ Review Report. Conversation text alone is never sufficient blocker state.
 - Invalid decomposition returns to Slice for the affected Feature.
 - Implementation or test defects remain with TDD for the affected Slice.
 
-After an upstream change, the procedure recomputes the whole graph. A Solution Plan
-change invalidates old Slice Plans before TDD may resume. A Requirement change
-requires Solution validation and then Slice validation. Recovery resumes at the
-first incomplete valid Slice, not at a cursor saved in conversation history.
+After an upstream change, the procedure recomputes the whole graph. A Requirement
+change requires Solution validation. Solution then advances Feature Engineering
+Versions only for Features with demonstrated engineering impact; Slice, TDD, and
+Review evidence remains usable for every unaffected Feature. Recovery resumes at
+the first incomplete valid Slice, not at a cursor saved in conversation history.
 
 ## Conformance
 
@@ -306,7 +315,9 @@ A conforming implementation MUST:
 5. use typed handoffs and the deterministic Transition Resolution Procedure;
 6. preserve immutable review attempts;
 7. reject execution whose Target Scope differs from a fresh procedure result;
-8. construct the active artifact graph only from valid Canonical Artifact Paths.
+8. construct the active artifact graph only from valid Canonical Artifact Paths;
+9. preserve unaffected Feature evidence across valid same-project increments; and
+10. exclude both Artifact History and Reports History from current progression.
 
 The framework relies solely on Markdown files and a participant capable of reading,
 writing, and updating them in the order defined here. No executable parser, external
