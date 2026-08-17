@@ -1,6 +1,6 @@
 # TDD Workflow
 
-Version: 2.2
+Version: 2.4
 
 ## Contract
 
@@ -9,7 +9,7 @@ Version: 2.2
 | Scope | Slice |
 | Owned artifact | TDD Record |
 | Output | Owned artifact at its Canonical Artifact Path defined by the Artifact Protocol |
-| Required inputs | Incoming Handoff (required); current Requirement, Solution Plan, and Slice Plan |
+| Required inputs | Valid Handoff Entry or Recovery Entry; current Requirement, Solution Plan, and Slice Plan |
 
 Target Scope is the only authoritative execution scope. It MUST identify exactly
 one Feature ID and Slice ID, and it MUST equal a fresh Transition Resolution
@@ -19,11 +19,14 @@ replace it.
 
 ## Entry validation
 
-Before changing tests or production code, TDD MUST first execute the Unified Entry
-Validation Procedure defined in the Handoff Protocol for every incoming handoff. It
+Before changing tests or production code, TDD MUST validate its entry. On Handoff
+Entry it executes the Unified Entry Validation Procedure. Without an incoming
+handoff, it may proceed only through Recovery Entry when a fresh Rule 3 result
+selects TDD at the exact Slice Target Scope from a current IMPLEMENTATION_GAP. It
 then:
 
-1. validate the typed handoff and confirm Next Workflow is TDD;
+1. validate the typed handoff and confirm Next Workflow is TDD, or validate every
+   Recovery Entry condition without inferring a handoff;
 2. validate `DELIVERY_READY` and the complete Requirement, Solution Plan, and
    Slice Plan version chain;
 3. locate the exact Slice in the targeted current Slice Plan;
@@ -87,17 +90,19 @@ or declare Feature or Project completion.
 
 After marking the TDD Record as READY_FOR_REVIEW:
 
-- **FORWARD to Review**: When the Slice's implementation is complete (all tests pass, all evidence recorded) and no blockers prevent review — forward execution to Review for that Slice.
-- **RETURN**: When Rule 2 matches before completing the Slice (a blocker exists in upstream artifacts or during self-check) — return per the Blocker Routing Rules table, with Return Workflow determined by Blocker Category:
+- **FORWARD to Review**: When Rule 9 matches the current READY_FOR_REVIEW attempt, forward to Review for the same Slice.
+- **RETURN**: When Rule 3 selects a persisted blocker before completing the Slice, return per the Blocker Routing Rules table:
    - BUSINESS_GAP → Grill for the affected Feature
    - ENGINEERING_GAP → Solution at Project scope
    - SLICE_VIOLATION → Slice for the affected Feature
-   - Local implementation defect → remain in TDD (no handoff needed)
-- **TERMINAL**: When all planned Slices have completed successfully — not typically emitted by TDD alone but may occur as part of a terminal pipeline state.
+   - IMPLEMENTATION_GAP → TDD for the affected Slice; while the same invocation is active, remain in TDD without a handoff
+
+TDD never emits project-complete TERMINAL because completion requires a matching PASS Review Report under Rule 11.
 
 ## Blockers
 
 - Missing business behavior: RETURN to Grill for the affected Feature.
 - Missing engineering decision: RETURN to Solution with the affected scope.
 - Invalid decomposition: RETURN to Slice for the affected Feature.
-- Local implementation/test defect: remain in TDD for the same Slice.
+- Local implementation/test defect: persist `IMPLEMENTATION_GAP` when blocked across
+  invocations; otherwise remain in TDD for the same Slice without a handoff.

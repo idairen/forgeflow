@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.2
+Version: 2.4
 
 ## Contract
 
@@ -29,8 +29,10 @@ upstream contract gap by inventing behavior or engineering policy.
 
 ## Required process
 
-1. Before accepting any handoff, execute the Unified Entry Validation Procedure
-   defined in the Handoff Protocol. Validate that Target Scope identifies one planned Feature.
+1. On Handoff Entry, execute the Unified Entry Validation Procedure defined in the
+   Handoff Protocol. Without an incoming handoff, proceed only through Recovery Entry
+   when a fresh Rule 3 result selects Slice at the exact Feature Target Scope from a
+   current SLICE_VIOLATION. Validate that Target Scope identifies one planned Feature.
 2. Validate the Feature's Requirement and the project Solution Plan versions.
 3. Inspect existing implementation boundaries relevant to the Feature.
 4. Define ordered `S-XX` Slices that are independently implementable, testable,
@@ -58,8 +60,9 @@ READY Slice Plans before the procedure may target the first TDD Slice.
 
 After producing a current Slice Plan:
 
-- **FORWARD to Slice**: When Rule 5 matches (another Feature in Slice Plan order still lacks a current READY Slice Plan) — forward to Slice at that Feature's Target Scope.
-- **RETURN**: When Rule 2 or Rule 5 matches (a blocker exists or slice plan is stale) — return per the Blocker Routing Rules table, with Return Workflow determined by Blocker Category.
+- **FORWARD to Slice**: When Rule 7 selects another Feature lacking a usable current Slice Plan, forward to Slice at that different Feature scope.
+- **FORWARD to TDD**: When every planned Feature has a usable current Slice Plan and Rule 10 selects the first incomplete Slice, forward to TDD at that Slice scope.
+- **RETURN**: When Rule 3 selects a persisted blocker, return to its resolved owner and scope.
 
 ## Change impact
 

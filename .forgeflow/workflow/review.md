@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.2
+Version: 2.4
 
 ## Contract
 
@@ -39,8 +39,18 @@ consequence MUST NOT cause FAIL.
 
 For FAIL, Review selects exactly one Return Workflow from all blocking finding
 owners using the Framework's upstream precedence and records that workflow and
-its canonical Return Scope in Review Report metadata. Review does not rely on the
-Transition Protocol to infer or replace this disposition.
+the Affected Scope of one blocking finding owned by it as Return Scope. Review
+does not rely on the Transition Protocol to infer or replace this disposition.
+Before writing the report, every Feature or Slice identifier in every finding and
+Return Scope MUST resolve in active Planning and the applicable Canonical Slice
+Plan. Findings and conversation text cannot create a new routing identifier.
+
+The Review Report is the final aggregate decision artifact. It MUST contain exactly
+one canonical Findings table using the exact structure defined by the Artifact
+Protocol. Build that table first, then derive Blocking Findings, Non-blocking
+Findings, Decision, Return Workflow, and Return Scope from its rows. A zero-finding
+report retains the header-only table. Plugin reports are supplemental evidence and
+never replace or independently determine the core Review Report fields.
 
 ## Required process
 
@@ -59,11 +69,9 @@ Transition Protocol to infer or replace this disposition.
    evidence chain.
 6. Decide PASS or FAIL using the shared gate. For FAIL, select Return Workflow by
    upstream owner precedence and use that owner's canonical Return Scope.
-7. Persist a new immutable Review Report at its Canonical Artifact Path. The report
-   MUST include the attempt number, PASS/FAIL decision, total finding counts broken
-   down by blocking vs non-blocking severity, the complete findings table (each entry
-   containing severity, Owner Workflow, Affected Scope, full evidence details, and
-   Violated Contract), and return metadata when applicable.
+7. Persist a new immutable Review Report at its Canonical Artifact Path. Write the
+   exact canonical Findings table first, derive its counts and disposition, and
+   include return metadata only when applicable.
 8. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
    final content of the response.
@@ -74,11 +82,14 @@ Transition Protocol to infer or replace this disposition.
 
 After producing a Review Report:
 
-- **FORWARD (PASS)**: When all findings are non-blocking — forward to the next workflow
-  in the pipeline (typically TDD for the next Slice, or Plan/TERMINAL if all slices complete).
+- **FORWARD (PASS)**: When all findings are non-blocking and Rule 10 selects another
+  incomplete Slice, forward to TDD at that Slice scope.
+- **TERMINAL / COMPLETE (PASS)**: When Rule 11 matches after this PASS, emit the
+  successful terminal variant with Completed Scope `Project`.
 - **RETURN per findings table (FAIL)**: When one or more blocking findings exist — emit
   a RETURN per the Review Report Findings Table, which determines the Return Workflow and
-  canonical Return Scope. The Transition Resolution Procedure uses Rule 6 to route this.
+  canonical Return Scope. The RETURN Handoff uses Blocker Category `REVIEW_BLOCKER`.
+  The Transition Resolution Procedure uses Rule 8 to route this.
 
 ## Findings and returns
 
@@ -102,37 +113,35 @@ The core decision logic, entry validation, and disposition policy remain unchang
 
 ## Plugin Registry
 
-All enabled plugins are registered in `.forgeflow/rules/reviews/_index.md`.
-Each plugin lives in its own subdirectory with a `rules.md` file containing
-a structured checklist of rules to apply against project artifacts.
-
-| Plugin | Directory | Rules File | Enabled? | Report Dir |
-|--------|-----------|-----------|----------|------------|
-| security | `security/` | `rules/security/rules.md` | true | `reports/security/` |
-| coding-standard | `coding-standard/` | `rules/coding-standard/rules.md` | true | `reports/coding-standard/` |
-| architecture | `architecture/` | `rules/architecture/rules.md` | true | `reports/architecture/` |
-| performance | `performance/` | `rules/performance/rules.md` | true | `reports/performance/` |
+`.forgeflow/rules/reviews/_index.md` is the single authoritative registry. Review
+MUST NOT duplicate or infer registry fields locally. Each Rules File is resolved
+relative to `.forgeflow/rules/reviews/` using the exact registered path.
 
 ## Plugin Execution Flow
 
 For each **enabled** plugin in the registry:
 
-1. Read `.forgeflow/rules/reviews/<plugin-name>/rules.md` to load the checklist
-2. For each rule row in the checklist table:
-    a. Apply the check criteria against relevant artifacts  
-    b. Record verdict: `[x] PASS` / `[!] FAIL` / `[~] WARN/N/A`
-    c. Capture evidence for any FAIL or WARN result
-3. Compile results into a structured report
-4. Save report to `.forgeflow/reports/<plugin-name>/report.md`
+1. Resolve dependencies and the registered Rules File.
+2. Evaluate plugin applicability; if inapplicable, record plugin N/A with evidence.
+3. For each rule in an applicable plugin:
+    a. Evaluate rule applicability before compliance.  
+    b. Record PASS, VIOLATION, UNKNOWN, or N/A.  
+    c. Capture evidence for VIOLATION, UNKNOWN, and N/A.  
+    d. Map each VIOLATION through the registered Blocking Threshold to BLOCKING or
+       NON_BLOCKING.
+4. Compile every configured report format.
+5. Save reports to `.forgeflow/reports/<plugin-name>/report-feature-XX-slice-XX-attempt-NN.<format>`.
 
 After all plugins complete, aggregate verdicts:
-- **ALL PASS** → `PASS` (proceed to next workflow)
-- **ANY `[!] FAIL`** → `FAIL` (block until critical/high issues resolved)
-- **All `[~]` only** → `PASS with warnings` (non-blocking)
+- one or more BLOCKING findings → Review FAIL;
+- zero BLOCKING findings → Review PASS, including NON_BLOCKING, UNKNOWN, and N/A;
+- UNKNOWN remains non-blocking unless separate observable evidence independently
+  satisfies the Framework definition of a blocking finding.
 
 ## Report Generation
 
-Each plugin generates a standalone report at `.forgeflow/reports/<plugin-name>/report.md`:
+Each plugin generates attempt-scoped supplemental reports under
+`.forgeflow/reports/<plugin-name>/`:
 
 ### Report Structure
 
@@ -141,18 +150,18 @@ Each plugin generates a standalone report at `.forgeflow/reports/<plugin-name>/r
 
 **Version:** <rules.md version>
 **Review Date:** YYYY-MM-DD
-**Status:** PASS / FAIL / WARN (with counts by severity)
+**Status:** PASS / VIOLATION / UNKNOWN / N/A (with counts by disposition)
 
 ## Summary Table
 
-| # | Rule ID | Description | Severity | Status | Finding |
-|---|---------|-------------|----------|--------|---------|
-| 1 | SEC-001 | No hardcoded passwords | P0 | [!] FAIL | Password found in config.py:15 |
-| 2 | SEC-002 | SQL Injection Prevention | P0 | [x] PASS | All queries parameterized |
+| # | Rule ID | Description | Severity | Verdict | Disposition | Finding |
+|---|---------|-------------|----------|---------|-------------|---------|
+| 1 | SEC-001 | No hardcoded passwords | P0 | VIOLATION | BLOCKING | Password found in config.py:15 |
+| 2 | SEC-002 | SQL Injection Prevention | P0 | PASS | NONE | All queries parameterized |
 
-## Detailed Findings (FAIL/WARN items only)
+## Detailed Findings (VIOLATION/UNKNOWN items only)
 
-### SEC-001 — No hardcoded passwords [P0] [!]
+### SEC-001 — No hardcoded passwords [P0] [BLOCKING]
 
 **Location:** `config.py`, line 15
 ```python
@@ -169,11 +178,11 @@ db_password = "admin123"   # Should use env var or Vault
 
 | Format | Location | Use Case |
 |--------|----------|----------|
-| MD (default) | `.forgeflow/reports/<name>/report.md` | Git-tracked, auditable |
-| HTML | `.forgeflow/reports/<name>/report.html` | Dashboard / Wiki display |
-| CSV/Excel | `.forgeflow/reports/<name>/report.csv` | CI/CD dashboards, data filtering |
+| MD (default) | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.md` | Git-tracked, auditable |
+| HTML | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.html` | Dashboard / Wiki display |
+| CSV/Excel | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.csv` | CI/CD dashboards, data filtering |
 
-For now, the default output is **MD**. HTML and CSV exports can be added later.
+Review generates every format configured by the authoritative registry.
 
 ## Severity Classification Standard
 
@@ -181,10 +190,10 @@ Use this unified severity scale across all plugins:
 
 | Level | Name | Impact | Block? | Example |
 |-------|------|--------|--------|---------|
-| P0 | Critical | System security breach, data loss risk, or severe regression | **Yes** (always blocks) | Hardcoded password, SQL injection, test failure on main branch |
-| P1 | High | Architectural flaw that degrades reliability or scalability | **Yes** (should block) | Missing auth on endpoint, N+1 query on hot path, no error handling |
-| P2 | Medium | Maintainability issue or technical debt accumulation | No (warn only) | Naming convention violation, missing docstring, unbatched cache key |
-| P3 | Info | Best-practice suggestion with no material impact | No (info only) | Code style preference, naming alternative, optional refactor |
+| P0 | Critical | Security breach, data loss risk, or severe regression | When included by registered threshold; normally always included | Hardcoded password, SQL injection, required test failure |
+| P1 | High | Material reliability, security, or scalability defect | When included by registered threshold | Missing auth on a protected endpoint, evidenced N+1 query on a hot path |
+| P2 | Medium | Concrete maintainability or performance risk | Only when registered threshold includes P2 | Repeated risky duplication or evidenced inefficient processing |
+| P3 | Info | Best-practice suggestion with no material impact | Only when registered threshold includes P3 | Naming alternative or optional refactor |
 
 ## Adding a New Plugin
 
@@ -192,7 +201,7 @@ To extend the review engine with a new custom check:
 
 1. Create `.forgeflow/rules/reviews/<new-plugin>/rules.md`
 2. Write rule checks in checklist table format (see existing plugins as template)
-3. Add an entry to the Plugin Registry table above with `Enabled? = true`
+3. Add an entry to `.forgeflow/rules/reviews/_index.md` with `Enabled? = true`
 4. Run review — all enabled plugins execute automatically
 
 ## Backward Compatibility

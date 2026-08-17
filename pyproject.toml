@@ -7,7 +7,7 @@ name = "forgeflow"
 version = "0.1.0"
 description = "AI-driven development workflow orchestrator"
 authors = [{ name = "Dairen" }]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []

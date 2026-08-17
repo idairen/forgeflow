@@ -46,11 +46,10 @@ ForgeFlow is a **pure-Markdown workflow orchestrator** that coordinates AI-drive
 
 ```
 project-root/
-├── .forgeflow/                     # The ForgeFlow runtime root
-│    ├── config.json                 # Single source of truth for CLI settings
-│    ├── artifact.md                 # Artifact Protocol spec (read-only)
-│    ├── handoff.md                  # Handoff & Transition Protocol spec (read-only)
+├── forgeflow.json                  # Single source of truth for CLI settings
+└── .forgeflow/                     # ForgeFlow framework and runtime root
 │    ├── forgeflow.md                # Framework overview / normative rules
+│    ├── protocol/                   # Artifact and Handoff protocols
 │    │
 │    ├── adapter/                    # LLM adapters per host
 │    │    ├── copilot/                # GitHub Copilot Chat prompts
@@ -77,15 +76,15 @@ project-root/
 │    │        └── performance/
 │    │            └── rules.md        # Performance review rules
 │    │
-│    ├── artifacts/                  # Generated workflow outputs (runtime)
+│    ├── artifacts/                  # Generated workflow outputs (created on demand)
 │    │    ├── planning.md
 │    │    ├── requirement-feature-01.md
 │    │    ├── solution-plan.md
 │    │    ├── slice-plan-feature-01.md
 │    │    ├── tdd-feature-01-slice-01.md
 │    │    └── review-feature-01-slice-01-attempt-01.md
-│    └── logs/                       # Engine log files (optional)
-│        └── forgeflow.log
+│    └── runtime/                    # Non-authoritative CLI step summaries
+│         └── steps/
 ```
 
 ### Key Directories Explained
@@ -206,13 +205,34 @@ Every artifact MUST begin with a metadata table:
 | TDD Record | `IN_PROGRESS`, `BLOCKED`, `READY_FOR_REVIEW` |
 | Review Report | `READY` |
 
+Every BLOCKED non-Review artifact persists Blocker Category, Blocker Owner,
+Affected Scope, Blocker Reason, and Blocker Evidence. Review persists blockers in
+its immutable FAIL Review Report. Every Review Report contains exactly one
+seven-column canonical Findings table. The artifact parser validates its structure,
+sequential row numbers, severity, owner/scope shape, rendered content, metadata
+counts, PASS/FAIL decision, and FAIL disposition. The state resolver then validates
+every finding scope against Planning and the applicable Slice Plan. Invalid Review
+evidence halts as a graph contradiction rather than authorizing a transition.
+
+An intentional empty project is not represented by a blank cell. Planning uses
+`Feature IDs = NONE` plus `Empty Feature Approval = APPROVED: <evidence>`. The
+parser normalizes this to an empty ordered list. After graph contradiction, blocker,
+and Planning readiness checks, the resolver derives Rule 11 completion without
+requiring Requirement, Solution, Slice, TDD, or Review artifacts. Any such downstream
+artifact beside an empty Planning makes the graph contradictory.
+
+Replaced contract versions are archived under `.forgeflow/artifacts/history/` using
+versioned filenames. The History Root is preserved by Artifact Root rotation but is
+excluded from the active artifact graph.
+
 ### Root Rotation Procedure (Artifact Reset)
 
-When `forge run --reset` is invoked, the Artifact Root undergoes rotation:
+When an explicit new-project or reset operation is authorized, the Artifact Root undergoes rotation:
 
-1. If `.forgeflow/artifacts/` exists and is non-empty -> rename to `artifacts.YYYYMMDDHHMMSS`
-2. Create a fresh empty `.forgeflow/artifacts/` directory
-3. All previous artifacts are archived; new run starts clean
+1. If the Artifact Root is absent, create it; if it is empty, leave it unchanged
+2. For a non-empty root, reject a pre-existing timestamped backup before changing anything
+3. Rename the whole root to `artifacts.YYYYMMDDHHMMSS` without filtering its contents
+4. Create a fresh empty `.forgeflow/artifacts/` directory, restoring the prior root if creation fails
 
 This ensures **zero state drift** between project versions.
 
@@ -230,7 +250,8 @@ A **handoff** is a structured Markdown block that records the result of a workfl
 
 ### Handoff Block Format
 
-Every handoff MUST use exactly one of these three canonical templates:
+Every handoff MUST use exactly one of four canonical templates. Scope values are
+exactly `Project`, `Feature: F-XX`, or `Slice: F-XX/S-XX`.
 
 #### FORWARD (Progress to Next Workflow)
 
@@ -263,7 +284,7 @@ Every handoff MUST use exactly one of these three canonical templates:
 | Reason | {{evidence_based_reason}} |
 ```
 
-#### TERMINAL (Pipeline Complete)
+#### TERMINAL / COMPLETE
 
 ```markdown
 ### Handoff
@@ -271,8 +292,25 @@ Every handoff MUST use exactly one of these three canonical templates:
 | Field | Value |
 | --- | --- |
 | Transition | TERMINAL |
+| Terminal Status | COMPLETE |
 | Source Scope | {{scope}} |
-| Completed Scope | {{scope}} |
+| Completed Scope | Project |
+| Input Artifacts | {{artifact_list}} |
+| Reason | {{evidence_based_reason}} |
+```
+
+#### TERMINAL / HALTED
+
+```markdown
+### Handoff
+
+| Field | Value |
+| --- | --- |
+| Transition | TERMINAL |
+| Terminal Status | HALTED |
+| Source Scope | {{scope}} |
+| Affected Scope | Project |
+| Blocker Category | GRAPH_CONTRADICTION |
 | Input Artifacts | {{artifact_list}} |
 | Reason | {{evidence_based_reason}} |
 ```
@@ -286,18 +324,32 @@ Every handoff MUST use exactly one of these three canonical templates:
 
 The receiving workflow MUST reject a malformed handoff rather than infer or normalize it.
 
+For HALTED, validation is evidence-bearing rather than status-only. ArtifactParser
+retains structured diagnostics for invalid canonical files, including a readable
+version or `INVALID_VERSION`. StateResolver selects the deterministic primary
+contradiction and emits its graph error code plus sorted terminal evidence. The
+Handoff parser accepts `NONE` only for HALTED, and Runner requires the Reason code
+and Input Artifacts to match the resolver projection exactly. This prevents an agent
+from terminating the pipeline with nonexistent, stale, unrelated, or falsely
+versioned evidence.
+
 ### Transition Resolution Procedure
 
 Before emitting any handoff, the active workflow evaluates these rules in order and stops at the first match:
 
 | Rule | Condition | Action |
 |------|-----------|--------|
-| **Rule 1** -- No Planning Yet | No Planning exists OR Plan is not READY | FORWARD to Plan (Project scope) |
-| **Rule 2** -- Blocker Exists | Upstream workflow identified a blocker | RETURN per Blocker Category routing table |
-| **Rule 3** -- Missing/Stale Requirement | First Feature lacks current READY Requirement | FORWARD to Grill (Feature scope) |
-| **Rule 4** -- Missing/Stale Solution Plan | SolutionPlan absent, incomplete, or stale | FORWARD to Solution (Project scope) |
-| **Rule 5** -- Missing/Stale Slice Plan | First Slice lacks current READY SlicePlan | FORWARD to Slice (Feature scope) |
-| **Rule 6** -- Review Failure with Blocker | FAIL ReviewReport exists for active attempt | RETURN per Review Report Findings Table |
+| **Rule 1** -- Bootstrap | Empty Artifact Root has no Planning | Authorize Plan at `Project` without synthetic handoff |
+| **Rule 2** -- Graph contradiction | Active graph is structurally invalid, including unresolved Blocker or FAIL Review routing scopes | TERMINAL / HALTED |
+| **Rule 3** -- Persisted blocker | BLOCKED artifact has valid metadata and a complete usable current upstream chain | Select by owner priority, Planning Feature position, then Slice Plan position; RETURN or Recovery Entry |
+| **Rule 4** -- Planning not ready | Planning exists but is not usable | FORWARD to Plan at `Project` |
+| **Rule 5** -- Missing/stale Requirement | A declared first Feature lacks usable Requirement | FORWARD to Grill at `Feature: F-XX` |
+| **Rule 6** -- Missing/stale Solution Plan | At least one Feature exists; Requirements ready; Solution Plan not usable | FORWARD to Solution at `Project` |
+| **Rule 7** -- Missing/stale Slice Plan | A declared first Feature lacks usable Slice Plan | FORWARD to Slice at `Feature: F-XX` |
+| **Rule 8** -- Current Review failure | Current TDD attempt has matching FAIL | RETURN per Review Report disposition |
+| **Rule 9** -- Review required | First incomplete Slice is READY_FOR_REVIEW without matching Review | FORWARD to Review at `Slice: F-XX/S-XX` |
+| **Rule 10** -- TDD required | Delivery ready and first incomplete Slice needs implementation | FORWARD to TDD at `Slice: F-XX/S-XX` |
+| **Rule 11** -- Project complete | Every Slice has a current matching PASS Review, or READY Planning is validly `NONE` and sole active artifact | TERMINAL / COMPLETE |
 
 ### Blocker Routing Rules
 
@@ -305,11 +357,13 @@ When a blocker needs routing, the following table determines ownership:
 
 | Blocker Category | Owner Workflow | Return Scope | Meaning |
 |------------------|---------------|--------------|---------|
-| `PLAN_GAP` | Plan | Project | Planning missing features, overlapping scope, or incompatible versions |
-| `BUSINESS_GAP` | Grill | Feature ID (F-XX) | Requirement missing, outdated, or internally contradictory |
-| `ENGINEERING_GAP` | Solution | Project | SolutionPlan missing, outdated, incomplete, or conflicting |
-| `SLICE_VIOLATION` | Slice | Feature ID (F-XX) | SlicePlan boundary wrong, dependency invalid, content missing |
+| `PLAN_GAP` | Plan | `Project` | Planning missing features, overlapping scope, or incompatible versions |
+| `BUSINESS_GAP` | Grill | `Feature: F-XX` | Requirement missing, outdated, or internally contradictory |
+| `ENGINEERING_GAP` | Solution | `Project` | SolutionPlan missing, outdated, incomplete, or conflicting |
+| `SLICE_VIOLATION` | Slice | `Feature: F-XX` | SlicePlan boundary wrong, dependency invalid, content missing |
+| `IMPLEMENTATION_GAP` | TDD | `Slice: F-XX/S-XX` | Implementation, test, or local evidence is blocked |
 | `REVIEW_BLOCKER` | Determined by Review Report Findings Table | Per finding | A review finding triggers routing -- read the findings table to determine owner and scope |
+| `GRAPH_CONTRADICTION` | None; terminal halt | `Project` | Active graph cannot authorize productive work |
 
 ---
 
@@ -326,29 +380,35 @@ Review workflow
      |       +- Lists all enabled plugins + priority order
      |
      +-- For each enabled plugin (sorted by Priority):
-     |       +- Reads rules/<plugin-name>/rules.md
+     |       +- Resolves the registered Rules File relative to rules/reviews/
      |       +- Executes each rule against artifacts/codebase
-     |       +- Records verdict: [x] PASS / [!] FAIL / [~] WARN/N/A
+     |       +- Records PASS / VIOLATION / UNKNOWN / N/A
+     |       +- Maps VIOLATION severity through Blocking Threshold
      |
      +-- Compiles results into structured report
-     |       +- Saves to .forgeflow/reports/<plugin-name>/report.md
+     |       +- Saves attempt-scoped reports under .forgeflow/reports/<plugin-name>/
      |
-     +- Aggregates verdicts -> decides PASS/FAIL for Review
+     +- Aggregates plugin evidence into the core Review Report Findings table
+             +- Core rows determine counts, PASS/FAIL, and RETURN disposition
 ```
+
+Attempt-scoped plugin reports remain supplemental. They never replace the
+canonical Review Report or serve as an independent transition authority.
 
 ### Plugin Registry (_index.md)
 
-The registry is a single Markdown table under `.forgeflow/rules/reviews/_index.md`. Each row defines one plugin with 10 fields:
+The registry is a single Markdown table under `.forgeflow/rules/reviews/_index.md`. Each row defines one plugin with 11 fields:
 
 | Field | Example | Description |
 |-------|---------|-------------|
 | Name | `security` | Human-readable identifier |
 | Directory | `security/` | Subdirectory under reviews/ |
-| Rules File | `rules/security/rules.md` | Path to rule checklist |
+| Rules File | `security/rules.md` | Path relative to `.forgeflow/rules/reviews/` |
 | Enabled? | `true` / `false` | Activates or skips this plugin |
 | Priority | `1` | Execution order (lower = earlier) |
 | Depends On | `--` or `security, architecture` | Other plugins scanned first |
 | Scope | `code, docs` | Where to apply checks |
+| Applicability | `Executable service code` | Evidence boundary evaluated before compliance |
 | Report Format | `md, csv` | Output format(s) for report |
 | Blocking Threshold | `P0-P1` | Severity levels that block pipeline |
 | Description | `Security vulnerability detection...` | One-line summary |
@@ -386,38 +446,36 @@ That's it. The Review workflow will automatically pick it up on next execution.
 
 The auto-mode engine is responsible for orchestrating the pipeline loop. It lives in `runner.py`.
 
+CLI artifact discovery validates only canonical files located directly under the
+configured Artifact Root. It reads status and version data from each artifact's
+leading Metadata table, reports malformed canonical artifacts as an invalid graph,
+and excludes `history/`, backup directories, nested files, and non-canonical files
+from the active artifact set.
+
 ### How Auto-Mode Works
 
 ```python
 for step in range(MAX_STEPS=50):
-    current_workflow = detect_current_workflow()
-    artifact_state = HandoffParser.detect_artifact_state(artifacts_dir)
-    
-     # Execute LLM workflow with retries
+    before = detect_artifact_state(artifacts_dir)
+    authorization = resolve_pipeline_state(before)
+    current_workflow = authorization.current_workflow
+    current_scope = authorization.target_scope
+
     llm_output = try_execute_llm(current_workflow, max_retries=3)
-    
-     # Parse handoff from response
-    handoff = HandoffParser.parse(llm_output)
-    
-    if handoff is not None:
-         # Valid handoff found -- apply transition
-        transition = apply_transition(handoff)
-        
-        if transition == "FORWARD":
-            current_workflow = next_workflow
-        elif transition == "RETURN":
-            current_workflow = return_to_workflow
-            log_blocker()
-        elif transition == "TERMINAL":
-            break   # Pipeline complete!
-    else:
-         # No valid handoff -- fallback to config rules
-        fallback = apply_fallback_transitions(current_workflow)
-        if fallback is None:
-            break   # Stuck -- no rule matched
-        current_workflow = fallback.next_workflow
-        
-print_summary()   # Persist step history
+    handoff = parse_handoff(
+        llm_output,
+        expected_source_workflow=current_workflow,
+        expected_source_scope=current_scope,
+    )
+
+    after = detect_artifact_state(artifacts_dir)
+    resolution = resolve_pipeline_state(after)
+    if not handoff_matches_graph(handoff, after, resolution):
+        return PIPELINE_BLOCKED
+
+    persist_step_history()
+    if resolution.pipeline_status in {"COMPLETE", "HALTED"}:
+        break
 ```
 
 ### Key Mechanisms
@@ -425,43 +483,38 @@ print_summary()   # Persist step history
 | Mechanism | Default Value | Purpose |
 |-----------|---------------|---------|
 | `MAX_STEPS` | 50 total iterations | Prevents infinite loops |
-| `MAX_FAILURES_PER_WF` | 3 consecutive failures per workflow | Triggers fallback on repeated LLM failure |
-| `RETRY_BACKOFF` | 0.5s -> 1s -> 2s (exponential) | Gentle retry for transient LLM errors |
+| `MAX_FAILURES_PER_WF` | 3 consecutive failures per workflow | Blocks after repeated execution or Handoff failure |
 | `artifacts_dir` | `.forgeflow/artifacts/` | Where all artifacts are persisted |
+| `runtime_dir` | `.forgeflow/runtime/` | Non-authoritative CLI step summaries |
 
-### Fallback Transition Engine
+### Failure Safety
 
-When handoff parsing fails or the LLM returns an invalid response, the engine falls back to rules defined in `config.json`:
-
-```json
-{
-   "transitions": [
-     {
-       "rule_id": "plan_done_to_grill",
-       "condition": "Plan DONE, first Feature missing Requirement",
-       "forward": "grill",
-       "return_to": null
-     },
-     ...
-   ]
-}
-```
-
-Fallback priority:
-1. `auto_next` from workflow config (forward)
-2. `on_blocker_return` mapping (conditional forward/return)
-3. Global `transitions` rules list
+When agent execution fails, or its response attempts an invalid canonical Handoff
+three times, the Runner returns `PIPELINE_BLOCKED`. A response with no Handoff marker
+and unchanged Workflow/Scope authorization returns `PIPELINE_WAITING` without a
+retry; if authorization changed, the missing Handoff blocks the run. The Runner
+never synthesizes a FORWARD, RETURN, or TERMINAL result from configuration. Step
+summaries are written under `.forgeflow/runtime/steps/`, outside the authoritative
+Artifact Root.
 
 ### LLM Execution Hook
 
 When the engine calls `_execute_llm(name)`:
 
 1. Reads prompt from `.forgeflow/adapter/<adapter>/<name>.prompt.md`
-2. Passes it as system instruction to the LLM
-3. Returns raw text output
-4. HandoffParser attempts to parse `### Handoff` block
+2. Appends engine-derived Bootstrap or Recovery Entry context when the current graph authorizes one
+3. Appends an optional Plan User Intent as escaped, non-normative JSON invocation data
+4. Invokes the matching non-interactive agent CLI from the project root
+5. Grants workspace-scoped execution permissions needed by the workflow
+6. Returns the agent's final response from standard output
+7. HandoffParser attempts to parse the final `### Handoff` block
 
-You can hook into this flow by modifying `runner.py` or providing custom adapters.
+The `codex` adapter uses `codex exec` with the `workspace-write` sandbox. The
+`copilot` adapter uses `gh copilot` with non-interactive `write` and `shell`
+permissions while retaining its default project-root path boundary. The optional
+`model` and `execution_timeout_seconds` keys in `forgeflow.json` select a model and
+bound each invocation. Process failures and malformed handoffs are retried by the
+Runner's workflow-level retry loop rather than by nested backend retries.
 
 ---
 
@@ -479,29 +532,17 @@ ForgeFlow supports multiple **host adapters** -- each adapts the core workflows 
 ### How Adapter Selection Works
 
 ```text
-config.json has "adapter": "copilot"
+forgeflow.json has "adapter": "copilot"
      |
      +- User runs: forge init --adapter codex
-     |       +- Writes {"adapter": "codex"} to config.json
+     |       +- Refreshes managed framework files and updates forgeflow.json
      |
-     +- Engine starts: runner.py reads config.json
-     |    +- If adapter is set -> use that
-     |    +- Otherwise -> detect host from environment variables
+     +- Engine starts: runner.py reads forgeflow.json
+     |    +- Uses the configured adapter, defaulting to copilot
      |
      +- PromptResolver resolves:
              .forgeflow/adapter/<selected>/<workflow>.prompt.md
 ```
-
-### Environment Auto-Detection Fallback
-
-If no adapter is set in `config.json`, the engine auto-detects:
-
-| Host | Detection Keys |
-|------|---------------|
-| copilot | `GITHUB_TOKEN` or `VS_CODE_EXTENSION` env vars |
-| codex | `CODEX_CLI` or `CODEX_HOME` env vars |
-| gemini | `GOOGLE_API_KEY` or `GEMINI_CLI` env vars |
-| claude | `ANTHROPIC_API_KEY` or `CLAUDE_CLI` env vars |
 
 ### Adapter Differences
 
@@ -529,21 +570,25 @@ The `copilot` adapter is the recommended default. Use `codex` when running from 
 |---------|-------------|------------|
 | `forge --help` | Show help message | None |
 | `forge plan` | Execute Plan workflow (Project scope) | `--intent TEXT` |
-| `forge run [--auto] [--no-auto] [--reset]` | Start pipeline | See below |
+| `forge run [--auto\|--manual] [--reset]` | Start pipeline | See below |
 | `forge status` | Show current state, artifacts, handoff data | None |
-| `forge reset [--force]` | Clean up artifacts/ (dry-run by default) | `--force` to actually delete |
-| `forge init [-a copilot\|codex]` | Initialize project | `--adapter`, `--force` |
+| `forge reset [--force]` | Rotate the Artifact Root (dry-run by default) | `--force` to archive and rotate |
+| `forge init [-a copilot\|codex]` | Install or refresh framework resources | `--adapter`, `--force` |
 | `forge handoff` | Debug latest handoff from artifacts/ | None |
+
+Command exit status is deterministic: `0` means success, `1` means an execution or
+configuration error, `2` means the pipeline ended without successful completion,
+and `130` means the user interrupted execution.
 
 ### Run Command Modes
 
 | Flag | Behavior | Use Case |
 |------|----------|---------|
-| Default (no flags) | Auto-mode: loop until TERMINAL or blocked | Fully automated pipeline |
-| `--auto` | Explicit auto-mode | Same as default |
-| `--no-auto` | Manual mode: one step at a time, you drive transitions | Debugging, review-driven development |
-| `--reset` | Clean artifacts/ before running | Start fresh with zero state drift |
-| `--force` | Combined with reset: actually delete artifacts | Hard reset |
+| Default (no flags) | Use `forgeflow.json` `mode` | Project-configured behavior |
+| `--auto` | Override this invocation to auto mode | Loop until TERMINAL or blocked |
+| `--manual` | Override this invocation to manual mode | Execute Plan once; `--no-auto` is an alias |
+| `--reset` | Rotate artifacts before running | Start fresh with zero state drift |
+| `--force` | Authorize `forge reset` rotation or `forge init` refresh | Explicit state-changing action |
 
 ### Example CLI Session
 
@@ -555,7 +600,7 @@ forge init --adapter copilot
 forge run
 
 # 3. Or run in manual mode to inspect each step
-forge run --no-auto
+forge run --manual
 
 # 4. Check status at any time
 forge status
@@ -572,7 +617,7 @@ ForgeFlow is a **pure-Markdown artifact-driven workflow** that coordinates AI de
 
 1. **6 canonical workflows** (Plan -> Grill -> Solution -> Slice -> TDD -> Review)
 2. **Typed handoff protocol** (FORWARD / RETURN / TERMINAL with validation)
-3. **Deterministic transition engine** (rules defined in config.json, evaluated at runtime)
+3. **Deterministic transition procedure** (ordered Markdown rules evaluated from the active artifact graph)
 4. **Plugin-based review system** (pure Markdown rules loaded from `_index.md`)
 5. **Adapter pattern** (supports copilot & codex hosts via separate prompt files)
 

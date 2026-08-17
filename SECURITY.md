@@ -22,7 +22,7 @@ This document describes ForgeFlow's security posture and provides guidance for r
 If you discover a security vulnerability in ForgeFlow:
 
 1. **Do NOT open a public GitHub issue** — vulnerabilities should be reported privately
-2. Email the maintainers at: **[dairen@example.com](mailto:dairen@example.com)** (replace with real contact when ready)
+2. Email the maintainers at: **[idairen@qq.com](mailto:idairen@qq.com)** 
 3. Include a clear subject line: **"ForgeFlow Security Vulnerability Report"**
 4. Provide as much detail as possible:
     - Description of the vulnerability

@@ -2,10 +2,10 @@
 
 Read completely, in order:
 
-1. `../../forgeflow.md`
-2. `../../protocol/artifact.md`
-3. `../../protocol/handoff.md`
-4. `../../workflow/review.md`
+1. `.forgeflow/forgeflow.md`
+2. `.forgeflow/protocol/artifact.md`
+3. `.forgeflow/protocol/handoff.md`
+4. `.forgeflow/workflow/review.md`
 
 Execute only the Review contract and exact Slice Target Scope. Make no code or
 upstream artifact changes; write immutable review evidence and apply the procedure.

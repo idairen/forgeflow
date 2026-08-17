@@ -2,7 +2,7 @@
 
 **Plugin:** architecture  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical(blocking), P1=High(blocking), P2=Medium(non-blocking), P3=Info(suggestion)
+**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -18,7 +18,9 @@
 
 ## Execution Notes
 
-- Apply each rule against the design documents, code structure, and any architectural decision records.
-- Mark `[x]` if compliant, `[!]` if violated, `[~]` if unclear or partially implemented.
-- P1 violations are structural — fix them before adding more features.
-- Some rules require reading multiple files; ensure all source directories are scanned.
+- Evaluate applicability before compliance. Layering, dependency injection, REST,
+  database, centralized error handling, and horizontal scaling rules are N/A when
+  the authorized Slice and Solution Plan do not contain that architectural surface.
+- Record PASS, VIOLATION, UNKNOWN, or N/A with observable evidence.
+- Apply the registry Blocking Threshold to each VIOLATION. Review only files and
+  documents needed for the authorized Slice and its declared architectural context.

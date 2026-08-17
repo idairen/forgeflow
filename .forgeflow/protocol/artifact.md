@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.2
+Version: 2.4
 
 ## Purpose
 
@@ -22,6 +22,34 @@ participate in the active artifact graph.
 
 If the Artifact Root does not exist, the workflow creating the first artifact MUST
 create it before writing that artifact.
+
+### History Root
+
+The canonical History Root is `.forgeflow/artifacts/history/`. It is physically
+inside the Artifact Root so Artifact Root Rotation preserves project history, but
+it is outside the active artifact graph. Transition resolution MUST ignore every
+file below the History Root.
+
+Before replacing a canonical current contract artifact with a higher version, its
+owner MUST copy the exact prior file into the History Root using one of these names:
+
+| Artifact Type | Historical filename |
+| --- | --- |
+| Planning | `planning-v<Version>.md` |
+| Requirement | `requirement-feature-XX-v<Version>.md` |
+| Solution Plan | `solution-plan-v<Version>.md` |
+| Slice Plan | `slice-plan-feature-XX-v<Version>.md` |
+| TDD Record | `tdd-feature-XX-slice-XX-attempt-NN.md` |
+
+Review Reports are already immutable attempt files and remain directly under the
+Artifact Root; they are not copied into History Root. An IN_PROGRESS TDD Record may
+be updated within its current attempt. Before TDD advances Attempt or replaces a
+READY_FOR_REVIEW or BLOCKED record, it MUST archive the prior exact file.
+
+Historical files are immutable. If the required historical path already exists with
+different content, the owner stops with a persisted blocker and MUST NOT replace the
+canonical current artifact. If identical content already exists, archival is
+already satisfied.
 
 ## Artifact Root Rotation Procedure
 
@@ -83,11 +111,19 @@ metadata is missing, duplicated, or contradictory.
 Identifiers use `F-XX` and `S-XX`. The numeric portions in filenames, metadata,
 Planning, and Slice Plans MUST match.
 
+Every narrow routing scope is a graph reference, not a declaration. `Feature: F-XX`
+in BLOCKED Affected Scope or FAIL Review Return Scope MUST resolve to an ID declared
+by active Planning. `Slice: F-XX/S-XX` MUST also resolve to an ID declared by the
+Canonical Slice Plan for that Feature. Only Planning declares Features, and only a
+Slice Plan declares Slices. Artifact text, blocker metadata, Review findings, and
+conversation context cannot create identifiers. An unresolved routing scope is a
+graph contradiction rather than an actionable or stale route.
+
 ## Type-specific metadata
 
 | Artifact Type | Additional required fields |
 | --- | --- |
-| Planning | Feature IDs in declared order |
+| Planning | Feature IDs in declared order; Empty Feature Approval only for `NONE` |
 | Requirement | Feature ID; Planning Version |
 | Solution Plan | Based On Requirements: every `F-XX = version` |
 | Slice Plan | Feature ID; Based On Solution; Slice IDs in declared order |
@@ -96,6 +132,19 @@ Planning, and Slice Plans MUST match.
 
 Multiple values MUST use semicolon-separated canonical entries in the table, for
 example `F-01 = 1.0; F-02 = 1.0`. Their declared order is significant where stated.
+Planning `Feature IDs` is the sole Feature order, and each Slice Plan's `Slice IDs`
+is the sole Slice order within that Feature. Identifier numbers and filenames do not
+override these positions. The same Slice ID may appear under different Features, so
+a Slice position is always resolved together with its Feature context.
+
+Planning represents an explicitly approved empty Feature list with the exact value
+`NONE`; a blank metadata value is never an empty list. When `Feature IDs` is `NONE`,
+Planning MUST include `Empty Feature Approval` rendered as
+`APPROVED: <non-empty user approval evidence>`. That field is forbidden when any
+Feature is declared. `NONE` cannot be combined with Feature identifiers. A READY
+empty Planning is valid only when it is the sole active artifact; any Requirement,
+Solution Plan, Slice Plan, TDD Record, or Review Report in that graph is a
+contradiction rather than evidence for an empty project.
 
 ## Status values
 
@@ -108,6 +157,51 @@ example `F-01 = 1.0; F-02 = 1.0`. Their declared order is significant where stat
 Review Report Decision is exactly PASS or FAIL. Attempt is a positive integer.
 `Blocking Findings` and `Non-blocking Findings` are non-negative integers. Version
 uses `major.minor` decimal notation such as `1.0`.
+
+## Persisted blocker metadata
+
+Every Planning, Requirement, Solution Plan, Slice Plan, or TDD Record whose Status
+is `BLOCKED` MUST include all of these additional metadata fields:
+
+| Field | Requirement |
+| --- | --- |
+| Blocker Category | One non-terminal owner category defined by the Handoff Protocol |
+| Blocker Owner | One canonical workflow name |
+| Affected Scope | Canonical Project, declared Feature, or declared Slice scope required by the category route |
+| Blocker Reason | Non-empty description of the unresolved condition |
+| Blocker Evidence | Observable artifact, code, command, or user-decision evidence |
+
+Persisted BLOCKED artifacts may use `PLAN_GAP`, `BUSINESS_GAP`, `ENGINEERING_GAP`,
+`SLICE_VIOLATION`, or `IMPLEMENTATION_GAP`. `REVIEW_BLOCKER` belongs only to FAIL
+Review Reports, and `GRAPH_CONTRADICTION` belongs only to terminal halt handoffs.
+The Blocker Owner and Affected Scope MUST match the category routing table. A
+BLOCKED artifact with missing or contradictory blocker metadata is invalid graph
+evidence. A structurally valid BLOCKED artifact whose upstream chain became stale is
+preserved but non-actionable. A valid current BLOCKED artifact remains the persistent
+blocker record until its owner replaces that canonical artifact with a higher valid
+version or attempt whose Status is no longer `BLOCKED`. Handoff text and conversation
+context do not replace this persisted evidence.
+
+Blocker currentness depends on the complete upstream barrier chain:
+
+| BLOCKED Artifact Type | Required usable current upstream chain |
+| --- | --- |
+| Planning | None |
+| Requirement | READY Planning containing its Feature; matching Planning Version |
+| Solution Plan | READY Planning and every planned READY Requirement; exact Based On Requirements map |
+| Slice Plan | Current Planning and Requirements; READY current Solution Plan; declared Feature; matching Based On Solution |
+| TDD Record | Current Planning, Requirements, and Solution Plan; READY current Slice Plan containing its Slice; matching Solution and Slice Plan versions |
+
+The BLOCKED artifact itself does not need READY status. Every artifact before it in
+the table's dependency chain does. Matching a direct version while an earlier
+barrier is unusable does not make the blocker current. A stale downstream blocker
+remains preserved evidence but MUST NOT authorize RETURN, Recovery Entry, or work.
+
+When a non-Review workflow discovers a blocker that cannot be resolved within the
+current invocation, it MUST persist the blocker in its own owned artifact before it
+emits RETURN or stops. It records the upstream owner in `Blocker Owner` and never
+edits that owner's artifact. Review persists blockers through its immutable FAIL
+Review Report and required return metadata instead of using Status `BLOCKED`.
 
 ## Artifact contracts
 
@@ -154,18 +248,37 @@ references are still current. It authorizes retry ordering but cannot prove Slic
 completion. A PASS proves completion only when it matches the current TDD attempt
 and current upstream versions.
 
-Every finding in the report body MUST identify its Severity as `BLOCKING` or
-`NON_BLOCKING`, Owner Workflow, Affected Scope, observable Evidence, and Violated
-Contract. The metadata counts MUST equal the findings in the body.
+Every Review Report MUST contain exactly one `## Findings` section with this exact
+table header and column order:
+
+```markdown
+## Findings
+
+| # | Severity | Owner Workflow | Affected Scope | Finding | Evidence | Violated Contract |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | BLOCKING | TDD | Slice: F-01/S-01 | Test failure | test_x failed | Requirement AC-3 |
+```
+
+Each data row is one finding. Row numbers start at 1 and are sequential; Severity
+is exactly `BLOCKING` or `NON_BLOCKING`; Owner Workflow is Plan, Grill, Solution,
+Slice, or TDD; and Finding, Evidence, and Violated Contract are non-empty rendered
+values without placeholders. Affected Scope MUST match the owner: Project for Plan
+and Solution, Feature for Grill and Slice, and Slice for TDD. A report with no
+findings retains the header and separator but has no data rows. Additional detailed
+evidence MAY follow the table, but it does not create findings or affect counts.
+
+The metadata counts MUST equal the rows of each severity in this canonical table.
 
 - PASS requires `Blocking Findings` to be 0. `Return Workflow` and `Return Scope`
   MUST be absent. PASS MAY contain non-blocking findings.
 - FAIL requires `Blocking Findings` to be greater than 0 and requires exactly one
   `Return Workflow` and `Return Scope`.
 - The return destination is selected from all blocking findings using the owner
-  precedence in the Framework. Its scope MUST be the affected Feature for Grill,
-  Project for Solution, the affected Feature for Slice, or the affected Slice for
-  TDD.
+  precedence in the Framework. `Return Workflow` MUST equal that selected owner,
+  and `Return Scope` MUST equal the Affected Scope of at least one blocking finding
+  owned by it. Every Feature and Slice identifier in every finding and Return Scope
+  MUST resolve in active Planning and the applicable Canonical Slice Plan before
+  the report is valid.
 
 A Review Report that violates these decision, count, finding, or return rules is
 invalid and cannot authorize a transition or prove completion.
@@ -174,8 +287,8 @@ invalid and cannot authorize a transition or prove completion.
 
 Only the owning workflow may create or replace its canonical current artifact.
 Normative content changes require a new version. Canonical Artifact Paths hold the
-current contract; source control or a separate archive may preserve replaced
-versions. Archived files are outside the active artifact graph.
+current contract; the required History Root preserves replaced versions. Historical
+files and Artifact Backup Paths are outside the active artifact graph.
 
 Downstream workflows MUST request a RETURN when an upstream contract change is
 needed. No workflow may change another workflow's artifact or status.

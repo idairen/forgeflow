@@ -22,13 +22,13 @@ An artifact-driven framework where **Markdown files are the single source of tru
 pip install -e .
 
 # 2. Initialize a new ForgeFlow project
-forge init --adapter copilot   # or codex / claude / gemini
+forge init --adapter copilot   # or codex
 forge init --adapter codex
 
 # 3. Run the full pipeline in auto-mode
 forge run                     # loops until all slices pass review or a blocker is hit
-forge run --no-auto           # manual: one step at a time, you drive transitions
-forge run --reset             # clean artifacts/ before running
+forge run --manual            # execute only the Plan workflow
+forge run --reset             # rotate artifacts/ before running
 ```
 
 ---
@@ -69,17 +69,24 @@ Slice]
 | Command | Description |
 |---------|-------------|
 | `forge --help` | Show help message |
-| `forge plan [--intent TEXT]` | Execute Plan workflow (Project scope) |
-| `forge run [--auto] [--no-auto] [--reset]` | Start pipeline. Auto-mode loops until TERMINAL or blocked. |
+| `forge plan [--intent TEXT]` | Execute and validate one Plan workflow response |
+| `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | Run using the configured mode or an explicit one-time override. |
 | `forge status` | Show current pipeline state, active artifact graph, and handoff data |
-| `forge reset [--force]` | Clean up generated artifacts/ (dry-run by default) |
-| `forge init [-a copilot\|codex]` | Initialize a new project. Creates `.forgeflow/config.json` |
-| `forge handoff` | Debug tool: display the latest handoff block from `artifacts/` |
+| `forge reset [--force]` | Rotate the active Artifact Root (dry-run by default) |
+| `forge init [-a copilot\|codex] [--force]` | Install or refresh the framework and create `forgeflow.json` |
+| `forge handoff` | Debug tool: display the latest validated CLI handoff snapshot |
+
+CLI exit codes are `0` for success, `1` for execution or configuration errors,
+`2` when a pipeline is blocked, halted, or reaches its iteration limit, and `130`
+when interrupted by the user.
 
 ### Configuration
 
-All project settings live in a single file: [`.forgeflow/config.json`](./.forgeflow/config.json)  
-Keys include `adapter`, `mode`, `workflows.*.auto_next`, and `transitions.*.condition`.  
+All project settings live in a single file: [`forgeflow.json`](./forgeflow.json).
+Keys include `adapter`, `mode`, `model`, `execution_timeout_seconds`,
+and the fixed canonical `root_artifact_dir`. Unknown or malformed fields are rejected.
+Pipeline transitions come only from validated canonical Handoff blocks, never
+configuration fallbacks.
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full schema.
 
 ---
@@ -91,10 +98,10 @@ ForgeFlow is designed to work natively inside AI coding assistants:
 - **GitHub Copilot Chat**: Use `/forge-plan`, `/forge-grill`, `/forge-solution`, etc. The adapter reads from `.forgeflow/adapter/copilot/*.prompt.md`.
 - **Codex CLI**: Pass commands via prompt or use the `forge` subcommands above. Adapters live in `.forgeflow/adapter/codex/*.prompt.md`.
 - **Manual vs Auto Mode**:  
-  - `auto-mode`: The engine loops through workflows, executing handoff logic automatically until a terminal state or blocker is reached.  
-  - `manual-mode`: You drive each step explicitly, inspecting artifacts between phases.
+  - `auto-mode`: The engine resolves each step from the active Artifact Graph and accepts a Handoff only when its transition, scope, and evidence versions match that graph.
+  - `manual-mode`: The CLI executes Plan once only when the active Artifact Graph authorizes Plan, then validates any emitted Handoff against the updated graph. `--no-auto` remains an alias for `--manual`.
 
-You can switch the active adapter at any time by editing `.forgeflow/config.json` or running `forge init -a <adapter>`.
+You can switch the active adapter by editing `forgeflow.json` or running `forge init -a <adapter> --force`. Forced refresh overwrites managed framework files while preserving artifacts, runtime state, custom plugins, and supported project configuration values.
 
 ---
 
@@ -118,7 +125,8 @@ Each plugin defines a `rules.md` checklist under `.forgeflow/rules/reviews/<plug
 
 ## Artifacts & State Tracking
 
-All workflow outputs are persisted as Markdown files under `.forgeflow/artifacts/`.  
+Canonical workflow artifacts are persisted as Markdown files under `.forgeflow/artifacts/`.
+Non-authoritative CLI execution state is stored separately under `.forgeflow/runtime/`.
 Example structure:
 
 ```
@@ -130,6 +138,11 @@ Example structure:
 │   ├── slice-plan-feature-01.md
 │   ├── tdd-feature-01-slice-01.md
 │   └── review-feature-01-slice-01-attempt-01.md
+├── runtime/
+│   ├── last-handoff.json
+│   ├── last-run.json
+│   ├── runs/                  # immutable automatic-run results
+│   └── steps/                 # paired Markdown summaries and JSON history entries
 ├── adapter/
 │   ├── copilot/
 │   └── codex/
@@ -143,14 +156,21 @@ Example structure:
             └── rules.md
 ```
 
-When you run `forge run --reset`, the current artifact graph is rotated into an archive directory (e.g., `artifacts.20241015T093000`) before a fresh run begins. This ensures **zero state drift** between project versions.
+Each CLI step writes a human-readable Markdown summary and a structured JSON
+history entry. New CLI processes rebuild execution history from valid JSON entries;
+artifact rotation preserves this runtime history. Interrupted Agent executions are
+recorded before the CLI exits with status `130`.
+Automatic runs also persist their final result independently from step history,
+including runs that stop because the iteration limit is reached.
+
+When you run `forge run --reset`, the current artifact graph is rotated into an archive directory (e.g., `artifacts.20241015093000`) before a fresh run begins. This ensures **zero state drift** between project versions.
 
 ---
 
 ## FAQ
 
 ### Q: Do I need an LLM API key to run ForgeFlow?
-A: The core framework is Markdown-driven, but the `forge` CLI invokes an LLM backend for workflow execution. You'll need valid credentials for your chosen adapter (e.g., OpenAI, Anthropic, Gemini).
+A: The core framework is Markdown-driven, but the `forge` CLI invokes the selected agent CLI for workflow execution. The `codex` adapter runs `codex exec` with a workspace-write sandbox; the `copilot` adapter runs `gh copilot` with workspace-scoped file access and non-interactive `write` and `shell` permissions. Authenticate the selected CLI before running ForgeFlow. Optional `forgeflow.json` keys are `model` and `execution_timeout_seconds` (default: `900`).
 
 ### Q: Can I use this without the CLI?
 A: Yes. ForgeFlow is designed to run purely through IDE prompts (Copilot Chat, Codex, Claude Desktop, etc.). The CLI is an optional orchestrator for automation and debugging.
@@ -159,7 +179,7 @@ A: Yes. ForgeFlow is designed to run purely through IDE prompts (Copilot Chat, C
 A: Create `.forgeflow/rules/reviews/<your-plugin>/rules.md`, register it in `.forgeflow/rules/reviews/_index.md`, and enable it (`Enabled? = true`). The Review workflow will automatically pick it up. No Python code required.
 
 ### Q: Is auto-mode safe for production codebases?
-A: Auto-mode loops until blocked or finished. It includes retry logic, fallback transitions, and blocker timeouts. We recommend testing on a staging branch first, then running against `main` with `--reset`.
+A: Auto-mode loops until blocked or finished. It retries execution failures but never guesses a transition when the model fails or emits an invalid Handoff. We recommend testing on a staging branch first, then running against `main` with `--reset`.
 
 ---
 
@@ -176,4 +196,4 @@ Before submitting a PR, ensure:
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).  
-Copyright (c) 2026 Dairen. All rights reserved.
+Copyright (c) 2026 Jiang XiaoGang. All rights reserved.

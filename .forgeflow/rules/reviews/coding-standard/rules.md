@@ -1,8 +1,8 @@
-# Coding Standard Review Rules
+# Python Coding Standard Review Rules
 
 **Plugin:** coding-standard  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical(blocking), P1=High(blocking), P2=Medium(non-blocking), P3=Info(suggestion)
+**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -19,7 +19,9 @@
 
 ## Execution Notes
 
-- Apply each rule to source files in the project directory.
-- Mark `[x]` if compliant, `[!]` if violated, `[~]` if unclear.
-- P2 violations should be flagged but do not block; they are improvement suggestions.
-- For rules that partially apply (e.g., a project uses minimal typing), mark as `[~] PARTIAL`.
+- This plugin applies only to Python source files in the authorized Slice. If none
+  exist, mark the plugin N/A rather than evaluating another language as Python.
+- Evaluate each rule's applicability before compliance and record PASS, VIOLATION,
+  UNKNOWN, or N/A with evidence.
+- Apply the registry Blocking Threshold to each VIOLATION; do not infer blocking
+  disposition from the presence of a style violation alone.

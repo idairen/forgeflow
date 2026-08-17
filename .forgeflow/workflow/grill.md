@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.2
+Version: 2.4
 
 ## Contract
 
@@ -16,12 +16,13 @@ challenge ambiguity and obtain stakeholder decisions, but it may not invent them
 
 ## Entry behavior
 
-On entry, Grill MUST first execute the Unified Entry Validation Procedure defined
-in the Handoff Protocol before accepting any handoff block. It then validates its
-Target Scope with a fresh Transition Resolution Procedure result. When that result
-identifies Grill at the same Target Scope, it authorizes execution in the current
-invocation. Grill MUST begin the Required process and MUST NOT emit a FORWARD
-handoff to itself or instruct the user to restart Grill.
+On Handoff Entry, Grill MUST first execute the Unified Entry Validation Procedure
+defined in the Handoff Protocol. Without an incoming handoff, Grill may proceed only
+through Recovery Entry when a fresh Rule 3 result selects Grill at the exact Feature
+Target Scope from a current BUSINESS_GAP. Once entry is valid, Grill MUST begin the
+Required process and MUST NOT emit a handoff to the same Feature scope or instruct
+the user to restart that scope. When the procedure selects another Feature, Grill
+emits a FORWARD handoff to Grill at that different Target Scope.
 
 ## Question boundary
 
@@ -127,6 +128,6 @@ current and READY.
 
 After producing a current Requirement artifact:
 
-- **FORWARD to Grill**: When Rule 3 matches (another Feature in Planning order still lacks a READY Requirement) — forward to Grill at that Feature's Target Scope to continue feature-by-feature decomposition.
-- **FORWARD to Solution**: When Rule 4 matches (Solution Plan is absent or stale and all Features have current Requirements) — forward to Solution at Project scope.
-- **RETURN**: When Rule 2 matches (a blocker exists) — return per the Blocker Routing Rules table, with Return Workflow determined by Blocker Category.
+- **FORWARD to Grill**: When Rule 5 selects another Feature lacking a usable current Requirement, forward to Grill at that different Feature scope.
+- **FORWARD to Solution**: When Rule 6 matches, forward to Solution at Project scope.
+- **RETURN**: When Rule 3 selects a persisted blocker or Rule 8 selects a current Review failure, return to the resolved owner and scope.

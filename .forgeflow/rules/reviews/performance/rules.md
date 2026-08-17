@@ -2,7 +2,7 @@
 
 **Plugin:** performance  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical(blocking), P1=High(blocking), P2=Medium(non-blocking), P3=Info(suggestion)
+**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -19,7 +19,9 @@
 
 ## Execution Notes
 
-- Apply each rule against source code, database schema, API definitions, and performance profiles (if available).
-- Mark `[x]` if compliant, `[!]` if violated, `[~]` if unclear.
-- P0/P1 violations are performance blockers — address before deploying to production.
-- Some checks may require running profiling tools; note that in the report as "requires manual verification".
+- Evaluate applicability before compliance. Database, cache, API, external-service,
+  payload, and media-processing rules are N/A when that surface is absent.
+- Record PASS, VIOLATION, UNKNOWN, or N/A with observable evidence. Missing profiling
+  data is UNKNOWN, not a violation, unless required evidence is contractually absent.
+- Apply the registry Blocking Threshold to each VIOLATION and keep evaluation within
+  the authorized Slice and its demonstrated runtime paths.

@@ -1,17 +1,12 @@
 """ForgeFlow logging setup."""
+import copy
 import logging
 import os
 import sys
 import pathlib as _pathlib
 
-# --- Logger singleton ---
-FORGEFLOW_LOG_DIR = _pathlib.Path(".forgeflow/logs")
-
 
 def _init():
-    FORGEFLOW_LOG_DIR.mkdir(parents=True, exist_ok=True)
-    log_file = str(FORGEFLOW_LOG_DIR / "forgeflow.log")
-
     logger = logging.getLogger("forgeflow")
     logger.setLevel(logging.DEBUG)
 
@@ -26,6 +21,7 @@ def _init():
         RESET = "\033[0m"
 
         def format(self, record):
+            record = copy.copy(record)
             color = self.COLORS.get(record.levelno, "")
             msg = record.getMessage()
             record.msg = f"{color}{msg}{self.RESET}"
@@ -34,16 +30,27 @@ def _init():
 
     fmt = ColorFormatter("%(asctime)s [%(levelname)s] %(message)s",
                          datefmt="%H:%M:%S")
-    ch = logging.StreamHandler(sys.stdout)
+    ch = logging.StreamHandler(sys.stderr)
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(fmt)
-    fh = logging.FileHandler(log_file, encoding="utf-8")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter(
-         "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
     if not logger.handlers:
         logger.addHandler(ch)
-        logger.addHandler(fh)
+        log_dir = os.environ.get("FORGEFLOW_LOG_DIR")
+        if log_dir:
+            try:
+                path = _pathlib.Path(log_dir).expanduser()
+                path.mkdir(parents=True, exist_ok=True)
+                file_handler = logging.FileHandler(
+                    path / "forgeflow.log", encoding="utf-8"
+                )
+                file_handler.setLevel(logging.DEBUG)
+                file_handler.setFormatter(logging.Formatter(
+                    "%(asctime)s [%(levelname)s] %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                ))
+                logger.addHandler(file_handler)
+            except OSError as error:
+                logger.warning("Unable to initialize file logging: %s", error)
     return logger
 
 

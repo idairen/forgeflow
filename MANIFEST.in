@@ -1,0 +1,8 @@
+include forgeflow.json
+include .forgeflow/forgeflow.md
+include .forgeflow/forgeflow.schema.json
+recursive-include .forgeflow/adapter *.md
+recursive-include .forgeflow/protocol *.md
+recursive-include .forgeflow/rules *.md
+recursive-include .forgeflow/workflow *.md
+global-exclude .DS_Store

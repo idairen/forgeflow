@@ -39,13 +39,14 @@ Sorts enabled plugins by Priority
 For each plugin:
   - Reads rules.md
   - LLM executes each rule against codebase/artifacts
-  - Records verdict: [x] PASS / [!] FAIL / [~] WARN/N/A
+  - Evaluates applicability, then records PASS / VIOLATION / UNKNOWN / N/A
+  - Maps each VIOLATION through the plugin Blocking Threshold
       |
       v
-Aggregates all results -> decides PASS or FAIL
+Aggregates BLOCKING findings -> decides PASS or FAIL
       |
       v
-Saves report to .forgeflow/reports/<plugin-name>/report.md
+Saves attempt-scoped reports under .forgeflow/reports/<plugin-name>/
 ```
 
 ### Why Markdown?
@@ -61,19 +62,20 @@ Saves report to .forgeflow/reports/<plugin-name>/report.md
 
 ## 2. Plugin Registry (_index.md)
 
-The plugin registry is a single Markdown table at `.forgeflow/rules/reviews/_index.md`. Each row defines one plugin with 10 fields:
+The plugin registry is a single Markdown table at `.forgeflow/rules/reviews/_index.md`. Each row defines one plugin with 11 fields:
 
-### The 10 Fields Explained
+### The 11 Fields Explained
 
 | Field | Example | Meaning |
 |-------|---------|---------|
 | **Name** | `security` | Human-readable identifier; lowercase with hyphens |
 | **Directory** | `security/` | Subdirectory under `.forgeflow/rules/reviews/` |
-| **Rules File** | `rules/security/rules.md` | Path to the rule checklist file |
+| **Rules File** | `security/rules.md` | Path relative to `.forgeflow/rules/reviews/` |
 | **Enabled?** | `true` / `false` | If false, the plugin is skipped entirely |
 | **Priority** | `1` | Execution order (lower = earlier). 1 = first. |
 | **Depends On** | `--` or `security` | Other plugins whose results should be scanned first |
 | **Scope** | `code, docs` | Where to apply checks: `code` only, `docs` only, or both |
+| **Applicability** | `Python source files only` | Evidence boundary evaluated before compliance |
 | **Report Format** | `md` / `csv` / `html` | Output format(s) for the generated report |
 | **Blocking Threshold** | `P0-P1` | Which severity levels trigger a pipeline block |
 | **Description** | `Security vulnerability...` | One-line summary shown in registry table |
@@ -146,7 +148,7 @@ db_password = "admin123"  # Should use os.environ.get('DB_PASSWORD')
 
 ### Report Structure
 
-Each plugin generates a standalone report saved to `.forgeflow/reports/<plugin-name>/report.md`:
+Each plugin generates attempt-scoped reports under `.forgeflow/reports/<plugin-name>/`:
 
 ```markdown
 # Security Review Report
@@ -157,12 +159,12 @@ Each plugin generates a standalone report saved to `.forgeflow/reports/<plugin-n
 
 ## Summary Table
 
-| # | Rule ID | Description | Severity | Status | Finding |
-|---|---------|-------------|----------|--------|---------|
-| 1 | SEC-001 | No hardcoded passwords | P0 | [!] FAIL | Password found in config.py:15 |
-| 2 | SEC-002 | SQL Injection Prevention | P0 | [x] PASS | All queries parameterized |
+| # | Rule ID | Description | Severity | Verdict | Disposition | Finding |
+|---|---------|-------------|----------|---------|-------------|---------|
+| 1 | SEC-001 | No hardcoded passwords | P0 | VIOLATION | BLOCKING | Password found in config.py:15 |
+| 2 | SEC-002 | SQL Injection Prevention | P0 | PASS | NONE | All queries parameterized |
 
-## Detailed Findings (FAIL/WARN items only)
+## Detailed Findings (VIOLATION/UNKNOWN items only)
 
 ### SEC-001 -- No hardcoded passwords [P0] [!]
 
@@ -179,11 +181,11 @@ db_password = "admin123"    # Should use env var or Vault
 
 | Format | Location | Use Case |
 |--------|----------|----------|
-| `md` (default) | `.forgeflow/reports/<name>/report.md` | Git-tracked, auditable |
-| `csv` | `.forgeflow/reports/<name>/report.csv` | CI/CD dashboards, data filtering |
-| `html` | `.forgeflow/reports/<name>/report.html` | Dashboard / Wiki display |
+| `md` (default) | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.md` | Git-tracked, auditable |
+| `csv` | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.csv` | CI/CD dashboards, data filtering |
+| `html` | `.forgeflow/reports/<name>/report-feature-XX-slice-XX-attempt-NN.html` | Dashboard / Wiki display |
 
-For now, only **Markdown (md)** is available. CSV and HTML exports can be added later.
+Review generates every format configured by the authoritative registry.
 
 ---
 

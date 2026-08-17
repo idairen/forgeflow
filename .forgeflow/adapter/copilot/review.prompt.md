@@ -1,8 +1,8 @@
 # ForgeFlow Review Launcher — Copilot
 
-Read `../../forgeflow.md`, `../../protocol/artifact.md`,
-`../../protocol/handoff.md`, then
-`../../workflow/review.md`. Execute only the exact Slice Target Scope, make no code
+Read `.forgeflow/forgeflow.md`, `.forgeflow/protocol/artifact.md`,
+`.forgeflow/protocol/handoff.md`, then
+`.forgeflow/workflow/review.md`. Execute only the exact Slice Target Scope, make no code
 changes, write immutable review evidence, and apply the Transition Resolution
 Procedure. Apply the Framework Command execution policy: in an IDE, reuse the
 current terminal tab or equivalent session for sequential commands, do not open a

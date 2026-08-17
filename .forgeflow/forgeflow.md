@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.2
+Version: 2.4
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.2 | `forgeflow.md` |
-| Artifact Protocol | 2.2 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.2 | `protocol/handoff.md` |
+| Framework | 2.4 | `forgeflow.md` |
+| Artifact Protocol | 2.4 | `protocol/artifact.md` |
+| Handoff and Transition Protocol | 2.6 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -49,11 +49,25 @@ choosing a lower-precedence instruction.
 - Delivery advances only from immutable evidence, never an agent's claim.
 
 ForgeFlow core consists entirely of Markdown files. No Python package, schema engine,
-plugin, model API, or platform-specific state store is part of the framework. A new
-platform becomes compatible by supplying Markdown launchers that reference these
-canonical specifications. Supported launchers include: Codex (`adapter/codex/`),
-Copilot (`adapter/copilot/`). Generic participants and other platforms (Claude, Gemini)
-remain usable through the core specifications without a dedicated launcher.
+plugin, model API, or platform-specific state store is part of the framework.
+
+## Platform compatibility
+
+Adapters are optional Markdown launchers. They add no framework rule and cannot
+override the precedence defined above.
+
+| Participant | Status | Launcher path |
+| --- | --- | --- |
+| Generic Markdown participant | Supported through the core specifications | `.forgeflow/forgeflow.md` |
+| Codex | Dedicated launcher supplied | `.forgeflow/adapter/codex/` |
+| Copilot | Dedicated launcher supplied | `.forgeflow/adapter/copilot/` |
+| Claude | Supported generically; no dedicated launcher supplied | — |
+| Gemini | Supported generically; no dedicated launcher supplied | — |
+
+Every launcher path is workspace-root-relative and begins with `.forgeflow/`.
+A new platform becomes compatible by supplying launchers that reference the canonical
+Framework, Artifact Protocol, Handoff Protocol, and one Workflow specification in
+that order. A launcher MUST NOT copy, redefine, or override their rules.
 
 ## Command execution policy
 
@@ -110,22 +124,25 @@ reapplies the same gate.
 
 Review decides PASS exactly when zero blocking findings remain. PASS may include
 non-blocking findings. Review decides FAIL exactly when one or more blocking
-findings remain. Every finding MUST record severity, owner workflow, affected
-scope, observable evidence, and violated contract.
+findings remain. Every finding MUST be one row in the Review Report's single
+canonical Findings table and record severity, owner workflow, affected scope,
+finding, observable evidence, and violated contract. Review derives its metadata
+counts, decision, and FAIL disposition from those rows. Plugin reports are
+supplemental evidence; they do not replace this core aggregate artifact.
 
 When a FAIL contains blocking findings owned by multiple workflows, its single
 RETURN destination is the most upstream owner in this precedence order:
 
 ```text
-Grill > Solution > Slice > TDD
+Plan > Grill > Solution > Slice > TDD
 ```
 
-The RETURN Target Scope MUST equal that owner's canonical scope: affected Feature
-for Grill, Project for Solution, affected Feature for Slice, and affected Slice
-for TDD. Findings retain their individual affected scopes even when the selected
-RETURN owner has a broader canonical scope. After the upstream issue is resolved,
-version invalidation and transition resolution expose any remaining downstream
-failing evidence.
+The RETURN Target Scope MUST equal the scope of a blocking finding owned by the
+selected workflow: Project for Plan and Solution, affected Feature for Grill and
+Slice, and affected Slice for TDD. Findings retain their individual affected scopes
+even when the selected RETURN owner has a broader canonical scope. After the
+upstream issue is resolved, version invalidation and transition resolution expose
+any remaining downstream failing evidence.
 
 ## Canonical workflows
 
@@ -163,6 +180,13 @@ The barriers are strict:
   references the Solution Plan version.
 - `PROJECT_COMPLETE`: every planned Slice has a latest valid PASS Review Report.
 
+An explicitly approved project with no delivery objective uses `Feature IDs = NONE`
+and persisted `Empty Feature Approval` evidence in its READY Planning artifact.
+That Planning file MUST be the sole active artifact. It bypasses no applicable
+barrier: Feature- and Slice-dependent barriers have no subject, so Rule 11 derives
+`PROJECT_COMPLETE` after graph validity, blocker, and Planning readiness checks.
+Blank Feature metadata or an empty graph with downstream artifacts is invalid.
+
 TDD MUST NOT start before `DELIVERY_READY`. A later Feature's Slice MUST NOT start
 until every Slice of all earlier Features is complete.
 
@@ -184,7 +208,9 @@ Planning
 
 If an upstream artifact gets a new version, dependent artifacts referencing an
 older version are stale. Stale artifacts remain historical evidence but MUST NOT
-authorize downstream execution or completion.
+authorize downstream execution or completion. This invalidation is transitive: a
+downstream BLOCKED artifact cannot authorize RETURN or Recovery merely because its
+direct version reference matches when any earlier barrier in its chain is unusable.
 
 No mutable "Project State" artifact is authoritative. Phase, Feature cursor,
 Slice cursor, and runtime Slice state are disposable projections produced from
@@ -200,6 +226,17 @@ performed by the active workflow before every handoff. It:
 - selects the first incomplete Feature and Slice in declared order;
 - selects the next workflow;
 - emits one typed handoff.
+
+For Rule 2 it also derives a deterministic primary graph error code and an exact
+terminal evidence projection. HALTED is authorized only when its Reason code and
+sorted Input Artifacts reproduce that projection. Invalid artifacts remain eligible
+as terminal evidence: they use a single readable valid Version when available and
+`INVALID_VERSION` only when no such Version exists. A root-level contradiction with
+no canonical artifact uses the HALTED-only value `NONE`.
+
+Every use of "first Feature" or "first Slice", including persisted Blocker
+selection, means its position in Planning or the applicable current Slice Plan. It
+never means the numerically smallest identifier or filename.
 
 It owns no artifact, requires no executable runtime, and makes no business or
 engineering decision. Given the same valid graph, every conforming participant
@@ -217,7 +254,12 @@ after the block.
 The emitting workflow is responsible for format validity before output. The target
 workflow MUST reject a malformed handoff rather than infer or normalize it. An
 authorized same-Workflow/same-Scope continuation or a wait for required user input
-emits no handoff.
+emits no handoff. A transition to the same Workflow at a different Target Scope is
+not a continuation and MUST emit a FORWARD handoff for the newly authorized scope.
+A fresh invocation may resume without an incoming handoff only through Bootstrap
+Entry or the Handoff Protocol's persisted-blocker Recovery Entry. Recovery authority
+comes from a fresh Rule 3 result and never permits a synthetic or same-authorization
+RETURN.
 
 Runtime Slice state is derived as follows:
 
@@ -225,7 +267,7 @@ Runtime Slice state is derived as follows:
 |---|---|
 | PENDING | Current Slice Plan exists; no current TDD evidence exists |
 | IN_PROGRESS | Current TDD evidence exists; no valid PASS review exists |
-| BLOCKED | An unresolved blocker targets this Slice |
+| BLOCKED | A valid current BLOCKED artifact or FAIL Review Report targets this Slice |
 | COMPLETE | Latest valid Review Report is PASS |
 
 Slice Plans MUST NOT contain those dynamic runtime states.
@@ -234,6 +276,14 @@ Slice Plans MUST NOT contain those dynamic runtime states.
 
 A workflow MUST stop when required input is missing, contradictory, stale, or
 outside its authority. A blocker identifies its owner and exact affected scope.
+Every Feature or Slice in that scope must already be declared by the active Artifact
+Graph. A blocker, Review finding, launcher, or conversation cannot create a narrower
+authorization by naming an undeclared identifier; such a reference is a graph
+contradiction.
+Before a non-Review workflow returns or ends an invocation with an unresolved
+blocker, it MUST persist that blocker in its own owned artifact using the Artifact
+Protocol's BLOCKED metadata. Review persists blocking findings in its immutable FAIL
+Review Report. Conversation text alone is never sufficient blocker state.
 
 - Missing business policy returns to Grill for the affected Feature.
 - Missing or invalid engineering policy returns to Solution.
@@ -256,8 +306,7 @@ A conforming implementation MUST:
 5. use typed handoffs and the deterministic Transition Resolution Procedure;
 6. preserve immutable review attempts;
 7. reject execution whose Target Scope differs from a fresh procedure result;
-8. construct the active artifact graph only from valid Canonical Artifact Paths;
-9. satisfy every Markdown conformance scenario.
+8. construct the active artifact graph only from valid Canonical Artifact Paths.
 
 The framework relies solely on Markdown files and a participant capable of reading,
 writing, and updating them in the order defined here. No executable parser, external

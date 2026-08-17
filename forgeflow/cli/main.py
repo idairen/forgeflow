@@ -3,14 +3,18 @@ import argparse
 import asyncio
 import json
 import os
-import shutil
 import sys
 
 from ..engine.runner import ForgeRunner
-from ..engine.config import EngineConfig, ForgeflowLoader
+from ..scaffold import initialize_project
 from ..logging_config import get_logger
 
 logger = get_logger()
+
+EXIT_SUCCESS = 0
+EXIT_ERROR = 1
+EXIT_INCOMPLETE = 2
+EXIT_INTERRUPTED = 130
 
 
 def _make_runner():
@@ -22,59 +26,51 @@ def _make_runner():
 
 def cmd_plan(args):
     """Execute Plan workflow."""
-    logger.info("Executing plan%s",
-                  f" with intent={args.intent}" if getattr(args, "intent", None) else "")
+    intent = getattr(args, "intent", None)
+    logger.info("Executing plan%s", " with User Intent" if intent else "")
     runner = _make_runner()
-    try:
-        result = asyncio.run(runner._execute_llm("plan"))
-        print(result)
-    except Exception as e:
-        logger.error("[plan] Failed: %s", e)
-        print(f"[ERROR] Plan failed: {e}", file=sys.stderr)
+    result = asyncio.run(runner.execute_single("plan", user_input=intent))
+    print(result)
+    return _single_exit_code(runner)
 
 
 def cmd_run(args):
     """Start the ForgeFlow pipeline."""
     reset = getattr(args, "reset", False)
-    no_auto = getattr(args, "no_auto", False)
-    auto_mode = not no_auto
+    intent = getattr(args, "intent", None)
+    runner = _make_runner()
 
     if reset:
-        artifacts_dir = ".forgeflow/artifacts"
-        if os.path.exists(artifacts_dir):
-            shutil.rmtree(artifacts_dir)
-        os.makedirs(artifacts_dir, exist_ok=True)
-        logger.info("[reset] Cleaned artifacts/")
+        rotation = runner.reset_artifacts()
+        logger.info("[reset] %s", json.dumps(rotation))
 
-    runner = _make_runner()
     state = runner.get_state()
+    run_mode = getattr(args, "run_mode", None) or state["config_mode"]
     logger.info(
           "ForgeFlow pipeline: mode=%s adapter=%s",
-        state["config_mode"], state["adapter"]
+        run_mode, state["adapter"]
       )
 
-    if auto_mode:
+    if run_mode == "auto":
         logger.info("[auto-mode] Starting... Ctrl+C to pause.")
         try:
-            result = asyncio.run(runner.run())
+            result = asyncio.run(runner.run(initial_intent=intent))
             print(f"\nPipeline result: {result}")
             print("\nExecution History:")
             runner.print_history()
+            return _pipeline_exit_code(result)
         except KeyboardInterrupt:
             logger.info("[auto-mode] Paused by user.")
             state = runner.get_state()
             print(json.dumps(state, indent=2))
-        except Exception as e:
-            logger.error("[auto-mode] Pipeline crashed: %s", e)
-            print(f"[ERROR] Pipeline crashed: {e}", file=sys.stderr)
+            return EXIT_INTERRUPTED
     else:
         logger.info("[manual-mode] Running Plan workflow...")
-        try:
-            result = asyncio.run(runner._execute_llm("plan"))
-            print(result)
-        except Exception as e:
-            logger.error("[manual-mode] Failed: %s", e)
-            print(f"[ERROR] Plan failed: {e}", file=sys.stderr)
+        result = asyncio.run(
+            runner.execute_single("plan", user_input=intent)
+        )
+        print(result)
+        return _single_exit_code(runner)
 
 
 def cmd_status(args):
@@ -83,62 +79,68 @@ def cmd_status(args):
     state = runner.get_state()
     logger.info("Status: %s", json.dumps(state, indent=2))
     print(json.dumps(state, indent=2))
+    return EXIT_SUCCESS
 
 
 def cmd_reset(args):
-    """Clean up artifacts/."""
+    """Rotate the active Artifact Root."""
     force = getattr(args, "force", False)
     if force:
-        artifacts_dir = ".forgeflow/artifacts"
-        if os.path.exists(artifacts_dir):
-            shutil.rmtree(artifacts_dir)
-        os.makedirs(artifacts_dir, exist_ok=True)
-        logger.info("[reset] artifacts/ cleaned.")
-        print("[reset] artifacts/ cleaned.")
+        rotation = _make_runner().reset_artifacts()
+        logger.info("[reset] %s", json.dumps(rotation))
+        print(json.dumps(rotation, indent=2))
     else:
-        logger.info("[reset] Dry-run mode. Use --force to clean.")
-        print("   [info] Use --force to actually clean.")
+        logger.info("[reset] Dry-run mode. Use --force to rotate.")
+        print("[info] Use --force to rotate the active Artifact Root.")
+    return EXIT_SUCCESS
 
 
 def cmd_init(args):
     """Initialize a new ForgeFlow project."""
     adapter = getattr(args, "adapter", None) or "copilot"
     logger.info("Initializing ForgeFlow project with adapter=%s", adapter)
-    
-    # Set adapter in forgeflow.json (single data source)
-    ForgeflowLoader.set_adapter(adapter)
-    logger.info("[init] Adapter set to %s in forgeflow.json", adapter)
-    
-    print(f"[success] ForgeFlow project initialized with adapter={adapter}.")
-
-
-
+    result = initialize_project(
+        project_root=os.getcwd(),
+        adapter=adapter,
+        force=getattr(args, "force", False),
+    )
+    logger.info("[init] %s", json.dumps(result))
+    print(json.dumps(result, indent=2))
+    return EXIT_SUCCESS
 
 def cmd_handoff(args):
-    """Display the latest handoff from artifacts/."""
+    """Display the latest handoff produced by the CLI runner."""
     runner = _make_runner()
-    import pathlib
-    root = pathlib.Path(runner.artifacts_dir)
-    if not root.exists():
-        print("[info] No artifacts directory found.")
-        return
+    handoff = runner.get_latest_handoff()
+    if handoff is None:
+        print("[info] No valid runtime handoff found.")
+        return EXIT_ERROR
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return EXIT_SUCCESS
+
+
+def _pipeline_exit_code(result):
     try:
-        for f in sorted(root.rglob("*.md"), key=os.path.getmtime, reverse=True):
-            ct = f.read_text(encoding="utf-8")
-            if "Handoff" in ct or "handoff" in ct.lower():
-                print(f"Latest handoff: {f.name}")
-                hlines = [l for l in ct.split("\n") if not l.startswith("#") and l.strip()]
-                print("\n".join(hlines[:30]))
-                return
-        print("[info] No handoff files found.")
-    except Exception as e:
-        logger.error("Failed to read latest handoff: %s", e)
-        print(f"[error] {e}")
+        summary = json.loads(result)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise RuntimeError("Runner returned an invalid pipeline summary") from error
+    if summary.get("result") == "PIPELINE_COMPLETE":
+        return EXIT_SUCCESS
+    return EXIT_INCOMPLETE
+
+
+def _single_exit_code(runner):
+    if not runner.history:
+        raise RuntimeError("Runner did not record the single workflow execution")
+    result = runner.history[-1].get("result")
+    if result in {"STEP_COMPLETE", "PIPELINE_COMPLETE"}:
+        return EXIT_SUCCESS
+    return EXIT_INCOMPLETE
 
 
 # --- CLI entry point ---
 
-def main_cli():
+def main_cli(argv=None):
     """ForgeFlow CLI - plan, run, status, reset, init."""
     parser = argparse.ArgumentParser(
         prog="forge",
@@ -153,17 +155,28 @@ def main_cli():
 
     # run
     p_run = subparsers.add_parser("run", help="Start the ForgeFlow pipeline")
-    p_run.add_argument(
-        "--auto-mode", action="store_true", default=True,
-        help="Auto-mode: loop until blocked. Manual: one step at a time."
+    mode_group = p_run.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--auto", "--auto-mode",
+        dest="run_mode",
+        action="store_const",
+        const="auto",
+        help="Run automatically until complete, blocked, or halted"
      )
-    p_run.add_argument(
-        "--no-auto", action="store_true", default=False,
-        help="Disable auto-mode (manual mode)"
+    mode_group.add_argument(
+        "--manual", "--no-auto",
+        dest="run_mode",
+        action="store_const",
+        const="manual",
+        help="Execute only the Plan workflow"
      )
     p_run.add_argument(
         "--reset", action="store_true", default=False,
-        help="Reset artifacts/ before running"
+        help="Rotate the active Artifact Root before running"
+     )
+    p_run.add_argument(
+        "--intent", "-i",
+        help="User Intent supplied to the initial Plan invocation"
      )
     p_run.set_defaults(func=cmd_run)
 
@@ -174,10 +187,10 @@ def main_cli():
     p_status.set_defaults(func=cmd_status)
 
     # reset
-    p_reset = subparsers.add_parser("reset", help="Clean up artifacts/")
+    p_reset = subparsers.add_parser("reset", help="Rotate the active Artifact Root")
     p_reset.add_argument(
         "--force", action="store_true", default=False,
-        help="Remove all artifacts/"
+        help="Archive the active graph and create an empty Artifact Root"
      )
     p_reset.set_defaults(func=cmd_reset)
 
@@ -189,29 +202,33 @@ def main_cli():
      )
     p_init.add_argument(
         "--force", action="store_true", default=False,
-        help="Overwrite existing config"
+        help="Refresh managed framework files and preserve project artifacts"
      )
     p_init.set_defaults(func=cmd_init)
 
-    # handoff (NEW - debug tool)
+    # handoff (debug tool)
     p_handoff = subparsers.add_parser(
-        "handoff", help="Show the latest handoff from artifacts/"
+        "handoff", help="Show the latest handoff produced by the CLI runner"
      )
     p_handoff.set_defaults(func=cmd_handoff)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if not hasattr(args, "func"):
         parser.print_help()
-        sys.exit(0)
+        return EXIT_SUCCESS
 
     try:
-        args.func(args)
+        result = args.func(args)
+        return result if isinstance(result, int) else EXIT_SUCCESS
+    except KeyboardInterrupt:
+        logger.info("[cli] Interrupted by user.")
+        return EXIT_INTERRUPTED
     except Exception as e:
         logger.error("[cli] Unhandled error: %s", e)
         print(f"[ERROR] {e}", file=sys.stderr)
-        sys.exit(1)
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":
-    main_cli()
+    raise SystemExit(main_cli())

@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.2
+Version: 2.4
 
 ## Contract
 
@@ -17,10 +17,12 @@ Features.
 
 ## Entry barrier
 
-Solution MUST first execute the Unified Entry Validation Procedure defined in the
-Handoff Protocol before accepting any handoff block. It then rejects entry unless
-`BUSINESS_READY` is derived — meaning all Requirements are current and READY. Partial
-Requirement sets cannot authorize a Solution Plan.
+On Handoff Entry, Solution MUST first execute the Unified Entry Validation Procedure
+defined in the Handoff Protocol. Without an incoming handoff, Solution may proceed
+only through Recovery Entry when a fresh Rule 3 result selects Solution at Project
+scope from a current ENGINEERING_GAP. It then rejects entry unless `BUSINESS_READY`
+is derived — meaning all Requirements are current and READY. Partial Requirement
+sets cannot authorize a Solution Plan.
 
 ## Engineering question ownership
 
@@ -106,8 +108,8 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
 9. Persist the Solution Plan at its Canonical Artifact Path and mark it READY only
    when all required engineering decisions are actionable and no business choice
    has been invented.
-10. Before accepting any handoff, execute the Unified Entry Validation Procedure
-    defined in the Handoff Protocol. Apply the Transition Resolution Procedure.
+10. Apply the Transition Resolution Procedure after the entry validation already
+    required by the Entry barrier.
     If it requires a handoff, validate and render exactly one Canonical Handoff Block
     from the Handoff Protocol as the final content of the response.
 
@@ -119,8 +121,8 @@ Feature scope.
 
 After producing a current Solution Plan:
 
-- **FORWARD to Slice**: When Rule 5 matches (first Feature in Slice Plan order lacks a current READY Slice Plan) — forward to Slice at that Feature's Target Scope.
-- **RETURN**: When Rule 2 matches (a blocker exists) — return per the Blocker Routing Rules table, with Return Workflow determined by Blocker Category (e.g., ENGINEERING_GAP → Solution itself for rework, BUSINESS_GAP → Grill for upstream requirement fix).
+- **FORWARD to Slice**: When Rule 7 matches, forward to Slice for the first Feature in Planning order lacking a usable current Slice Plan.
+- **RETURN**: When Rule 3 selects a persisted blocker, return to its resolved owner and scope.
 
 ## Change impact
 
