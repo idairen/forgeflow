@@ -9,6 +9,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added a 12-page Chinese enterprise roadshow deck for CTOs and engineering
+  leaders at `output/pdf/forgeflow-enterprise-roadshow.pdf`, together with its
+  purpose-built visual asset at `docs/assets/forgeflow-roadshow-hero.png`.
 - Added `Incremental Intent Entry` for IDE and CLI Plan invocations. An explicit
   same-project addition or change can now authorize Plan without an incoming
   Handoff, Bootstrap state, or persisted blocker.
