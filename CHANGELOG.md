@@ -61,6 +61,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Rebuilt `examples/sample-project` as an installation-driven walkthrough instead
+  of a stale second copy of the ForgeFlow framework. The example now contains a
+  reusable intent and protocol-valid comparison Artifacts, while a repository
+  contract test parses the checkpoint and verifies its next authorized workflow.
 - Repositioned the public documentation around ForgeFlow's implemented role as a
   repository-native control protocol and marked the project as a Technical Preview.
   Dedicated integration claims are now limited to Codex and GitHub Copilot, while

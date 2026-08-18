@@ -93,6 +93,10 @@ forge run --manual            # execute only the Plan workflow
 forge run --reset             # rotate artifacts/ and reports/ before running
 ```
 
+For a source-checkout walkthrough that installs the canonical framework into a
+temporary project and includes protocol-valid comparison artifacts, see
+[`examples/sample-project`](./examples/sample-project/README.md).
+
 ---
 
 ## Architecture Overview

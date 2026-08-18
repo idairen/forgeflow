@@ -2,6 +2,9 @@ import json
 import unittest
 from pathlib import Path
 
+from forgeflow.engine.artifact_parser import ArtifactParser
+from forgeflow.engine.state_resolver import StateResolver
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = {"plan", "grill", "solution", "slice", "tdd", "review"}
@@ -66,6 +69,24 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(package["bin"], {"forgeflow": "npm/bin/forgeflow.js"})
         self.assertNotIn("forgeflow/engine", package["files"])
         self.assertNotIn("forgeflow/cli", package["files"])
+
+    def test_sample_project_uses_current_protocol_without_framework_copy(self):
+        sample = ROOT / "examples" / "sample-project"
+        expected = sample / "expected-artifacts"
+
+        self.assertFalse((sample / ".forgeflow").exists())
+        self.assertEqual(
+            {path.name for path in expected.glob("*.md")},
+            {"planning.md", "requirement-feature-01.md"},
+        )
+        artifact_state = ArtifactParser.detect_artifact_state(expected)
+        self.assertEqual(artifact_state["status"], "active")
+        self.assertEqual(artifact_state["errors"], [])
+
+        resolution = StateResolver.resolve(artifact_state)
+        self.assertEqual(resolution["pipeline_status"], "ACTIVE")
+        self.assertEqual(resolution["current_workflow"], "grill")
+        self.assertEqual(resolution["target_scope"], "Feature: F-02")
 
 
 if __name__ == "__main__":

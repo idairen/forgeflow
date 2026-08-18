@@ -1,136 +1,92 @@
 # ForgeFlow Sample Project
 
-A minimal **example project** showing how to use ForgeFlow with your own codebase.
+This example demonstrates ForgeFlow installation and the first two workflow
+artifacts without maintaining a second copy of the framework.
 
-This is a **template** — copy it into your real project directory and modify the contents (workflow specs, artifact samples, etc.) to match your needs.
+The canonical framework always comes from the repository's root `.forgeflow/`
+directory or a published ForgeFlow package. The files under `expected-artifacts/`
+are protocol-valid examples for comparison; they are not active project state and
+must not be copied over model output.
 
----
+## Contents
 
-## Directory Structure
-
-```
+```text
 sample-project/
-├── .forgeflow/                    # The ForgeFlow runtime root (copy this!)
-│   ├── adapter/                   # LLM adapters per host
-│   │   └── copilot/              # GitHub Copilot Chat prompts
-│   │       ├── plan.prompt.md    # Plan workflow system prompt
-│   │       ├── grill.prompt.md   # Grill workflow system prompt  
-│   │       ├── solution.prompt.md
-│   │       ├── slice.prompt.md
-│   │       ├── tdd.prompt.md
-│   │       └── review.prompt.md
-│   ├── artifacts/                 # Generated workflow outputs (created at runtime)
-│   │   └── planning.md           # Sample artifact showing output format
-│   ├── protocol/                  # Protocol specification files
-│   │   ├── artifact.md           # Artifact naming, metadata conventions
-│   │   └── handoff.md            # Handoff block templates (FORWARD/RETURN/TERMINAL)
-│   ├── rules/reviews/             # Plugin system for custom review rules
-│   │   ├── security/
-│   │   │   └── rules.md          # Security check checklist (editable)
-│   │   └── coding-standard/
-│   │       └── rules.md          # Code style checklist (editable)
-│   └── workflow/                  # Workflow specification files
-│       ├── plan.md                # Plan → Planning.md
-│       ├── grill.md               # Grill → Requirement-*.md
-│       ├── solution.md            # Solution → SolutionPlan.md
-│       ├── slice.md               # Slice → SlicePlan-*.md
-│       ├── tdd.md                 # TDD → TDDRecord-*.md
-│       └── review.md              # Review → ReviewReport-*.md
-└── README.md                      # This file (project-level documentation)
+├── README.md
+├── intent.md
+└── expected-artifacts/
+    ├── planning.md
+    └── requirement-feature-01.md
 ```
 
----
+`intent.md` contains a small project request. The expected artifacts demonstrate a
+valid graph after Plan and Grill have completed for the first Feature. At that
+point, ForgeFlow resolves Grill for `F-02` as the next authorized workflow.
 
-## How to Use This Example
+## Try It From a Source Checkout
 
-### Step 1: Copy the .forgeflow/ Directory into Your Project
+Run these commands from the ForgeFlow repository root. The temporary directory
+keeps generated framework and runtime files out of the tracked example.
 
 ```bash
-# Option A: Copy directly into an existing project
-cp -r sample-project/.forgeflow/ /path/to/my-project/
+repository_root="$(pwd)"
+sample_root="$(mktemp -d)/forgeflow-sample"
+cp -R examples/sample-project "$sample_root"
+cd "$sample_root"
 
-# Option B: Clone and customize
-git clone https://github.com/<your-org>/my-project.git
-cd my-project
-mkdir .forgeflow && cp -r sample-project/.forgeflow/* .forgeflow/
+node "$repository_root/npm/bin/forgeflow.js" init --adapter copilot
 ```
 
-### Step 2: Customize the Prompt Files
-
-Open `.forgeflow/adapter/copilot/<workflow>.prompt.md` and modify:
-- The **context** you want the LLM to consider (e.g., specific codebase structure)
-- The **constraints** for your project (languages, frameworks, policies)
-
-Example: Replace generic instructions with your project's technology stack.
-
-### Step 3: Define Your Own Workflows
-
-Each `.md` file in `.forgeflow/workflow/` contains:
-- A **contract table** (scope, artifact type, required inputs)
-- **Process steps** (what the LLM must do)
-- **Completion criteria** (when to mark READY vs BLOCKED)
-
-Replace the sample content with your project's specific requirements.
-
-### Step 4: Add Review Plugins
-
-Create `.forgeflow/rules/reviews/<your-plugin>/rules.md` for custom checks:
-
-```markdown
-# My Plugin Rules
-
-| Rule ID | Description | Check Criteria | Expected Result |
-|---------|-------------|----------------|-----------------|
-| MY-001 | No hardcoded secrets | Scan .env files for literal values | All keys use environment variables |
-```
-
-Then register it in `.forgeflow/rules/reviews/_index.md` (create if not exists).
-
----
-
-## Quick Start Commands
-
-Once your project is set up, run:
+To use the Python installer instead, install ForgeFlow from the checkout and run:
 
 ```bash
-# 1. Initialize (if not already done)
 forge init --adapter copilot
-
-# 2. Run the full pipeline
-forge run                        # auto-mode: loops until complete or blocked
-forge run --reset                # clean artifacts/ before running
-
-# 3. Check status at any time
-forge status
-
-# 4. View latest handoff (debug tool)
-forge handoff
 ```
 
----
+When the npm package is published, the equivalent public installation command is:
 
-## What Each Artifact Represents
+```bash
+npx @idairen/forgeflow@latest init --adapter copilot
+```
 
-| File | Created By | Purpose |
-|------|------------|---------|
-| `planning.md` | Plan workflow | Project scope, feature list, exclusions |
-| `requirement-feature-01.md` | Grill workflow | Feature-level behavior and acceptance criteria |
-| `solution-plan.md` | Solution workflow | Engineering design, tech stack decisions |
-| `slice-plan-feature-01.md` | Slice workflow | Decomposition into implementable slices |
-| `tdd-feature-01-slice-01.md` | TDD workflow | Test-driven development records per slice |
-| `review-feature-01-slice-01-attempt-01.md` | Review workflow | Quality gate pass/fail with findings table |
+Use `--adapter codex` for the Codex launcher set.
 
----
+## Run the Workflow
 
-## Tips for Customization
+In an IDE whose host integration discovers the installed launcher prompts, invoke
+ForgeFlow Plan with the contents of `intent.md`. Launcher discovery and command
+syntax depend on the host; the prompt files alone do not register slash commands.
 
-1. **Keep prompts focused** — Don't add too much context; let the LLM reason from the contract
-2. **Define clear completion criteria** — Use explicit conditions (not "when it feels right")
-3. **Use sample artifacts as templates** — Modify field names, not structure
-4. **Test plugins independently** — Run `forge status` to see which plugin rules are active
+With the optional Python CLI and an authenticated external agent CLI:
 
----
+```bash
+forge plan --intent "$(cat intent.md)"
+forge run
+forge status
+```
 
-## License
+Generated artifacts belong under `.forgeflow/artifacts/`. Compare their metadata,
+filenames, ownership, versions, and dependency references with
+`expected-artifacts/`; exact prose may differ because model output is not
+deterministic.
 
-This example project is MIT-licensed under the same terms as ForgeFlow itself.
+## Expected Checkpoint
+
+The included checkpoint contains:
+
+- READY Planning version `1.0` with three ordered Features;
+- READY Requirement `F-01` tied to its Feature Contract Version `1.0`;
+- no Requirement for `F-02` or `F-03`, and no Solution Plan yet.
+
+The active graph represented by that checkpoint authorizes Grill at `Feature: F-02`
+scope. Repository tests parse this directory with the production Artifact Parser
+and assert that exact resolution, preventing the example from drifting away from
+the current protocol and declared Feature order.
+
+## Important Boundaries
+
+- Do not edit copied Workflow, Protocol, or Adapter files to customize a project;
+  use supported Review plugins and project evidence instead.
+- Do not treat `expected-artifacts/` as generated evidence for another project.
+- Do not interpret protocol-test success as proof of real IDE behavior or model
+  correctness.
