@@ -86,6 +86,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Documentation
 
+- Added a Chinese IDE acceptance test plan with 215 uniquely identified scenarios
+  covering prompt discovery and host isolation, all six workflows, entry and
+  Handoff variants, blockers and recovery, incremental evolution, evidence history,
+  Review plugins, invalid graphs, session restart, and Codex/Copilot parity.
 - Added comprehensive public-facing English and Chinese Concept & Architecture
   Guides under `docs/`. The guides explain ForgeFlow's mental model, six-workflow
   lifecycle, Artifact Graph, deterministic transitions, Review architecture,
