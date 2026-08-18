@@ -25,7 +25,7 @@ jobs:
       - name: Install ForgeFlow
         run: python -m pip install --disable-pip-version-check -e .
       - name: Compile Python sources
-        run: python -m compileall -q forgeflow
+        run: python -m compileall -q src/forgeflow
       - name: Smoke-test Python CLI
         run: python -m forgeflow --help
       - name: Run core and repository contract tests

@@ -50,7 +50,7 @@ forge init --adapter copilot
 
 ```
 project-root/
-├── forgeflow/                      # Python package source code
+├── src/forgeflow/                  # Python package source code
 │     ├── cli/
 │     │     └── main.py             # CLI entry point (all subcommands)
 │     └── engine/
@@ -59,7 +59,7 @@ project-root/
 │         ├── handoff_parser.py     # Handoff block parser
 │         └── yaml_parser.py        # forgeflow.json schema parser
 │
-├── .forgeflow/                     # Runtime root (per-project)
+├── .forgeflow/                     # Canonical framework source and runtime root
 │     ├── workflow/                 # Workflow specs (*.md)
 │     ├── protocol/                 # Artifact & handoff protocol specs
 │     ├── adapter/                  # LLM adapter prompt files
@@ -344,14 +344,14 @@ Before publishing a new version:
 
 ```
 .project-root/
-├── forgeflow/                      # Python source
+├── src/forgeflow/                  # Python source
 │     ├── cli/main.py               # CLI entry point
 │     └── engine/                   # Engine components
 │         ├── runner.py             # Auto-mode loop
 │         ├── config.py             # Config loader
 │         ├── handoff_parser.py     # Handoff parser
 │         └── yaml_parser.py        # JSON schema parser
-├── .forgeflow/                     # Runtime root
+├── .forgeflow/                     # Canonical framework source and runtime root
 │     ├── workflow/                 # Workflow specs
 │     ├── protocol/                 # Protocol specs
 │     ├── adapter/                  # LLM adapters

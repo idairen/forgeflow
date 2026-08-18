@@ -4,7 +4,7 @@
 >
 > 框架版本：2.5 · Artifact Protocol：2.5 · Handoff Protocol：2.7 · 工作流规范：2.5
 
-[English](./forgeflow-concept-and-architecture-guide.md)
+[English](./concept-and-architecture.md)
 
 ## 1. 概览
 
@@ -505,10 +505,10 @@ ForgeFlow 当前支持的扩展点是 Markdown Review 插件注册表。自定�
 - 补充报告和 Runtime 文件永远不成为转换权威。
 
 需要了解协议级细节的贡献者，可以继续阅读
-[`../.forgeflow/forgeflow.md`](../.forgeflow/forgeflow.md)、
-[`../.forgeflow/protocol/artifact.md`](../.forgeflow/protocol/artifact.md)、
-[`../.forgeflow/protocol/handoff.md`](../.forgeflow/protocol/handoff.md)，以及
-[`../.forgeflow/workflow/`](../.forgeflow/workflow/) 下的工作流文件。这些规范具有权威性；本文档是它们面向公众的架构解释。
+[`../../.forgeflow/forgeflow.md`](../../.forgeflow/forgeflow.md)、
+[`../../.forgeflow/protocol/artifact.md`](../../.forgeflow/protocol/artifact.md)、
+[`../../.forgeflow/protocol/handoff.md`](../../.forgeflow/protocol/handoff.md)，以及
+[`../../.forgeflow/workflow/`](../../.forgeflow/workflow/) 下的工作流文件。这些规范具有权威性；本文档是它们面向公众的架构解释。
 
 ## 15. 总结
 

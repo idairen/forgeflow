@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -191,10 +191,18 @@ test("rejects symbolic links during force refresh", {
 
 
 test("the Python CLI remains available from the Python package", () => {
+  const pythonPath = [
+    join(REPOSITORY_ROOT, "src"),
+    process.env.PYTHONPATH,
+  ].filter(Boolean).join(delimiter);
   const output = execFileSync(
     process.env.PYTHON || "python3",
     ["-m", "forgeflow", "--help"],
-    { cwd: REPOSITORY_ROOT, encoding: "utf8" },
+    {
+      cwd: REPOSITORY_ROOT,
+      encoding: "utf8",
+      env: { ...process.env, PYTHONPATH: pythonPath },
+    },
   );
 
   assert.match(output, /ForgeFlow CLI/);

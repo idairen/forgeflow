@@ -12,8 +12,8 @@ import shutil
 import sys
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-PLAN_PATH = REPOSITORY_ROOT / "docs" / "forgeflow-ide-test-plan.zh-CN.md"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+PLAN_PATH = REPOSITORY_ROOT / "docs" / "testing" / "ide-test-plan.zh-CN.md"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "python-project"
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",

@@ -90,7 +90,7 @@ def _template_root():
     package_template = Path(__file__).parent / "_template"
     if (package_template / ".forgeflow" / "forgeflow.md").is_file():
         return package_template
-    source_root = Path(__file__).parent.parent
+    source_root = Path(__file__).resolve().parents[2]
     if (source_root / ".forgeflow" / "forgeflow.md").is_file():
         return source_root
     raise RuntimeError("Bundled ForgeFlow framework resources are missing")

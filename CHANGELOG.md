@@ -9,7 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- Added 39 dependency-free Python tests covering strict configuration, canonical
+- Added 40 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,
   paired Artifact/Report rotation, and repository integration contracts.
@@ -25,7 +25,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   handling, forced refresh, evidence and custom-plugin preservation, config
   validation, symbolic-link rejection, packaged help/version output, and continued
   availability of the Python CLI.
-- Added executable IDE acceptance-test assets under `tests/ide/`: a case manager
+- Added executable IDE acceptance-test assets under `tests/acceptance/ide/`: a case manager
   that reads all 215 scenarios from the canonical test plan, creates clean Copilot
   or Codex workspaces, captures real IDE-generated snapshots, prepares isolated case
   copies and result records, plus a dependency-free Python fixture and reusable
@@ -35,7 +35,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   execution-result fields. The IDE case manager can reproduce the catalog through
   its `export` command.
 - Added a 12-page Chinese enterprise roadshow deck for CTOs and engineering
-  leaders at `output/pdf/forgeflow-enterprise-roadshow.pdf`, together with its
+  leaders at `docs/presentations/forgeflow-enterprise-roadshow.pdf`, together with its
   purpose-built visual asset at `docs/assets/forgeflow-roadshow-hero.png`.
 - Added `Incremental Intent Entry` for IDE and CLI Plan invocations. An explicit
   same-project addition or change can now authorize Plan without an incoming
@@ -61,6 +61,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Reorganized the repository without changing `.forgeflow/`: public documents now
+  use purpose-specific `docs/` sections, Python sources use the standard
+  `src/forgeflow/` layout, tests are separated into unit, integration, contract,
+  and IDE acceptance suites, and all build, CI, command, and documentation paths
+  follow the new structure.
 - Rebuilt `ARCHITECTURE.md` around the current protocol and implementation, covering
   the four core primitives, typed scopes, versioned Artifact Graph, ordered state
   resolution, Return and Recovery, incremental evidence preservation, execution and

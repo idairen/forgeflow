@@ -538,14 +538,17 @@ forgeflow/
 │   ├── protocol/               # Artifact and Handoff/Transition protocols
 │   ├── rules/reviews/          # Review plugin registry and rules
 │   └── workflow/               # six Workflow specifications
-├── forgeflow/                  # Python package
+├── src/forgeflow/              # Python package
 │   ├── cli/                    # forge command surface
 │   └── engine/                 # parser, resolver, runner, configuration
 ├── npm/                        # installer-only Node implementation and tests
-├── tests/                      # Python protocol, resolver, runner, contract tests
-│   └── ide/                    # real-host acceptance assets and result capture
+├── tests/
+│   ├── unit/                   # parser, resolver, and configuration tests
+│   ├── integration/            # runner and orchestration tests
+│   ├── contracts/              # repository and distribution invariants
+│   └── acceptance/ide/         # real-host acceptance assets and result capture
 ├── examples/sample-project/    # installation walkthrough and valid evidence samples
-├── docs/                       # public guides and test plan
+├── docs/                       # guides, test plans, presentations, and assets
 ├── .github/workflows/          # cross-version quality gates
 ├── forgeflow.json              # canonical project configuration template
 ├── pyproject.toml              # Python distribution metadata
@@ -577,7 +580,7 @@ The repository currently verifies:
 
 Automated tests prove deterministic repository behavior, not model quality or host
 behavior. Real Copilot and Codex execution must be evaluated separately using the
-IDE acceptance assets under `tests/ide/`. A prepared test case is not a passed host
+IDE acceptance assets under `tests/acceptance/ide/`. A prepared test case is not a passed host
 acceptance test until its actual invocation and evidence are captured.
 
 ## 15. Comparison with related open-source projects

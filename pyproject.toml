@@ -14,3 +14,9 @@ dependencies = []
 
 [project.scripts]
 forge = "forgeflow.cli.main:main_cli"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

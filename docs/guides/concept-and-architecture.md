@@ -4,7 +4,7 @@
 >
 > Framework version: 2.5 · Artifact Protocol: 2.5 · Handoff Protocol: 2.7 · Workflow specifications: 2.5
 
-[中文版](./forgeflow-concept-and-architecture-guide.zh-CN.md)
+[中文版](./concept-and-architecture.zh-CN.md)
 
 ## 1. Executive overview
 
@@ -656,10 +656,10 @@ preserve these architectural invariants:
 - Supplemental reports and runtime files never become transition authority.
 
 For protocol-level details, contributors can continue with
-[`../.forgeflow/forgeflow.md`](../.forgeflow/forgeflow.md),
-[`../.forgeflow/protocol/artifact.md`](../.forgeflow/protocol/artifact.md),
-[`../.forgeflow/protocol/handoff.md`](../.forgeflow/protocol/handoff.md), and the
-workflow files under [`../.forgeflow/workflow/`](../.forgeflow/workflow/). Those
+[`../../.forgeflow/forgeflow.md`](../../.forgeflow/forgeflow.md),
+[`../../.forgeflow/protocol/artifact.md`](../../.forgeflow/protocol/artifact.md),
+[`../../.forgeflow/protocol/handoff.md`](../../.forgeflow/protocol/handoff.md), and the
+workflow files under [`../../.forgeflow/workflow/`](../../.forgeflow/workflow/). Those
 specifications are normative; this guide is their public-facing architectural
 explanation.
 

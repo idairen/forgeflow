@@ -6,11 +6,35 @@ from forgeflow.engine.artifact_parser import ArtifactParser
 from forgeflow.engine.state_resolver import StateResolver
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = {"plan", "grill", "solution", "slice", "tdd", "review"}
 
 
 class RepositoryContractTests(unittest.TestCase):
+    def test_repository_uses_segmented_public_layout(self):
+        required_paths = {
+            "src/forgeflow/__init__.py",
+            "tests/unit/test_artifact_parser.py",
+            "tests/integration/test_runner_protocol.py",
+            "tests/contracts/test_repository_contracts.py",
+            "tests/acceptance/ide/manage.py",
+            "docs/guides/concept-and-architecture.md",
+            "docs/testing/ide-test-plan.zh-CN.md",
+            "docs/presentations/forgeflow-enterprise-roadshow.pdf",
+        }
+        removed_paths = {
+            "forgeflow",
+            "tests/ide",
+            "output",
+            "docs/forgeflow-concept-and-architecture-guide.md",
+            "docs/forgeflow-ide-test-plan.zh-CN.md",
+        }
+
+        for relative in required_paths:
+            self.assertTrue((ROOT / relative).exists(), relative)
+        for relative in removed_paths:
+            self.assertFalse((ROOT / relative).exists(), relative)
+
     def test_json_documents_are_parseable(self):
         for relative in (
             "forgeflow.json",
@@ -67,8 +91,8 @@ class RepositoryContractTests(unittest.TestCase):
         package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
 
         self.assertEqual(package["bin"], {"forgeflow": "npm/bin/forgeflow.js"})
-        self.assertNotIn("forgeflow/engine", package["files"])
-        self.assertNotIn("forgeflow/cli", package["files"])
+        self.assertNotIn("src/forgeflow/engine", package["files"])
+        self.assertNotIn("src/forgeflow/cli", package["files"])
 
     def test_sample_project_uses_current_protocol_without_framework_copy(self):
         sample = ROOT / "examples" / "sample-project"

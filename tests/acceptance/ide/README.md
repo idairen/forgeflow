@@ -1,6 +1,6 @@
 # ForgeFlow IDE Acceptance Test Assets
 
-本目录把 `docs/forgeflow-ide-test-plan.zh-CN.md` 中的 215 个场景转化为可执行的 IDE 测试资产。
+本目录把 `docs/testing/ide-test-plan.zh-CN.md` 中的 215 个场景转化为可执行的 IDE 测试资产。
 
 ## 设计原则
 
@@ -13,7 +13,7 @@
 ## 目录
 
 ```text
-tests/ide/
+tests/acceptance/ide/
 ├── README.md
 ├── manage.py
 ├── inputs.md
@@ -26,7 +26,7 @@ tests/ide/
 ## 1. 校验测试资产
 
 ```bash
-python3 tests/ide/manage.py verify
+python3 tests/acceptance/ide/manage.py verify
 ```
 
 期望输出：
@@ -38,10 +38,10 @@ Verified 215 IDE cases and 12 workflow Prompts (P0=194, P1=21, P2=0).
 ## 2. 查看用例
 
 ```bash
-python3 tests/ide/manage.py list --priority P0
-python3 tests/ide/manage.py list --area INV
-python3 tests/ide/manage.py show IDE-INV-003
-python3 tests/ide/manage.py export
+python3 tests/acceptance/ide/manage.py list --priority P0
+python3 tests/acceptance/ide/manage.py list --area INV
+python3 tests/acceptance/ide/manage.py show IDE-INV-003
+python3 tests/acceptance/ide/manage.py export
 ```
 
 `list` 和 `show` 直接读取权威测试计划，不维护第二份容易过期的用例清单。
@@ -53,9 +53,9 @@ python3 tests/ide/manage.py export
 Copilot：
 
 ```bash
-python3 tests/ide/manage.py init \
+python3 tests/acceptance/ide/manage.py init \
   --adapter copilot \
-  --output tests/ide/workspaces/copilot-happy
+  --output tests/acceptance/ide/workspaces/copilot-happy
 ```
 
 该命令会：
@@ -69,9 +69,9 @@ python3 tests/ide/manage.py init \
 Codex：
 
 ```bash
-python3 tests/ide/manage.py init \
+python3 tests/acceptance/ide/manage.py init \
   --adapter codex \
-  --output tests/ide/workspaces/codex-happy
+  --output tests/acceptance/ide/workspaces/codex-happy
 ```
 
 Codex 的 Prompt 发现方式由实际宿主配置；工具不会虚构 Codex IDE 注册文件。
@@ -93,9 +93,9 @@ Codex 的 Prompt 发现方式由实际宿主配置；工具不会虚构 Codex ID
 在真实 IDE 中完成每个门禁后关闭正在运行的进程，并从仓库根目录执行：
 
 ```bash
-python3 tests/ide/manage.py snapshot \
-  --source tests/ide/workspaces/copilot-happy \
-  --output tests/ide/snapshots/S1-PLANNED-copilot
+python3 tests/acceptance/ide/manage.py snapshot \
+  --source tests/acceptance/ide/workspaces/copilot-happy \
+  --output tests/acceptance/ide/snapshots/S1-PLANNED-copilot
 ```
 
 依次保存：
@@ -115,10 +115,10 @@ S7-COMPLETE
 ## 6. 准备一个独立用例
 
 ```bash
-python3 tests/ide/manage.py prepare IDE-GRAPH-002 \
+python3 tests/acceptance/ide/manage.py prepare IDE-GRAPH-002 \
   --adapter copilot \
-  --source tests/ide/snapshots/S1-PLANNED-copilot \
-  --output tests/ide/workspaces/IDE-GRAPH-002-copilot
+  --source tests/acceptance/ide/snapshots/S1-PLANNED-copilot \
+  --output tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot
 ```
 
 命令会：
@@ -136,7 +136,7 @@ python3 tests/ide/manage.py prepare IDE-GRAPH-002 \
 默认结果文件示例：
 
 ```text
-tests/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
+tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
 ```
 
 填写：
@@ -163,4 +163,4 @@ tests/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
 7. 汇总发布准出结果
 ```
 
-完整期望结果、优先级和准出规则以 `docs/forgeflow-ide-test-plan.zh-CN.md` 为准。
+完整期望结果、优先级和准出规则以 `docs/testing/ide-test-plan.zh-CN.md` 为准。
