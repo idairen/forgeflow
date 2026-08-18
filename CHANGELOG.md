@@ -9,6 +9,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added executable IDE acceptance-test assets under `tests/ide/`: a case manager
+  that reads all 215 scenarios from the canonical test plan, creates clean Copilot
+  or Codex workspaces, captures real IDE-generated snapshots, prepares isolated case
+  copies and result records, plus a dependency-free Python fixture and reusable
+  intent inputs. The tooling prepares evidence but never simulates an IDE workflow.
 - Added a 12-page Chinese enterprise roadshow deck for CTOs and engineering
   leaders at `output/pdf/forgeflow-enterprise-roadshow.pdf`, together with its
   purpose-built visual asset at `docs/assets/forgeflow-roadshow-hero.png`.

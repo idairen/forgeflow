@@ -1,0 +1,4 @@
+workspaces/
+snapshots/
+results/*.md
+!results/.gitkeep
