@@ -9,10 +9,16 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added 13-page English and Chinese executive architecture briefs under
+  `docs/presentations/`, positioning ForgeFlow as an AI engineering protocol above
+  SDLC methods. The light executive layout covers protocol architecture, Workflow
+  execution, Feature/Slice loops, Ownership, Handoff/Return, engineering state,
+  governance, Agent independence, and clearly labeled future direction. Added a
+  dependency-free Chrome-based generator for reproducible builds.
 - Added `ARCHITECTURE.zh-CN.md` as the complete Chinese counterpart of the public
   architecture document, preserving the same implemented architecture, comparison
   scope, open-source advantages, limitations, and normative-source boundaries.
-- Added 40 dependency-free Python tests covering strict configuration, canonical
+- Added 41 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,
   paired Artifact/Report rotation, and repository integration contracts.

@@ -564,6 +564,8 @@ forgeflow/
 │   └── acceptance/ide/         # real-host acceptance assets and result capture
 ├── examples/sample-project/    # installation walkthrough and valid evidence samples
 ├── docs/                       # guides, test plans, presentations, and assets
+│   └── presentations/          # publication-ready presentation PDFs
+├── scripts/                    # reproducible documentation build tools
 ├── .github/workflows/          # cross-version quality gates
 ├── forgeflow.json              # canonical project configuration template
 ├── pyproject.toml              # Python distribution metadata

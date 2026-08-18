@@ -21,20 +21,49 @@ class RepositoryContractTests(unittest.TestCase):
             "docs/guides/concept-and-architecture.md",
             "docs/testing/ide-test-plan.zh-CN.md",
             "docs/presentations/forgeflow-enterprise-roadshow.pdf",
+            "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
+            "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
+            "scripts/build_executive_brief.py",
             "ARCHITECTURE.zh-CN.md",
         }
         removed_paths = {
             "forgeflow",
             "tests/ide",
-            "output",
             "docs/forgeflow-concept-and-architecture-guide.md",
             "docs/forgeflow-ide-test-plan.zh-CN.md",
+            "output",
         }
 
         for relative in required_paths:
             self.assertTrue((ROOT / relative).exists(), relative)
         for relative in removed_paths:
             self.assertFalse((ROOT / relative).exists(), relative)
+
+    def test_executive_briefs_are_bilingual_pdf_outputs(self):
+        briefs = {
+            "en": ROOT
+            / "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
+            "zh-CN": ROOT
+            / "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
+        }
+        for locale, path in briefs.items():
+            with self.subTest(locale=locale):
+                self.assertGreater(path.stat().st_size, 100_000)
+                self.assertEqual(path.read_bytes()[:5], b"%PDF-")
+
+        generator = (ROOT / "scripts/build_executive_brief.py").read_text(
+            encoding="utf-8"
+        )
+        for concept in (
+            "Artifact Graph",
+            "Agent-agnostic Core",
+            "HANDOFF & RETURN PROTOCOL",
+            "FEATURE / SLICE",
+            "FROM SDLC TO AI ENGINEERING PROTOCOL",
+            "AGENT INDEPENDENCE",
+            "方向，不是当前能力声明",
+        ):
+            self.assertIn(concept, generator)
 
     def test_json_documents_are_parseable(self):
         for relative in (

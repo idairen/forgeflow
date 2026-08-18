@@ -18,5 +18,7 @@
 ## Presentations
 
 - [ForgeFlow enterprise roadshow](./presentations/forgeflow-enterprise-roadshow.pdf)
+- [Executive architecture brief - English](./presentations/forgeflow-executive-architecture-brief.en.pdf)
+- [管理层架构简报 - 中文](./presentations/forgeflow-executive-architecture-brief.zh-CN.pdf)
 
 The normative ForgeFlow contracts remain under [`.forgeflow/`](../.forgeflow/).

@@ -466,6 +466,8 @@ forgeflow/
 │   └── acceptance/ide/         # 真实宿主验收资产与结果记录
 ├── examples/sample-project/    # 安装说明与合法示例证据
 ├── docs/                       # 指南、测试计划、演示文档和资源
+│   └── presentations/          # 可发布的演示 PDF 成品
+├── scripts/                    # 可复现的文档构建工具
 ├── .github/workflows/          # 跨版本质量门禁
 ├── forgeflow.json              # 规范项目配置模板
 ├── pyproject.toml              # Python 分发元数据
