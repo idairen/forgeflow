@@ -17,6 +17,31 @@ An artifact-driven framework where **Markdown files are the single source of tru
 
 ## Installation
 
+### Install the framework for IDE use with npx
+
+The `@idairen/forgeflow` npm distribution is an installer only. It copies the
+current Markdown framework and `forgeflow.json` into the current project; it does
+not install or replace the Python `forge` CLI. Node.js 18 or newer is required.
+
+When consuming the published npm distribution, run this from the target project:
+
+```bash
+npx @idairen/forgeflow@latest init --adapter copilot   # or codex
+```
+
+To refresh ForgeFlow-managed files while preserving project artifacts, reports,
+runtime evidence, custom Review plugins, and supported configuration values:
+
+```bash
+npx @idairen/forgeflow@latest init --adapter copilot --force
+```
+
+The npx package intentionally provides no `plan`, `run`, `status`, `reset`, or
+`handoff` command. Install the Python CLI below when command-line orchestration is
+required.
+
+### Install the optional Python CLI
+
 ForgeFlow is not currently published to PyPI. Install the CLI from a source
 checkout with [pipx](https://pipx.pypa.io/) so that `forge` runs in an isolated
 environment. Python 3.10 or newer is required.
@@ -44,10 +69,17 @@ python -m pip install -e .
 
 ## Quick Start
 
+For IDE-only use:
+
+```bash
+npx @idairen/forgeflow@latest init --adapter copilot   # or codex
+```
+
+For Python CLI orchestration:
+
 ```bash
 # 1. Initialize a new ForgeFlow project
 forge init --adapter copilot   # or codex
-forge init --adapter codex
 
 # 2. Run the full pipeline in auto-mode
 forge run                     # loops until all slices pass review or a blocker is hit

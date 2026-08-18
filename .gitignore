@@ -13,6 +13,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!npm/lib/
 lib64/
 parts/
 sdist/

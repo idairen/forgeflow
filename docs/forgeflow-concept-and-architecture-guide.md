@@ -561,10 +561,26 @@ control decisions inspectable in the repository.
 
 ## 13. Getting started
 
-### 13.1 Use the optional CLI from source
+### 13.1 Install framework files with npx
 
-The current repository is installed from source rather than from a documented
-package-registry release:
+The `@idairen/forgeflow` npm distribution is an installation wrapper for IDE use.
+It copies the current Markdown framework and `forgeflow.json` into the target
+project. It does not implement the Python CLI, execute workflows, or provide a Node
+runtime for the resolver and Runner. Node.js 18 or newer is required.
+
+When consuming the published npm distribution, run this from the target project:
+
+```bash
+npx @idairen/forgeflow@latest init --adapter codex   # or copilot
+```
+
+Use `--force` to refresh managed framework files while preserving project-owned
+Artifacts, Reports, runtime evidence, custom Review plugins, and supported
+configuration values. The npx installer exposes no workflow-execution commands.
+
+### 13.2 Use the optional Python CLI from source
+
+The Python CLI remains a separate source installation:
 
 ```bash
 git clone <forgeflow-repository-url>
@@ -587,7 +603,7 @@ forge status
 Install and authenticate the selected external agent CLI before execution. Use a
 version-control branch and review generated changes before merging them.
 
-### 13.2 Add a later module to the same project
+### 13.3 Add a later module to the same project
 
 ```bash
 forge plan --incremental --intent "Add the reporting module to this project"
@@ -598,7 +614,7 @@ Use incremental mode only when the request truly belongs to the same project. An
 ambiguous relationship must be confirmed before evidence changes. Use reset or an
 explicit new-project flow when the intent belongs to a different project.
 
-### 13.3 Follow progress
+### 13.4 Follow progress
 
 Use `forge status` to inspect the current graph-derived workflow and scope. For
 manual or IDE-assisted operation, inspect the active Markdown artifacts directly;

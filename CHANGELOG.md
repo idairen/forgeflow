@@ -9,6 +9,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added the dependency-free `@idairen/forgeflow` npm package and its installer-only
+  `npx @idairen/forgeflow init` command. It installs or refreshes the current
+  Markdown framework and `forgeflow.json` for Copilot or Codex projects, preserves
+  project-owned evidence and supported configuration during `--force`, and rejects
+  symbolic-link targets.
+- Added Node installer tests for initial installation, adapter selection, conflict
+  handling, forced refresh, evidence and custom-plugin preservation, config
+  validation, symbolic-link rejection, packaged help/version output, and continued
+  availability of the Python CLI.
 - Added executable IDE acceptance-test assets under `tests/ide/`: a case manager
   that reads all 215 scenarios from the canonical test plan, creates clean Copilot
   or Codex workspaces, captures real IDE-generated snapshots, prepares isolated case
@@ -45,6 +54,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Kept workflow execution exclusively in the Python `forge` CLI. The npm package
+  explicitly rejects `plan`, `run`, `status`, `reset`, and `handoff` instead of
+  introducing a second Node.js orchestration implementation.
 - Standardized all Codex and Copilot workflow launchers with explicit metadata,
   invocation identity, authoritative read order, graph-derived authorization, and
   canonical Handoff output sections. Copilot launchers now force `agent: agent`,

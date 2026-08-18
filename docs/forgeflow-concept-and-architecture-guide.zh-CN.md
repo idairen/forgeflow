@@ -423,9 +423,26 @@ project/
 
 ## 13. 快速开始
 
-### 13.1 从源码使用可选 CLI
+### 13.1 使用 npx 安装框架文件
 
-当前仓库通过源码安装，尚未以文档形式声明可从包注册表直接安装：
+`@idairen/forgeflow` npm 包是面向 IDE 使用场景的安装包装器。它将当前
+Markdown 框架和 `forgeflow.json` 复制到目标项目中，不会实现 Python CLI、
+执行工作流，也不会提供 Node 版本的 Resolver 或 Runner。要求 Node.js 18
+或更高版本。
+
+使用已发布的 npm 包时，在目标项目中执行：
+
+```bash
+npx @idairen/forgeflow@latest init --adapter codex   # 或 copilot
+```
+
+使用 `--force` 可以刷新 ForgeFlow 管理的框架文件，同时保留项目拥有的
+Artifacts、Reports、Runtime evidence、自定义 Review 插件和受支持的配置值。
+npx 安装器不提供任何工作流执行命令。
+
+### 13.2 从源码使用可选 Python CLI
+
+Python CLI 继续作为独立的源码安装：
 
 ```bash
 git clone <forgeflow-repository-url>
@@ -447,7 +464,7 @@ forge status
 
 执行前需要安装所选外部 Agent CLI 并完成认证。建议在版本控制分支中运行，并在合并前审查生成的改动。
 
-### 13.2 向同一项目添加后续模块
+### 13.3 向同一项目添加后续模块
 
 ```bash
 forge plan --incremental --intent "为当前项目增加报表模块"
@@ -456,7 +473,7 @@ forge run
 
 只有当请求确实属于同一项目时才使用 incremental 模式。如果关系不明确，必须先确认再修改证据。如果需求属于另一个项目，应使用 reset 或显式新项目流程。
 
-### 13.3 查看进度
+### 13.4 查看进度
 
 使用 `forge status` 检查从制品图推导出的当前工作流和作用域。在 manual 或 IDE 辅助模式下，可以直接查看当前 Markdown 制品；它们始终是项目状态的权威解释。
 
