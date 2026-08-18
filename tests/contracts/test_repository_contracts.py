@@ -130,6 +130,7 @@ class RepositoryContractTests(unittest.TestCase):
         }
         required_boundaries = {
             "Technical Preview",
+            "agent-agnostic by design",
             "A Handoff does not make an Artifact true",
             "There is currently no separate `update` command.",
             "does not currently ship or claim validated dedicated integrations",
@@ -144,6 +145,7 @@ class RepositoryContractTests(unittest.TestCase):
 
         chinese_boundaries = {
             "Technical Preview",
+            "规范核心在设计上是 **Agent-agnostic**",
             "Handoff 不会让 Artifact 自动变为真实",
             "当前没有独立的 `update` 命令。",
             "不提供、也不宣称已经验证它们的专用集成",

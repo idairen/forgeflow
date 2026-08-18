@@ -64,6 +64,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Clarified in both architecture documents that ForgeFlow's normative Core is
+  agent-agnostic by design, while dedicated Adapters and real-host acceptance
+  evidence remain explicitly host-specific and currently limited to Codex and
+  GitHub Copilot.
 - Reorganized the repository without changing `.forgeflow/`: public documents now
   use purpose-specific `docs/` sections, Python sources use the standard
   `src/forgeflow/` layout, tests are separated into unit, integration, contract,

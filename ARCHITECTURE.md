@@ -79,6 +79,12 @@ ForgeFlow is therefore best understood as an opinionated protocol and reference
 implementation for **stateful AI-assisted software delivery**, not as another model,
 chat interface, autonomous multi-agent system, or generic task manager.
 
+The normative ForgeFlow Core is **agent-agnostic by design**. Its contracts are
+Markdown, its state is repository evidence, and its authorization model does not
+depend on a particular model API, chat product, or vendor-specific runtime.
+Agent-agnostic describes the portability of the Core Protocol; it does not mean
+that every host already has a dedicated Adapter or completed acceptance evidence.
+
 ## 2. Authoritative sources
 
 ForgeFlow deliberately separates normative contracts from explanatory documents.
@@ -421,7 +427,16 @@ are rotated as one transaction. Partial rotation is rolled back.
 
 ### 10.1 Markdown and IDE-assisted execution
 
-The framework core is Markdown. Dedicated launchers currently exist for:
+ForgeFlow separates the agent-agnostic Core from host-specific integration:
+
+- the Core Protocol defines Artifacts, ownership, scopes, transitions, and
+  validation without naming an executing Agent;
+- an Adapter translates one host's invocation and instruction conventions into a
+  thin launcher without changing Core semantics;
+- acceptance evidence belongs to a specific Adapter, host, and version and cannot
+  be generalized to every Agent.
+
+Dedicated launchers currently exist for:
 
 | Adapter | Launcher directory | Current claim |
 | --- | --- | --- |
@@ -593,7 +608,7 @@ projects solve overlapping but different problems.
 
 | Project | Primary abstraction | Workflow stance | Deterministic control emphasis | Integration breadth | Characteristic strength |
 | --- | --- | --- | --- | --- | --- |
-| **ForgeFlow** | Versioned Artifact Graph with Workflow/Scope ownership | Fixed, gated six-workflow lifecycle with explicit Return and Recovery | Parser and ordered resolver compute authorization from repository evidence | Dedicated Codex and Copilot launchers | Lightweight, opinionated execution-control protocol with typed evidence and recovery. |
+| **ForgeFlow** | Versioned Artifact Graph with Workflow/Scope ownership | Fixed, gated six-workflow lifecycle with explicit Return and Recovery | Parser and ordered resolver compute authorization from repository evidence | Agent-agnostic Core; dedicated Codex and Copilot launchers | Lightweight, opinionated execution-control protocol with typed evidence and recovery. |
 | **GitHub Spec Kit** | Specification-driven phases, templates, extensions, presets, and bundles | Default Spec → Plan → Tasks → Implement flow; extensible beyond it | Public docs emphasize phase tooling and agent integrations rather than ForgeFlow-style typed graph authorization | Broad documented agent integration catalog | Large integration ecosystem and extensible SDD toolchain. |
 | **OpenSpec** | Current specs plus per-change proposal, delta specs, design, tasks, and archive | Explicitly fluid and iterative; artifacts are enablers rather than rigid gates | CLI understands artifact schemas and change state; workflow is intentionally less phase-locked | Broad documented tool support | Lightweight brownfield-friendly agreement and delta/archive model. |
 | **BMAD Method** | Specialized agents, agile phases, stories, and context documents | Guided, scale-adaptive lifecycle with quick and full tracks | Public architecture centers guided workflows, agents, and progressive context | Multiple AI development tools through installed skills | Comprehensive role-based methodology and mature workflow/community breadth. |
@@ -704,14 +719,22 @@ Review has exclusive PASS/FAIL ownership and cannot repair implementation. Markd
 plugins add ordered security, architecture, coding-standard, and performance checks
 without changing the Python engine.
 
-### 16.9 Small deployment surface
+### 16.9 Agent-agnostic Core with explicit Adapter boundaries
+
+The normative Core does not depend on an Agent vendor, model API, or proprietary
+state store. Host-specific behavior is isolated in thin Adapters, so a new Agent can
+be integrated without redefining Artifact ownership or transition semantics. This
+portability claim is deliberately separate from the narrower list of integrations
+that ForgeFlow currently ships and has evidence to validate.
+
+### 16.10 Small deployment surface
 
 The normative core is Markdown. The npx installer has no runtime dependencies and
 does not duplicate orchestration. The optional Python CLI also has no third-party
 runtime dependencies. Teams can adopt the protocol manually before adopting CLI
 automation.
 
-### 16.10 Honest verification boundary
+### 16.11 Honest verification boundary
 
 ForgeFlow distinguishes protocol tests, installer tests, simulated evidence, and
 real IDE acceptance. That distinction is important for an open-source project whose

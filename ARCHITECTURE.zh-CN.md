@@ -71,6 +71,8 @@ Agent Execution and Verification
 
 因此，ForgeFlow 更适合被定义为一个面向**有状态 AI 辅助软件交付**的强约束协议和参考实现，而不是新的模型、聊天界面、自治多 Agent 系统或通用任务管理器。
 
+ForgeFlow 的规范核心在设计上是 **Agent-agnostic** 的。它使用 Markdown 表达契约，以仓库证据保存状态，其授权模型不依赖特定模型 API、聊天产品或厂商专属 Runtime。这里的 Agent-agnostic 描述的是 Core Protocol 的可移植性，并不表示每一种宿主都已经具备专用 Adapter 或完成真实验收。
+
 ## 2. 权威来源
 
 ForgeFlow 明确区分规范契约和解释性文档。优先级从高到低为：
@@ -353,7 +355,13 @@ Plan 记录精确 Change Set，并保持稳定的 Feature ID。新增或受影�
 
 ### 10.1 Markdown 与 IDE 辅助执行
 
-框架核心是 Markdown。目前提供以下专用启动器：
+ForgeFlow 将 Agent-agnostic Core 与宿主专属集成明确分层：
+
+- Core Protocol 定义 Artifacts、所有权、Scopes、Transitions 和 Validation，不指定由哪一种 Agent 执行；
+- Adapter 将特定宿主的调用方式和指令约定转换为轻量 Launcher，但不能改变 Core Semantics；
+- Acceptance Evidence 属于特定 Adapter、宿主和版本，不能直接推广为所有 Agent 都已验证。
+
+目前提供以下专用启动器：
 
 | Adapter | 启动器目录 | 当前承诺 |
 | --- | --- | --- |
@@ -495,7 +503,7 @@ forgeflow/
 
 | 项目 | 核心抽象 | Workflow 立场 | 确定性控制重点 | 集成广度 | 代表性优势 |
 | --- | --- | --- | --- | --- | --- |
-| **ForgeFlow** | 带 Workflow/Scope 所有权的版本化 Artifact Graph | 固定、门禁式六 Workflow 生命周期，显式 Return 与 Recovery | Parser 与有序 Resolver 根据仓库证据计算授权 | Codex 与 Copilot 专用 Launcher | 轻量、强约束、类型化证据和可恢复的执行控制协议。 |
+| **ForgeFlow** | 带 Workflow/Scope 所有权的版本化 Artifact Graph | 固定、门禁式六 Workflow 生命周期，显式 Return 与 Recovery | Parser 与有序 Resolver 根据仓库证据计算授权 | Agent-agnostic Core；Codex 与 Copilot 专用 Launcher | 轻量、强约束、类型化证据和可恢复的执行控制协议。 |
 | **GitHub Spec Kit** | Specification 阶段、Templates、Extensions、Presets 与 Bundles | 默认 Spec → Plan → Tasks → Implement，可扩展 | 公开文档更强调阶段工具和 Agent 集成 | 广泛的公开 Agent 集成目录 | 大型集成生态与可扩展 SDD 工具链。 |
 | **OpenSpec** | Current Specs、Change Proposal、Delta Specs、Design、Tasks 与 Archive | 明确强调流动和迭代，Artifact 是助力而不是刚性门禁 | CLI 理解 Artifact Schema 和 Change State，流程限制更少 | 广泛的工具支持 | 轻量、适合 Brownfield 的共识与 Delta/Archive 模型。 |
 | **BMAD Method** | 专业化 Agents、Agile Phases、Stories 与 Context Documents | 有引导、按规模自适应，包含 Quick 与 Full Tracks | 强调引导式 Workflows、Agents 和渐进上下文 | 通过 Skills 支持多种 AI 开发工具 | 全面的角色化方法论和成熟的流程广度。 |
@@ -570,11 +578,15 @@ Canonical History、Reports History、不可变 Review Attempts、成对 Project
 
 Review 独占 PASS/FAIL 所有权且不能修复实现。Markdown Plugins 可以增加安全、架构、编码规范和性能检查，而不修改 Python Engine。
 
-### 16.9 小型部署面
+### 16.9 Agent-agnostic Core 与显式 Adapter 边界
+
+规范 Core 不依赖某个 Agent 厂商、模型 API 或专有状态存储。宿主专属行为被隔离在轻量 Adapter 中，因此集成新 Agent 不需要重新定义 Artifact Ownership 或 Transition Semantics。这项可移植性声明与当前已经提供、并有证据可验证的较小集成列表严格分开。
+
+### 16.10 小型部署面
 
 规范核心是 Markdown；npx Installer 没有 Runtime Dependency，也不复制编排；可选 Python CLI 同样没有第三方 Runtime Dependency。团队可以先手动采用协议，再引入 CLI 自动化。
 
-### 16.10 诚实的验证边界
+### 16.11 诚实的验证边界
 
 ForgeFlow 区分 Protocol Tests、Installer Tests、模拟证据和真实 IDE Acceptance。对于依赖非确定性外部 Agent 执行的开源项目，这种区分非常重要。
 
