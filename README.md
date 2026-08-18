@@ -1,14 +1,20 @@
 # ForgeFlow
 
-**AI-driven development workflow orchestrator** for CLI and IDE extensions.  
-An artifact-driven framework where **Markdown files are the single source of truth**.
+**Repository-native control protocol and workflow orchestrator for AI-assisted software delivery.**
+ForgeFlow uses a validated Artifact Graph and typed Handoffs to keep Markdown
+evidence authoritative across CLI and IDE-assisted execution.
+
+> **Project status: Technical Preview.** The current implementation provides
+> dedicated Codex and GitHub Copilot launchers plus an optional Python CLI. Its
+> protocol controls are covered by automated tests, but model output correctness
+> and real host behavior still require review and IDE-specific acceptance testing.
 
 ---
 
 ## Why ForgeFlow?
 
 - 🔄 **Artifact-Driven**: All project state lives in structured Markdown files — no database, external services, or heavy runtimes required.
-- 🤖 **AI-Agnostic**: Works seamlessly with Codex CLI, GitHub Copilot Chat, Claude, Gemini, or any model that supports Markdown I/O.
+- 🤖 **Portable Protocol**: Dedicated launchers are supplied for Codex and GitHub Copilot. Other Markdown-capable agents can read the framework manually, but are not currently supported integrations.
 - 🔌 **Plugin-Based Reviews**: Extensible review pipeline for security, coding standards, architecture, performance, and more — all defined in pure Markdown rules.
 - 🛡️ **Deterministic Handoffs**: Strict transition protocol ensures every AI agent follows the same decision path, eliminating context drift.
 - ⚡ **Zero Runtime Dependency**: The core framework is pure Markdown. Python provides a lightweight CLI orchestrator, but the logic runs entirely through LLM prompts and artifact validation.
@@ -149,10 +155,10 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full schema.
 
 ## IDE Usage (Copilot / Codex)
 
-ForgeFlow is designed to work natively inside AI coding assistants:
+ForgeFlow supplies dedicated launcher prompts for two AI coding environments:
 
-- **GitHub Copilot Chat**: Use `/forge-plan`, `/forge-grill`, `/forge-solution`, etc. The adapter reads from `.forgeflow/adapter/copilot/*.prompt.md`.
-- **Codex CLI**: Pass commands via prompt or use the `forge` subcommands above. Adapters live in `.forgeflow/adapter/codex/*.prompt.md`.
+- **GitHub Copilot Chat**: Launchers live in `.forgeflow/adapter/copilot/*.prompt.md`. Command names such as `/forge-plan` work only when the host has been configured to discover those prompt files.
+- **Codex**: Launchers live in `.forgeflow/adapter/codex/*.prompt.md`; the Python CLI can also invoke `codex exec`.
 - **Manual vs Auto Mode**:  
   - `auto-mode`: The engine resolves each step from the active Artifact Graph and accepts a Handoff only when its transition, scope, and evidence versions match that graph.
   - `manual-mode`: The CLI executes Plan once only when the active Artifact Graph authorizes Plan, then validates any emitted Handoff against the updated graph. `--no-auto` remains an alias for `--manual`.
@@ -235,13 +241,13 @@ from a prior project from being mixed into the next project.
 A: The core framework is Markdown-driven, but the `forge` CLI invokes the selected agent CLI for workflow execution. The `codex` adapter runs `codex exec` with a workspace-write sandbox; the `copilot` adapter runs `gh copilot` with workspace-scoped file access and non-interactive `write` and `shell` permissions. Authenticate the selected CLI before running ForgeFlow. Optional `forgeflow.json` keys are `model` and `execution_timeout_seconds` (default: `900`).
 
 ### Q: Can I use this without the CLI?
-A: Yes. ForgeFlow is designed to run purely through IDE prompts (Copilot Chat, Codex, Claude Desktop, etc.). The CLI is an optional orchestrator for automation and debugging.
+A: Yes. The dedicated Codex and Copilot launchers can drive the Markdown workflows when the host is configured to discover them. Other Markdown-capable agents may read the framework manually, but ForgeFlow does not currently ship or validate dedicated integrations for them. The CLI is optional orchestration and diagnostic tooling.
 
 ### Q: How do I add a custom review plugin?
 A: Create `.forgeflow/rules/reviews/<your-plugin>/rules.md`, register it in `.forgeflow/rules/reviews/_index.md`, and enable it (`Enabled? = true`). The Review workflow will automatically pick it up. No Python code required.
 
 ### Q: Is auto-mode safe for production codebases?
-A: Auto-mode loops until blocked or finished. It retries execution failures but never guesses a transition when the model fails or emits an invalid Handoff. We recommend testing on a staging branch first, then running against `main` with `--reset`.
+A: ForgeFlow does not claim that autonomous model output is safe for production. Auto-mode rejects invalid transitions and stops on unresolved failures, but the selected agent still receives code-writing and shell capabilities. Run it on an isolated branch or disposable workspace, apply least-privilege host permissions, inspect generated artifacts and code, and require the project's normal review and CI gates before merging.
 
 ---
 
@@ -253,9 +259,21 @@ Before submitting a PR, ensure:
 2. Handoff blocks follow the canonical format (`### Handoff` with typed transitions).
 3. Plugin rules use the checklist table schema defined in `_index.md`.
 
+Run the local quality gates:
+
+```bash
+python3 -m unittest discover -s tests -p 'test_*.py'
+npm test
+npm pack --dry-run
+```
+
+GitHub Actions runs the Python suite on 3.10 and 3.13 and the installer suite on
+Node.js 18 and 22. These gates validate deterministic repository behavior; they do
+not substitute for real Copilot or Codex acceptance testing.
+
 ---
 
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).  
-Copyright (c) 2026 Jiang XiaoGang. All rights reserved.
+Copyright (c) 2026 Dairen.

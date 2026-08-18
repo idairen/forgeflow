@@ -9,6 +9,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added 37 dependency-free Python tests covering strict configuration, canonical
+  Artifact and Handoff parsing, every forward graph stage, terminal and recovery
+  resolution, stale evidence, incremental authorization, Runner Handoff validation,
+  paired Artifact/Report rotation, and repository integration contracts.
+- Added GitHub Actions quality gates across Python 3.10/3.13 and Node.js 18/22,
+  including Python compilation, core protocol tests, npm installer tests, and npm
+  package-content verification.
 - Added the dependency-free `@idairen/forgeflow` npm package and its installer-only
   `npx @idairen/forgeflow init` command. It installs or refreshes the current
   Markdown framework and `forgeflow.json` for Copilot or Codex projects, preserves
@@ -54,6 +61,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Repositioned the public documentation around ForgeFlow's implemented role as a
+  repository-native control protocol and marked the project as a Technical Preview.
+  Dedicated integration claims are now limited to Codex and GitHub Copilot, while
+  automated protocol verification is explicitly separated from real IDE acceptance
+  and model-output correctness.
 - Kept workflow execution exclusively in the Python `forge` CLI. The npm package
   explicitly rejects `plan`, `run`, `status`, `reset`, and `handoff` instead of
   introducing a second Node.js orchestration implementation.

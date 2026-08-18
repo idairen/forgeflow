@@ -22,20 +22,26 @@ This document explains how ForgeFlow works at every layer: from the overall arch
 
 ## 1. System Overview
 
-ForgeFlow is a **pure-Markdown workflow orchestrator** that coordinates AI-driven development through a strict artifact graph and deterministic handoff protocol. It works with both:
+ForgeFlow is a **repository-native control protocol with an optional Python orchestrator**. Its Markdown framework coordinates AI-assisted development through a strict Artifact Graph and deterministic Handoff Protocol. The current implementation provides:
 
 - **CLI mode**: The `forge` Python command-line interface for automation
-- **IDE mode**: GitHub Copilot Chat, Codex CLI, or any Markdown-capable LLM
+- **IDE-assisted mode**: dedicated launcher prompts for GitHub Copilot and Codex; other Markdown-capable agents may read the protocol manually but are not supported integrations
+
+The project is currently a Technical Preview. Protocol invariants are covered by
+automated tests, while model correctness and host-specific IDE behavior require
+separate acceptance testing.
 
 ### Core Philosophy
 
-> Artifacts before conversations. Every piece of project state lives in a Markdown file. No database, no external service, no hidden state. The LLM is only a reader/writer of Markdown — never the source of truth.
+> Artifacts before conversations. Canonical project truth lives in versioned
+> Markdown evidence, not chat history or the CLI's non-authoritative runtime records.
+> The LLM reads and writes evidence but is never itself the source of truth.
 
 ### Key Principles
 
 | Principle | Meaning |
 |-----------|---------|
-| **Artifacts are authoritative** | Planning.md, SolutionPlan.md, etc. are the only persistent truth |
+| **Artifacts are authoritative** | `planning.md`, `solution-plan.md`, and the other canonical Artifacts define persistent project truth |
 | **Handoffs are typed & validated** | Every workflow emits a `### Handoff` block; receivers validate before acting |
 | **Plugins are pure Markdown** | Custom review rules live in `.md` files; no Python required |
 | **Auto-mode is optional** | You can drive the pipeline step-by-step manually, or let the engine loop automatically |
@@ -59,14 +65,14 @@ project-root/
 │    ├── workflow/                   # Workflow specs (per-workflow.md)
 │    │    ├── plan.md                # Plan -> Planning artifact
 │    │    ├── grill.md               # Grill -> Requirement artifacts
-│    │    ├── solution.md            # Solution -> SolutionPlan
-│    │    ├── slice.md               # Slice -> SlicePlan
+│    │    ├── solution.md            # Solution -> Solution Plan
+│    │    ├── slice.md               # Slice -> Slice Plan
 │    │    ├── tdd.md                 # TDD -> TDD Record
 │    │    └── review.md              # Review -> Review Report
 │    │
 │    ├── rules/                      # Plugin registry
 │    │    └── reviews/
-│    │        ├── _index.md           # Plugin registry (10-field table)
+│    │        ├── _index.md           # Plugin registry (11-field table)
 │    │        ├── security/
 │    │        │    └── rules.md        # Security review rules
 │    │        ├── coding-standard/
@@ -127,23 +133,23 @@ Plan (Project) -> Grill (Feature) -> Solution (Project) -> Slice (Feature)
 
 | Stage | Scope | Artifact Produced | Owner | Reads |
 |-------|-------|-------------------|-------|-------|
-| **Plan** | Project | `Planning.md` | Plan | User intent, existing system context |
-| **Grill** | Feature | `Requirement-Feature-XX.md` | Grill | Planning.md |
-| **Solution** | Project | `SolutionPlan.md` | Solution | All Requirements (GRILL output) |
-| **Slice** | Feature | `SlicePlan-Feature-XX.md` | Slice | SolutionPlan.md, Requirement |
-| **TDD** | Slice | `TDDRecord-Feature-XX-Slice-XX.md` | TDD | SlicePlan, Requirement |
-| **Review** | Slice | `ReviewReport-Feature-XX-Slice-XX-attempt-NN.md` | Review | TDD Record, implementation, tests |
+| **Plan** | Project | `planning.md` | Plan | User intent, existing system context |
+| **Grill** | Feature | `requirement-feature-XX.md` | Grill | `planning.md` |
+| **Solution** | Project | `solution-plan.md` | Solution | All active Requirement artifacts |
+| **Slice** | Feature | `slice-plan-feature-XX.md` | Slice | `solution-plan.md`, Requirement |
+| **TDD** | Slice | `tdd-feature-XX-slice-XX.md` | TDD | Slice Plan, Requirement |
+| **Review** | Slice | `review-feature-XX-slice-XX-attempt-NN.md` | Review | TDD Record, implementation, tests |
 
 ### Execution Flow (Detailed)
 
 ```
-1. Plan runs -> produces Planning.md with ordered Feature list [F-01, F-02, ...]
-2. Grill runs per Feature -> produces Requirement-{F-XX}.md
-3. Solution runs after ALL Requirements are READY -> produces SolutionPlan.md
-4. Slice runs per Feature -> produces SlicePlan-{F-XX}.md with ordered Slices [S-01, S-02, ...]
+1. Plan runs -> produces `planning.md` with ordered Feature list [F-01, F-02, ...]
+2. Grill runs per Feature -> produces `requirement-feature-XX.md`
+3. Solution runs after all active Requirements are READY -> produces `solution-plan.md`
+4. Slice runs per Feature -> produces `slice-plan-feature-XX.md` with ordered Slices [S-01, S-02, ...]
 5. For each Slice (in order):
-   a. TDD runs -> produces TDDRecord-{Feature}-{Slice}.md
-   b. Review runs -> produces ReviewReport
+   a. TDD runs -> produces `tdd-feature-XX-slice-XX.md`
+   b. Review runs -> produces `review-feature-XX-slice-XX-attempt-NN.md`
        - PASS: Move to next Slice
        - FAIL: Return to TDD with blocker category & scope
 ```
@@ -155,7 +161,7 @@ Plan (Project) -> Grill (Feature) -> Solution (Project) -> Slice (Feature)
 | Plan | Yes (per approved increment) | Bootstrap defines the initial scope; Incremental Intent Entry merges later same-project modules |
 | Grill | Yes (per Feature) | Can loop back to Plan if Requirement needs re-planning |
 | Solution | No | Single pass after all Requirements are READY |
-| Slice | Yes (per Feature) | Can loop back to Solution if SlicePlan violates engineering contract |
+| Slice | Yes (per Feature) | Can loop back to Solution if the Slice Plan violates the engineering contract |
 | TDD | No | Single pass per Slice -- produces one TDD Record attempt |
 | Review | Yes (per Slice) | Can loop back to TDD on FAIL |
 
@@ -191,6 +197,8 @@ Every artifact MUST begin with a metadata table:
 ```markdown
 # Planning
 
+## Metadata
+
 | Field | Value |
 | --- | --- |
 | Artifact Type | Planning |
@@ -203,7 +211,7 @@ Every artifact MUST begin with a metadata table:
 
 | Artifact Type | Allowed Status |
 |---------------|----------------|
-| Planning, Requirement, SolutionPlan, SlicePlan | `DRAFT`, `BLOCKED`, `READY` |
+| Planning, Requirement, Solution Plan, Slice Plan | `DRAFT`, `BLOCKED`, `READY` |
 | TDD Record | `IN_PROGRESS`, `BLOCKED`, `READY_FOR_REVIEW` |
 | Review Report | `READY` |
 
@@ -395,8 +403,8 @@ When a blocker needs routing, the following table determines ownership:
 |------------------|---------------|--------------|---------|
 | `PLAN_GAP` | Plan | `Project` | Planning missing features, overlapping scope, or incompatible versions |
 | `BUSINESS_GAP` | Grill | `Feature: F-XX` | Requirement missing, outdated, or internally contradictory |
-| `ENGINEERING_GAP` | Solution | `Project` | SolutionPlan missing, outdated, incomplete, or conflicting |
-| `SLICE_VIOLATION` | Slice | `Feature: F-XX` | SlicePlan boundary wrong, dependency invalid, content missing |
+| `ENGINEERING_GAP` | Solution | `Project` | Solution Plan missing, outdated, incomplete, or conflicting |
+| `SLICE_VIOLATION` | Slice | `Feature: F-XX` | Slice Plan boundary wrong, dependency invalid, content missing |
 | `IMPLEMENTATION_GAP` | TDD | `Slice: F-XX/S-XX` | Implementation, test, or local evidence is blocked |
 | `REVIEW_BLOCKER` | Determined by Review Report Findings Table | Per finding | A review finding triggers routing -- read the findings table to determine owner and scope |
 | `GRAPH_CONTRADICTION` | None; terminal halt | `Project` | Active graph cannot authorize productive work |
@@ -667,4 +675,6 @@ ForgeFlow is a **pure-Markdown artifact-driven workflow** that coordinates AI de
 4. **Plugin-based review system** (pure Markdown rules loaded from `_index.md`)
 5. **Adapter pattern** (supports copilot & codex hosts via separate prompt files)
 
-Everything is designed to work with any LLM that supports Markdown I/O -- no external services, databases, or heavy runtimes required.
+The Markdown contracts are portable and require no database or hosted ForgeFlow
+service. Dedicated integration and automated CLI execution are currently limited to
+the documented Codex and GitHub Copilot surfaces.

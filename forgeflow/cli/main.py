@@ -1,4 +1,4 @@
-"""ForgeFlow CLI - AI-driven development workflow orchestrator."""
+"""ForgeFlow CLI - Python orchestrator for the ForgeFlow control protocol."""
 import argparse
 import asyncio
 import json
@@ -157,7 +157,7 @@ def main_cli(argv=None):
     """ForgeFlow CLI - plan, run, status, reset, init."""
     parser = argparse.ArgumentParser(
         prog="forge",
-        description="ForgeFlow CLI - AI-driven development workflow orchestrator"
+        description="ForgeFlow CLI - repository-native AI delivery orchestrator"
       )
     subparsers = parser.add_subparsers(dest="command")
 

@@ -525,6 +525,10 @@ evidence. Runtime files describe CLI execution only.
 
 ## 12. Current capabilities and boundaries
 
+ForgeFlow is currently a **Technical Preview**. The repository is suitable for
+evaluation, controlled pilots, and contribution, but it does not claim production
+maturity or autonomous model correctness.
+
 ### 12.1 What ForgeFlow currently provides
 
 - A six-workflow delivery lifecycle with explicit business, engineering,
@@ -558,6 +562,19 @@ evidence. Runtime files describe CLI execution only.
 
 These boundaries are intentional: they keep the framework portable and make its
 control decisions inspectable in the repository.
+
+### 12.3 Verification boundary
+
+The automated quality gates cover configuration validation, canonical Artifact and
+Handoff parsing, ordered graph resolution, blocker and Review return behavior,
+incremental-entry authorization, evidence rotation, adapter/workflow symmetry, and
+the installer-only npm boundary. CI runs these checks across supported Python and
+Node.js baselines.
+
+Automated protocol tests do not prove that a model will produce correct business
+requirements, designs, code, or review findings. They also do not prove that a host
+IDE discovers launcher files or executes them exactly as intended. Those behaviors
+require separately recorded, host-specific acceptance tests.
 
 ## 13. Getting started
 

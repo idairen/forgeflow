@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "forgeflow"
 version = "0.1.0"
-description = "AI-driven development workflow orchestrator"
+description = "Repository-native control protocol and Python orchestrator for AI-assisted software delivery"
 authors = [{ name = "Dairen" }]
 license = "MIT"
 readme = "README.md"
