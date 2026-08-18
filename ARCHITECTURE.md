@@ -1,680 +1,758 @@
 # ForgeFlow Architecture
 
-**Artifact-driven AI workflow orchestrator for CLI and IDE extensions.**
+**A stateful execution protocol for AI-assisted software engineering.**
 
-This document explains how ForgeFlow works at every layer: from the overall architecture down to individual components. Read this before contributing code or creating custom plugins.
+> **Project status:** Technical Preview
+> **Framework:** 2.5 · **Artifact Protocol:** 2.5 · **Handoff Protocol:** 2.7
+> **Comparison reviewed:** 2026-08-18
 
----
+ForgeFlow is not an AI coding agent and does not provide a model. It is a
+repository-native control protocol that tells humans and AI agents:
 
-## Table of Contents
+- which engineering evidence is currently authoritative;
+- which workflow owns the next decision;
+- which Project, Feature, or Slice scope is authorized;
+- whether execution may advance, must return, is waiting, is complete, or must halt;
+- which exact artifact versions justify that result.
 
-- [1. System Overview](#1-system-overview)
-- [2. Directory Structure](#2-directory-structure)
-- [3. The Workflow Chain](#3-the-workflow-chain)
-- [4. Artifact Protocol](#4-artifact-protocol)
-- [5. Handoff & Transition Protocol](#5-handoff--transition-protocol)
-- [6. Plugin System](#6-plugin-system)
-- [7. Auto-Mode Engine](#7-auto-mode-engine)
-- [8. Adapter Pattern](#8-adapter-pattern)
-- [9. CLI Reference](#9-cli-reference)
+The short version is:
 
----
+> **Artifacts preserve state. Workflows own decisions. The Artifact Graph
+> authorizes execution. Handoffs report validated transfers.**
 
-## 1. System Overview
+This document describes the architecture implemented by the current repository. It
+is explanatory, not normative. When it conflicts with the framework or protocols,
+the normative files listed in [Authoritative sources](#2-authoritative-sources) win.
 
-ForgeFlow is a **repository-native control protocol with an optional Python orchestrator**. Its Markdown framework coordinates AI-assisted development through a strict Artifact Graph and deterministic Handoff Protocol. The current implementation provides:
+## Table of contents
 
-- **CLI mode**: The `forge` Python command-line interface for automation
-- **IDE-assisted mode**: dedicated launcher prompts for GitHub Copilot and Codex; other Markdown-capable agents may read the protocol manually but are not supported integrations
+1. [Positioning](#1-positioning)
+2. [Authoritative sources](#2-authoritative-sources)
+3. [Goals and non-goals](#3-goals-and-non-goals)
+4. [System context](#4-system-context)
+5. [Core architectural model](#5-core-architectural-model)
+6. [Artifact Graph](#6-artifact-graph)
+7. [Workflow and scope model](#7-workflow-and-scope-model)
+8. [Transition and Handoff model](#8-transition-and-handoff-model)
+9. [Incremental change and recovery](#9-incremental-change-and-recovery)
+10. [Execution surfaces](#10-execution-surfaces)
+11. [Review plugin architecture](#11-review-plugin-architecture)
+12. [Persistence, history, and safety](#12-persistence-history-and-safety)
+13. [Repository and package architecture](#13-repository-and-package-architecture)
+14. [Verification architecture](#14-verification-architecture)
+15. [Comparison with related open-source projects](#15-comparison-with-related-open-source-projects)
+16. [ForgeFlow's open-source advantages](#16-forgeflows-open-source-advantages)
+17. [Current limitations](#17-current-limitations)
+18. [Contribution boundaries](#18-contribution-boundaries)
 
-The project is currently a Technical Preview. Protocol invariants are covered by
-automated tests, while model correctness and host-specific IDE behavior require
-separate acceptance testing.
+## 1. Positioning
 
-### Core Philosophy
+AI coding agents execute quickly, but speed does not give them durable engineering
+state, decision ownership, transition authority, or reliable upstream return
+behavior. Those concerns are usually left inside a conversation, a task list, or an
+agent-specific runtime.
 
-> Artifacts before conversations. Canonical project truth lives in versioned
-> Markdown evidence, not chat history or the CLI's non-authoritative runtime records.
-> The LLM reads and writes evidence but is never itself the source of truth.
-
-### Key Principles
-
-| Principle | Meaning |
-|-----------|---------|
-| **Artifacts are authoritative** | `planning.md`, `solution-plan.md`, and the other canonical Artifacts define persistent project truth |
-| **Handoffs are typed & validated** | Every workflow emits a `### Handoff` block; receivers validate before acting |
-| **Plugins are pure Markdown** | Custom review rules live in `.md` files; no Python required |
-| **Auto-mode is optional** | You can drive the pipeline step-by-step manually, or let the engine loop automatically |
-
----
-
-## 2. Directory Structure
-
-```
-project-root/
-├── forgeflow.json                  # Single source of truth for CLI settings
-└── .forgeflow/                     # ForgeFlow framework and runtime root
-│    ├── forgeflow.md                # Framework overview / normative rules
-│    ├── protocol/                   # Artifact and Handoff protocols
-│    │
-│    ├── adapter/                    # LLM adapters per host
-│    │    ├── copilot/                # GitHub Copilot Chat prompts
-│    │    └── codex/                  # Codex CLI prompts
-│    │        └── forge-<workflow>.prompt.md
-│    │
-│    ├── workflow/                   # Workflow specs (per-workflow.md)
-│    │    ├── plan.md                # Plan -> Planning artifact
-│    │    ├── grill.md               # Grill -> Requirement artifacts
-│    │    ├── solution.md            # Solution -> Solution Plan
-│    │    ├── slice.md               # Slice -> Slice Plan
-│    │    ├── tdd.md                 # TDD -> TDD Record
-│    │    └── review.md              # Review -> Review Report
-│    │
-│    ├── rules/                      # Plugin registry
-│    │    └── reviews/
-│    │        ├── _index.md           # Plugin registry (11-field table)
-│    │        ├── security/
-│    │        │    └── rules.md        # Security review rules
-│    │        ├── coding-standard/
-│    │        │    └── rules.md        # Coding standard rules
-│    │        ├── architecture/
-│    │        │    └── rules.md        # Architecture review rules
-│    │        └── performance/
-│    │            └── rules.md        # Performance review rules
-│    │
-│    ├── artifacts/                  # Generated workflow outputs (created on demand)
-│    │    ├── planning.md
-│    │    ├── requirement-feature-01.md
-│    │    ├── solution-plan.md
-│    │    ├── slice-plan-feature-01.md
-│    │    ├── tdd-feature-01-slice-01.md
-│    │    └── review-feature-01-slice-01-attempt-01.md
-│    ├── reports/                    # Supplemental plugin review evidence
-│    └── runtime/                    # Non-authoritative CLI step summaries
-│         └── steps/
-```
-
-### Key Directories Explained
-
-| Directory | Purpose | Who Writes? | Git-Tracked? |
-|-----------|---------|-------------|--------------|
-| `artifacts/` | Generated workflow outputs | LLM via runner.py | Yes (tracked), but `.gitignore` excludes runtime `.md` files -- use `--reset` to rotate |
-| `reports/` | Supplemental, attempt-scoped plugin reports | Review workflow | No (`.gitignore`) |
-| `adapter/` | Host-specific prompt templates | Developer configures | Yes |
-| `workflow/` | Workflow spec Markdown | LLM reads, you edit | Yes |
-| `rules/reviews/` | Plugin rule definitions | You add | Yes |
-| `logs/` | CLI engine debug logs | Runner auto-writes | No (.gitignore) |
-
----
-
-## 3. The Workflow Chain
-
-ForgeFlow uses a **6-stage linear pipeline** with optional upstream returns:
+ForgeFlow inserts an explicit control layer between human intent and agent
+execution:
 
 ```text
-Plan (Project) -> Grill (Feature) -> Solution (Project) -> Slice (Feature)
-        |                                               |
-     Grill <- -- LOOP - ---------------------------------|
-                                                          |
-                                                  Slice (Feature)
-                                                          |
-                                                      TDD (Slice)
-                                                          |
-                                                    Review (Slice)
-                                                     /     \
-                                                PASS      FAIL
-                                                   |         |
-                                                   v        v
-                                         Next Slice   RETURN to
-                                           (TDD)       Upstream
+Human Intent
+     │
+     ▼
+Engineering Evidence
+     │
+     ▼
+Deterministic Authorization
+     │
+     ▼
+Workflow-Owned Decision
+     │
+     ▼
+Agent Execution and Verification
+     │
+     └──────────────► Updated Evidence ──────────────┐
+                                                     │
+                                                     └── resolve again
 ```
 
-### Workflow Details
+ForgeFlow is therefore best understood as an opinionated protocol and reference
+implementation for **stateful AI-assisted software delivery**, not as another model,
+chat interface, autonomous multi-agent system, or generic task manager.
 
-| Stage | Scope | Artifact Produced | Owner | Reads |
-|-------|-------|-------------------|-------|-------|
-| **Plan** | Project | `planning.md` | Plan | User intent, existing system context |
-| **Grill** | Feature | `requirement-feature-XX.md` | Grill | `planning.md` |
-| **Solution** | Project | `solution-plan.md` | Solution | All active Requirement artifacts |
-| **Slice** | Feature | `slice-plan-feature-XX.md` | Slice | `solution-plan.md`, Requirement |
-| **TDD** | Slice | `tdd-feature-XX-slice-XX.md` | TDD | Slice Plan, Requirement |
-| **Review** | Slice | `review-feature-XX-slice-XX-attempt-NN.md` | Review | TDD Record, implementation, tests |
+## 2. Authoritative sources
 
-### Execution Flow (Detailed)
+ForgeFlow deliberately separates normative contracts from explanatory documents.
+The precedence order is:
 
-```
-1. Plan runs -> produces `planning.md` with ordered Feature list [F-01, F-02, ...]
-2. Grill runs per Feature -> produces `requirement-feature-XX.md`
-3. Solution runs after all active Requirements are READY -> produces `solution-plan.md`
-4. Slice runs per Feature -> produces `slice-plan-feature-XX.md` with ordered Slices [S-01, S-02, ...]
-5. For each Slice (in order):
-   a. TDD runs -> produces `tdd-feature-XX-slice-XX.md`
-   b. Review runs -> produces `review-feature-XX-slice-XX-attempt-NN.md`
-       - PASS: Move to next Slice
-       - FAIL: Return to TDD with blocker category & scope
-```
+1. [Framework](./.forgeflow/forgeflow.md)
+2. [Artifact Protocol](./.forgeflow/protocol/artifact.md)
+3. [Handoff and Transition Protocol](./.forgeflow/protocol/handoff.md)
+4. Workflow specifications under [`.forgeflow/workflow/`](./.forgeflow/workflow/)
+5. Platform launchers under [`.forgeflow/adapter/`](./.forgeflow/adapter/)
+6. Conversation context
 
-### Loop Behavior Per Workflow
+The Python engine implements parsing, state resolution, orchestration, and runtime
+records. It does not redefine the Markdown contracts. IDE launchers are thin entry
+instructions and cannot override them.
 
-| Workflow | Loops? | Meaning |
-|----------|--------|---------|
-| Plan | Yes (per approved increment) | Bootstrap defines the initial scope; Incremental Intent Entry merges later same-project modules |
-| Grill | Yes (per Feature) | Can loop back to Plan if Requirement needs re-planning |
-| Solution | No | Single pass after all Requirements are READY |
-| Slice | Yes (per Feature) | Can loop back to Solution if the Slice Plan violates the engineering contract |
-| TDD | No | Single pass per Slice -- produces one TDD Record attempt |
-| Review | Yes (per Slice) | Can loop back to TDD on FAIL |
+## 3. Goals and non-goals
 
----
+### 3.1 Goals
 
-## 4. Artifact Protocol
+- Persist project truth in reviewable, version-controlled Markdown.
+- Resolve the next authorized Workflow and Scope from current evidence.
+- Separate business, engineering, implementation, and review ownership.
+- Make forward progress, return, recovery, completion, and invalid state explicit.
+- Preserve unaffected evidence during same-project incremental change.
+- Support manual IDE-assisted execution and optional sequential CLI orchestration.
+- Keep Review independently owned and extensible through Markdown rules.
+- Fail closed when graph evidence is missing, stale, malformed, or contradictory.
 
-### What Is An Artifact?
+### 3.2 Non-goals
 
-An artifact is a **Markdown file** stored under `.forgeflow/artifacts/`. It is the sole persistent source of truth for project state.
+- Providing an LLM, model API, hosted service, dashboard, or remote state store.
+- Guaranteeing that model-generated requirements, designs, code, or findings are
+  correct.
+- Replacing source control, CI, static analysis, or human approval.
+- Supporting arbitrary user-defined workflow graphs in the current release.
+- Orchestrating concurrent distributed agents or background worker fleets.
+- Providing code-graph analysis, multi-repository coordination, or MCP services.
+- Claiming dedicated compatibility with agents for which no launcher and acceptance
+  evidence exist.
 
-### Artifact Root
+## 4. System context
 
-The canonical artifact root is: **`.forgeflow/artifacts/`** (relative to repository root).
+```mermaid
+flowchart LR
+    Human[Human intent and decisions]
+    Host[Codex or Copilot host]
+    Launcher[Adapter launcher]
+    Contracts[Framework + Protocols + Workflow]
+    Evidence[Artifact Graph]
+    Resolver[Parser + State Resolver]
+    Work[Repository code and tests]
+    Reports[Supplemental Review Reports]
+    Runtime[Non-authoritative CLI Runtime]
 
-All active artifacts MUST be created, read, and updated directly under this root. Files outside this root do NOT participate in the transition graph.
-
-### Canonical Filename Convention
-
-| Artifact Type | Owner Workflow | Scope | Canonical Filename |
-|---------------|----------------|-------|-------------------|
-| Planning | Plan | Project | `planning.md` |
-| Requirement | Grill | Feature | `requirement-feature-XX.md` |
-| Solution Plan | Solution | Project | `solution-plan.md` |
-| Slice Plan | Slice | Feature | `slice-plan-feature-XX.md` |
-| TDD Record | TDD | Slice | `tdd-feature-XX-slice-XX.md` |
-| Review Report | Review | Slice attempt | `review-feature-XX-slice-XX-attempt-NN.md` |
-
-### Metadata Table Requirement
-
-Every artifact MUST begin with a metadata table:
-
-```markdown
-# Planning
-
-## Metadata
-
-| Field | Value |
-| --- | --- |
-| Artifact Type | Planning |
-| Version | 1.0 |
-| Status | READY |
-| Owner Workflow | Plan |
+    Human --> Host
+    Host --> Launcher
+    Launcher --> Contracts
+    Contracts --> Host
+    Evidence --> Resolver
+    Resolver --> Host
+    Host --> Evidence
+    Host --> Work
+    Work --> Host
+    Host --> Reports
+    Resolver --> Runtime
 ```
 
-### Status Values Per Artifact Type
+The architecture has five cooperating layers:
 
-| Artifact Type | Allowed Status |
-|---------------|----------------|
-| Planning, Requirement, Solution Plan, Slice Plan | `DRAFT`, `BLOCKED`, `READY` |
-| TDD Record | `IN_PROGRESS`, `BLOCKED`, `READY_FOR_REVIEW` |
-| Review Report | `READY` |
+| Layer | Current implementation | Responsibility |
+| --- | --- | --- |
+| Normative contracts | Markdown framework, protocols, workflows | Defines legal behavior and precedence. |
+| Authoritative evidence | Canonical Markdown Artifacts | Records current project truth and dependency versions. |
+| Deterministic control | Python Artifact Parser, State Resolver, Handoff Parser | Validates evidence and computes authorization. |
+| Execution integration | Codex/Copilot launchers and optional Python Runner | Supplies instructions and invokes supported external agent CLIs. |
+| Distribution and assurance | Python scaffold, npx installer, tests, CI | Installs the framework and guards architectural invariants. |
 
-Every BLOCKED non-Review artifact persists Blocker Category, Blocker Owner,
-Affected Scope, Blocker Reason, and Blocker Evidence. Review persists blockers in
-its immutable FAIL Review Report. Every Review Report contains exactly one
-seven-column canonical Findings table. The artifact parser validates its structure,
-sequential row numbers, severity, owner/scope shape, rendered content, metadata
-counts, PASS/FAIL decision, and FAIL disposition. The state resolver then validates
-every finding scope against Planning and the applicable Slice Plan. Invalid Review
-evidence halts as a graph contradiction rather than authorizing a transition.
+## 5. Core architectural model
 
-An intentional empty project is not represented by a blank cell. Planning uses
-`Feature IDs = NONE` plus `Empty Feature Approval = APPROVED: <evidence>`. The
-parser normalizes this to an empty ordered list. After graph contradiction, blocker,
-and Planning readiness checks, the resolver derives Rule 11 completion without
-requiring Requirement, Solution, Slice, TDD, or Review artifacts. Any such downstream
-artifact beside an empty Planning makes the graph contradictory.
+### 5.1 Four primitives
 
-Replaced contract versions are archived under `.forgeflow/artifacts/history/` using
-versioned filenames. The History Root is preserved by Project Evidence Rotation but is
-excluded from the active artifact graph.
+ForgeFlow is built around four distinct primitives:
 
-Planning carries a Feature Contract Version for every active Feature. An incremental
-Planning version retains that value for unchanged Features and advances it only for
-added or business-affected Features. Requirements reference this Feature-scoped
-version. Solution similarly carries one Feature Engineering Version per active
-Feature; Slice, TDD, and Review evidence references that scoped value. A new Planning
-or Solution artifact version therefore does not invalidate an unaffected Feature.
+| Primitive | Question answered | Authority |
+| --- | --- | --- |
+| Artifact | What has been decided, implemented, or reviewed? | Persistent project truth. |
+| Workflow | Who may make or revise this class of decision? | Artifact ownership contract. |
+| Artifact Graph | What work is authorized now? | Deterministic resolution from active evidence. |
+| Handoff | What validated cross-authorization result is being reported? | Transfer record; never a replacement for evidence. |
 
-Supplemental report replacements are archived under
-`.forgeflow/reports/history/<plugin-name>/` with monotonically increasing revision
-suffixes before the current report path is replaced. Reports History is immutable,
-excluded from current Review evidence, and preserved inside Reports Root rotation.
+This distinction matters. A Handoff does not make an Artifact true, transfer
+Artifact ownership, or independently authorize work. The receiving participant
+rebuilds the graph and resolves authorization again.
 
-The CLI exposes the same incremental entry contract through
-`forge plan --incremental --intent "..."`. The flag is the explicit same-project
-authorization; it never invokes Project Evidence Rotation. After Plan updates the
-active Planning artifact, the resolver compares Feature-scoped contract and
-engineering versions so `forge run` resumes at the earliest affected Feature or
-Slice while retaining compatible evidence. Review continues to use the shared
-Reports History replacement procedure.
+### 5.2 Control loop
 
-### Project Evidence Rotation Procedure
+```mermaid
+flowchart TD
+    Parse[Parse canonical Artifacts]
+    Validate[Validate metadata, identifiers, versions, findings]
+    Resolve[Apply ordered transition rules]
+    Authorize[Authorize one Workflow and Scope]
+    Execute[Execute or wait]
+    Persist[Persist owned Artifact or Review evidence]
+    Report[Emit Handoff only across authorizations]
 
-When an explicit new-project or reset operation is authorized, the Artifact Root and
-supplemental Reports Root undergo one coordinated rotation:
-
-1. Validate both roots and determine independently whether each is non-empty
-2. Capture one UTC timestamp and preflight every required backup before moving either root
-3. Rename non-empty roots in full to paired `artifacts.YYYYMMDDHHMMSS` and `reports.YYYYMMDDHHMMSS` paths
-4. Create fresh empty `.forgeflow/artifacts/` and `.forgeflow/reports/` directories
-5. Restore every moved root if any move or directory creation fails
-
-An empty root does not receive an empty backup. Reports remain supplemental and do
-not participate in the active artifact graph. In IDE execution, an explicit
-new-project or reset request authorizes rotation; a request that merely appears
-unrelated requires user confirmation before either root is changed. A clean
-Bootstrap requires both evidence roots to be absent or empty; residual reports also
-require explicit reset authorization.
-
----
-
-## 5. Handoff & Transition Protocol
-
-### What Is A Handoff?
-
-A **handoff** is a structured Markdown block that records the result of a workflow execution. It declares:
-- The transition type (FORWARD / RETURN / TERMINAL)
-- The next or returning workflow
-- The blocker category (if applicable)
-- Evidence-based reason for the decision
-
-### Handoff Block Format
-
-Every handoff MUST use exactly one of four canonical templates. Scope values are
-exactly `Project`, `Feature: F-XX`, or `Slice: F-XX/S-XX`.
-
-#### FORWARD (Progress to Next Workflow)
-
-```markdown
-### Handoff
-
-| Field | Value |
-| --- | --- |
-| Transition | FORWARD |
-| Next Workflow | {{workflow_name}} |
-| Source Scope | {{scope}} |
-| Target Scope | {{scope}} |
-| Input Artifacts | {{artifact_list}} |
-| Reason | {{evidence_based_reason}} |
+    Parse --> Validate --> Resolve --> Authorize --> Execute --> Persist --> Parse
+    Persist --> Report
 ```
 
-#### RETURN (Blocker -- Return to Upstream Owner)
+There is no mutable workflow cursor in the authoritative model. A new process can
+restart from repository evidence and derive the same next authorization.
 
-```markdown
-### Handoff
+## 6. Artifact Graph
 
-| Field | Value |
-| --- | --- |
-| Transition | RETURN |
-| Next Workflow | {{workflow_name}} |
-| Source Scope | {{scope}} |
-| Target Scope | {{scope}} |
-| Blocker Category | {{blocker_category}} |
-| Input Artifacts | {{artifact_list}} |
-| Reason | {{evidence_based_reason}} |
-```
+### 6.1 Canonical evidence
 
-#### TERMINAL / COMPLETE
+Active Artifacts live directly under `.forgeflow/artifacts/`:
 
-```markdown
-### Handoff
+| Artifact | Owner | Scope | Canonical path | Forward-ready status |
+| --- | --- | --- | --- | --- |
+| Planning | Plan | Project | `planning.md` | `READY` |
+| Requirement | Grill | Feature | `requirement-feature-XX.md` | `READY` |
+| Solution Plan | Solution | Project | `solution-plan.md` | `READY` |
+| Slice Plan | Slice | Feature | `slice-plan-feature-XX.md` | `READY` |
+| TDD Record | TDD | Slice | `tdd-feature-XX-slice-XX.md` | `READY_FOR_REVIEW` |
+| Review Report | Review | Slice attempt | `review-feature-XX-slice-XX-attempt-NN.md` | `READY` plus `PASS` or `FAIL` |
 
-| Field | Value |
-| --- | --- |
-| Transition | TERMINAL |
-| Terminal Status | COMPLETE |
-| Source Scope | {{scope}} |
-| Completed Scope | Project |
-| Input Artifacts | {{artifact_list}} |
-| Reason | {{evidence_based_reason}} |
-```
+Only canonical paths participate in resolution. Supplemental reports, runtime JSON,
+conversation text, archived versions, and arbitrary Markdown files are not graph
+nodes.
 
-#### TERMINAL / HALTED
+### 6.2 Typed scopes
 
-```markdown
-### Handoff
-
-| Field | Value |
-| --- | --- |
-| Transition | TERMINAL |
-| Terminal Status | HALTED |
-| Source Scope | {{scope}} |
-| Affected Scope | Project |
-| Blocker Category | GRAPH_CONTRADICTION |
-| Input Artifacts | {{artifact_list}} |
-| Reason | {{evidence_based_reason}} |
-```
-
-### Handoff Emission Rule
-
-**Every workflow that reaches a handoff-producing end MUST:**
-1. Validate and render exactly one `### Handoff` block
-2. Use the selected variant's exact heading, fields, row order
-3. Make it the **final content** of the response (no trailing prose)
-
-The receiving workflow MUST reject a malformed handoff rather than infer or normalize it.
-
-For HALTED, validation is evidence-bearing rather than status-only. ArtifactParser
-retains structured diagnostics for invalid canonical files, including a readable
-version or `INVALID_VERSION`. StateResolver selects the deterministic primary
-contradiction and emits its graph error code plus sorted terminal evidence. The
-Handoff parser accepts `NONE` only for HALTED, and Runner requires the Reason code
-and Input Artifacts to match the resolver projection exactly. This prevents an agent
-from terminating the pipeline with nonexistent, stale, unrelated, or falsely
-versioned evidence.
-
-### Transition Resolution Procedure
-
-Before emitting any handoff, the active workflow evaluates these rules in order and stops at the first match:
-
-| Rule | Condition | Action |
-|------|-----------|--------|
-| **Rule 1** -- Bootstrap | Empty Artifact Root has no Planning | Authorize Plan at `Project` without synthetic handoff |
-| **Rule 2** -- Graph contradiction | Active graph is structurally invalid, including unresolved Blocker or FAIL Review routing scopes | TERMINAL / HALTED |
-| **Rule 3** -- Persisted blocker | BLOCKED artifact has valid metadata and a complete usable current upstream chain | Select by owner priority, Planning Feature position, then Slice Plan position; RETURN or Recovery Entry |
-| **Rule 4** -- Planning not ready | Planning exists but is not usable | FORWARD to Plan at `Project` |
-| **Rule 5** -- Missing/stale Requirement | A declared first Feature lacks a READY Requirement matching its Feature Contract Version | FORWARD to Grill at `Feature: F-XX` |
-| **Rule 6** -- Missing/stale Solution Plan | At least one Feature exists; Requirements ready; Solution Plan not usable | FORWARD to Solution at `Project` |
-| **Rule 7** -- Missing/stale Slice Plan | A declared first Feature lacks a Slice Plan matching its Feature Engineering Version | FORWARD to Slice at `Feature: F-XX` |
-| **Rule 8** -- Current Review failure | Current TDD attempt has matching FAIL | RETURN per Review Report disposition |
-| **Rule 9** -- Review required | First incomplete Slice is READY_FOR_REVIEW without matching Review | FORWARD to Review at `Slice: F-XX/S-XX` |
-| **Rule 10** -- TDD required | Delivery ready and first incomplete Slice needs implementation | FORWARD to TDD at `Slice: F-XX/S-XX` |
-| **Rule 11** -- Project complete | Every Slice has a current matching PASS Review, or READY Planning is validly `NONE` and sole active artifact | TERMINAL / COMPLETE |
-
-IDE Plan also supports Incremental Intent Entry outside the numbered transition
-rules. It requires explicit same-project user intent, one valid READY Planning
-artifact, and no actionable blocker or current FAIL Review. It authorizes only Plan,
-never rotates project evidence, archives the replaced Planning, and records the
-exact Change Set before transition resolution resumes. Ambiguous project continuity
-requires user confirmation.
-
-### Blocker Routing Rules
-
-When a blocker needs routing, the following table determines ownership:
-
-| Blocker Category | Owner Workflow | Return Scope | Meaning |
-|------------------|---------------|--------------|---------|
-| `PLAN_GAP` | Plan | `Project` | Planning missing features, overlapping scope, or incompatible versions |
-| `BUSINESS_GAP` | Grill | `Feature: F-XX` | Requirement missing, outdated, or internally contradictory |
-| `ENGINEERING_GAP` | Solution | `Project` | Solution Plan missing, outdated, incomplete, or conflicting |
-| `SLICE_VIOLATION` | Slice | `Feature: F-XX` | Slice Plan boundary wrong, dependency invalid, content missing |
-| `IMPLEMENTATION_GAP` | TDD | `Slice: F-XX/S-XX` | Implementation, test, or local evidence is blocked |
-| `REVIEW_BLOCKER` | Determined by Review Report Findings Table | Per finding | A review finding triggers routing -- read the findings table to determine owner and scope |
-| `GRAPH_CONTRADICTION` | None; terminal halt | `Project` | Active graph cannot authorize productive work |
-
----
-
-## 6. Plugin System
-
-ForgeFlow uses a **pure-Markdown plugin registry** for extensible review rules. No Python code is required to add custom reviews.
-
-### How Plugins Work
+ForgeFlow models three explicit scopes:
 
 ```text
-Review workflow
-     |
-     +-- Reads _index.md (plugin registry)
-     |       +- Lists all enabled plugins + priority order
-     |
-     +-- For each enabled plugin (sorted by Priority):
-     |       +- Resolves the registered Rules File relative to rules/reviews/
-     |       +- Executes each rule against artifacts/codebase
-     |       +- Records PASS / VIOLATION / UNKNOWN / N/A
-     |       +- Maps VIOLATION severity through Blocking Threshold
-     |
-     +-- Compiles results into structured report
-     |       +- Archives an existing same-path report under .forgeflow/reports/history/
-     |       +- Saves the new attempt-scoped report under .forgeflow/reports/<plugin-name>/
-     |
-     +- Aggregates plugin evidence into the core Review Report Findings table
-             +- Core rows determine counts, PASS/FAIL, and RETURN disposition
+Project
+└── Feature: F-XX
+    └── Slice: F-XX/S-XX
 ```
 
-Attempt-scoped plugin reports remain supplemental. They never replace the
-canonical Review Report or serve as an independent transition authority.
+Planning alone declares Feature order. Each Slice Plan alone declares Slice order
+within its Feature. Filenames, identifier numbers, timestamps, filesystem order, and
+conversation order never override those declarations.
 
-### Plugin Registry (_index.md)
+### 6.3 Version edges
 
-The registry is a single Markdown table under `.forgeflow/rules/reviews/_index.md`. Each row defines one plugin with 11 fields:
+Graph edges carry versions rather than implied freshness:
 
-| Field | Example | Description |
-|-------|---------|-------------|
-| Name | `security` | Human-readable identifier |
-| Directory | `security/` | Subdirectory under reviews/ |
-| Rules File | `security/rules.md` | Path relative to `.forgeflow/rules/reviews/` |
-| Enabled? | `true` / `false` | Activates or skips this plugin |
-| Priority | `1` | Execution order (lower = earlier) |
-| Depends On | `--` or `security, architecture` | Other plugins scanned first |
-| Scope | `code, docs` | Where to apply checks |
-| Applicability | `Executable service code` | Evidence boundary evaluated before compliance |
-| Report Format | `md, csv` | Output format(s) for report |
-| Blocking Threshold | `P0-P1` | Severity levels that block pipeline |
-| Description | `Security vulnerability detection...` | One-line summary |
+```text
+Planning
+  └── Feature Contract Version
+        └── Requirement Version
+              └── Feature Engineering Version in Solution Plan
+                    └── Slice Plan Version
+                          └── TDD Attempt
+                                └── Review Attempt
+```
 
-### Adding A Custom Plugin
+This enables scoped invalidation:
 
-**Step 1:** Create the rules file
+- a later Planning version does not automatically invalidate every Feature;
+- unchanged Features retain their Feature Contract Versions;
+- a later Solution Plan does not automatically invalidate every Slice;
+- unchanged Features retain their Feature Engineering Versions;
+- stale TDD and Review evidence cannot satisfy current barriers.
+
+### 6.4 Graph validity
+
+The parser and resolver reject, among other conditions:
+
+- a non-empty Artifact Root without valid Planning;
+- missing, duplicate, or malformed required metadata;
+- undeclared Feature or Slice references;
+- incompatible owner, filename, scope, status, or version data;
+- invalid persisted blocker routing;
+- malformed Review Findings or count/decision mismatch;
+- invalid FAIL disposition;
+- downstream evidence beside an explicitly empty project.
+
+A contradictory graph resolves to `TERMINAL / HALTED`; ForgeFlow does not guess a
+repair transition.
+
+## 7. Workflow and scope model
+
+### 7.1 Ownership chain
+
+```mermaid
+flowchart LR
+    Plan[Plan\nProject]
+    Grill[Grill\nFeature]
+    Solution[Solution\nProject]
+    Slice[Slice\nFeature]
+    TDD[TDD\nSlice]
+    Review[Review\nSlice attempt]
+
+    Plan --> Grill --> Solution --> Slice --> TDD --> Review
+```
+
+| Workflow | Owns | Decision boundary |
+| --- | --- | --- |
+| Plan | Planning | Approved project intent, ordered Features, exclusions, project constraints, incremental Change Set. |
+| Grill | Requirement | Observable Feature behavior, acceptance criteria, business ambiguity. |
+| Solution | Solution Plan | Cross-Feature engineering design, interfaces, data, security, operations, verification strategy. |
+| Slice | Slice Plan | Ordered, bounded implementation slices for one Feature. |
+| TDD | TDD Record | Implementation and tests for one authorized Slice attempt. |
+| Review | Review Report | Independent PASS/FAIL decision and routed findings for one Slice attempt. |
+
+No workflow may modify another workflow's Artifact. Review does not repair code;
+TDD does not approve itself; Solution does not invent business outcomes.
+
+### 7.2 Two-dimensional iteration
+
+ForgeFlow does not flatten a project into one unordered task list. Delivery order is
+the Cartesian structure of declared Features and their declared Slices:
+
+```text
+Feature order
+  ×
+Slice order within each Feature
+```
+
+```mermaid
+flowchart TD
+    P[Planning: F-01, F-02]
+    R1[Requirement F-01]
+    R2[Requirement F-02]
+    Sol[Solution Plan]
+    SP1[Slice Plan F-01: S-01, S-02]
+    SP2[Slice Plan F-02: S-01]
+    T11[TDD F-01/S-01]
+    V11[Review F-01/S-01]
+    T12[TDD F-01/S-02]
+    V12[Review F-01/S-02]
+    T21[TDD F-02/S-01]
+    V21[Review F-02/S-01]
+
+    P --> R1 --> R2 --> Sol --> SP1 --> SP2 --> T11 --> V11 --> T12 --> V12 --> T21 --> V21
+```
+
+All Requirements become usable before Solution. All Slice Plans become usable
+before TDD begins. TDD and Review then advance in Planning Feature order and Slice
+Plan order.
+
+## 8. Transition and Handoff model
+
+### 8.1 Ordered state resolution
+
+The Handoff Protocol defines eleven ordered rules. The first matching rule wins:
+
+| Rule | Condition | Result |
+| --- | --- | --- |
+| 1 | Empty project | Bootstrap Plan at Project scope. |
+| 2 | Contradictory graph | `TERMINAL / HALTED`. |
+| 3 | Current persisted blocker | Recover or RETURN to its owner and scope. |
+| 4 | Planning not usable | Plan at Project scope. |
+| 5 | First missing/stale Requirement | Grill for that Feature. |
+| 6 | Solution Plan missing/stale | Solution at Project scope. |
+| 7 | First missing/stale Slice Plan | Slice for that Feature. |
+| 8 | Current FAIL Review | RETURN to recorded owner and scope. |
+| 9 | Current TDD awaits Review | Review for that Slice. |
+| 10 | First incomplete Slice needs implementation | TDD for that Slice. |
+| 11 | Every declared Slice has current PASS evidence | `TERMINAL / COMPLETE`. |
+
+This ordering gives contradictions and blockers precedence over apparent forward
+progress.
+
+### 8.2 Handoff variants
+
+ForgeFlow has three transition types:
+
+- `FORWARD`: report a move to a different next Workflow/Scope authorization;
+- `RETURN`: report a move to a prior decision owner or implementation owner;
+- `TERMINAL`: report `COMPLETE` or `HALTED`.
+
+Each Canonical Handoff has an exact field set and order. The Python Handoff Parser
+validates transition type, scopes, blocker categories, artifact filenames, versions,
+terminal evidence, and reason codes.
+
+A workflow emits no Handoff when it remains authorized at the same Workflow and
+Scope while waiting for required input. This prevents meaningless self-RETURN loops.
+
+### 8.3 Return semantics
+
+Returns are routed by evidence, not by the agent's preferred destination:
+
+```mermaid
+flowchart BT
+    Review -->|implementation finding| TDD
+    Review -->|slice boundary finding| Slice
+    Review -->|engineering finding| Solution
+    Review -->|business finding| Grill
+    Review -->|project-scope finding| Plan
+    TDD -->|persisted blocker| TDDOwner[TDD or upstream owner selected by blocker category]
+```
+
+A FAIL Review records blocking findings, selects the highest-precedence owner, and
+names one matching affected scope. A persisted non-Review blocker records its own
+category, owner, scope, reason, and evidence. Stale blockers and stale Review
+attempts remain evidence but cannot authorize recovery.
+
+## 9. Incremental change and recovery
+
+### 9.1 Same-project incremental intent
+
+`forge plan --incremental --intent "..."` is a special Plan entry for an explicit
+addition or change to the same project. It is allowed only when:
+
+- the graph is valid;
+- Planning is current and `READY`;
+- no actionable persisted blocker exists;
+- no current FAIL Review is awaiting its owner;
+- the relationship to the existing project is explicit or confirmed.
+
+Plan records an exact Change Set and retains stable Feature IDs. Added or affected
+Features receive new contract versions; unaffected Features retain their versions
+and usable downstream evidence.
+
+### 9.2 Feature retirement
+
+Removing a Feature is an explicit transaction. Its canonical Artifacts and
+supplemental Reports are archived before the higher Planning version becomes
+active. Retired identifiers cannot be reused.
+
+### 9.3 Recovery entry
+
+A new process may resume a current persisted blocker without a remembered Handoff.
+It rebuilds the graph, applies Rule 3, and re-authorizes only the selected owner and
+scope. Runtime history is diagnostic; it is not the recovery authority.
+
+### 9.4 New-project rotation
+
+An unrelated project request or explicit reset uses paired Project Evidence
+Rotation. Active `artifacts/` and `reports/` roots receive the same UTC suffix and
+are rotated as one transaction. Partial rotation is rolled back.
+
+## 10. Execution surfaces
+
+### 10.1 Markdown and IDE-assisted execution
+
+The framework core is Markdown. Dedicated launchers currently exist for:
+
+| Adapter | Launcher directory | Current claim |
+| --- | --- | --- |
+| Codex | `.forgeflow/adapter/codex/` | Dedicated launcher files supplied. |
+| GitHub Copilot | `.forgeflow/adapter/copilot/` | Dedicated launcher files supplied. |
+
+Launchers read the Framework, Artifact Protocol, Handoff Protocol, and one Workflow
+in the required precedence order. They do not register commands by themselves.
+Command discovery and invocation syntax remain host-specific.
+
+Other Markdown-capable agents can read the normative files manually, but ForgeFlow
+does not currently ship or claim validated dedicated integrations for them.
+
+### 10.2 Python CLI
+
+The optional `forge` CLI provides:
+
+| Command | Responsibility |
+| --- | --- |
+| `forge init` | Install or refresh managed framework files. |
+| `forge plan` | Execute authorized Plan, including explicit incremental intent. |
+| `forge run` | Run sequential manual or automatic orchestration. |
+| `forge status` | Parse evidence and display graph-derived state. |
+| `forge reset` | Preview or execute paired evidence rotation. |
+| `forge handoff` | Display the latest validated runtime Handoff snapshot. |
+
+The Runner invokes external tools rather than model APIs directly:
+
+- Codex uses `codex exec` with an ephemeral session and workspace-write sandbox.
+- Copilot uses `gh copilot` non-interactively with workspace-scoped `write` and
+  `shell` permissions.
+
+Execution is sequential. The Runner reparses the graph after each step, rejects a
+Handoff that disagrees with graph resolution, records interruptions, and stops after
+bounded failures or iterations.
+
+### 10.3 npx installer
+
+`@idairen/forgeflow` is an installer-only Node package:
 
 ```bash
-mkdir -p .forgeflow/rules/reviews/my-plugin/
-touch .forgeflow/rules/reviews/my-plugin/rules.md
+npx @idairen/forgeflow@latest init --adapter copilot
 ```
 
-**Step 2:** Write checklist rules in `rules.md`
+It supports initialization, adapter selection, and forced refresh. It deliberately
+rejects `plan`, `run`, `status`, `reset`, and `handoff`; workflow execution remains
+in the Python CLI or IDE-assisted Markdown flow. The npm distribution is implemented
+and package-tested but is not claimed as publicly available until published.
 
-```markdown
-# My Plugin Rules
+### 10.4 Refresh boundary
 
-| Rule ID | Description | Check Criteria | Expected Result |
-|---------|-------------|----------------|-----------------|
-| MY-001 | No hardcoded passwords | Scan all .py files for "password =" | All credentials from env vars |
+`init --force` refreshes ForgeFlow-managed framework files while preserving
+project-owned Artifacts, Reports, runtime evidence, supported configuration values,
+and custom Review plugins. Both installers reject unsafe symbolic-link targets.
+There is currently no separate `update` command.
+
+## 11. Review plugin architecture
+
+Review plugins are the supported behavioral extension point. Each plugin supplies a
+Markdown `rules.md` file and one registry row containing priority, dependencies,
+scope, applicability, report formats, and blocking threshold.
+
+```mermaid
+flowchart TD
+    Registry[_index.md registry]
+    Validate[Validate names, paths, dependencies]
+    Sort[Deterministic priority order]
+    Applicable[Evaluate plugin and rule applicability]
+    Evaluate[PASS / VIOLATION / UNKNOWN / N/A]
+    Classify[Blocking threshold]
+    Reports[Write supplemental reports]
+    Decision[Persist canonical Review PASS or FAIL]
+
+    Registry --> Validate --> Sort --> Applicable --> Evaluate --> Classify --> Reports --> Decision
 ```
 
-**Step 3:** Add entry to `_index.md`
+Supplemental plugin reports may use Markdown, CSV, or HTML. They never replace the
+canonical Review Report, which must contain all findings required for transition
+resolution.
 
-```markdown
-| my-plugin | `my-plugin/` | `rules/my-plugin/rules.md` | true | 5 | -- | code | md, csv | P0-P1 | My custom plugin description |
-```
+## 12. Persistence, history, and safety
 
-That's it. The Review workflow will automatically pick it up on next execution.
+| Storage | Authority | Purpose |
+| --- | --- | --- |
+| `.forgeflow/artifacts/` | Authoritative | Current contract, implementation, and Review evidence. |
+| `.forgeflow/artifacts/history/` | Historical | Replaced or retired canonical evidence. |
+| `.forgeflow/reports/` | Supplemental | Current plugin-specific Review detail. |
+| `.forgeflow/reports/history/` | Historical | Replaced supplemental reports with revision suffixes. |
+| `.forgeflow/runtime/` | Non-authoritative | CLI step history, run summaries, latest validated Handoff snapshot. |
 
----
+Safety properties implemented by the current architecture include:
 
-## 7. Auto-Mode Engine
+- strict canonical filenames and metadata;
+- explicit upstream version references;
+- graph-derived authorization before and after execution;
+- no shell interpolation when constructing agent CLI commands;
+- bounded execution timeout, failures, and total steps;
+- interruption recording and process termination;
+- atomic JSON writes;
+- symlink rejection in installer, runtime, and refresh-sensitive paths;
+- paired Artifact/Report rotation with rollback;
+- preservation of prior evidence instead of silent overwrite.
 
-The auto-mode engine is responsible for orchestrating the pipeline loop. It lives in `runner.py`.
+These controls reduce workflow and evidence errors. They do not make autonomous
+model execution intrinsically safe. Normal branch protection, review, tests, secret
+controls, and least-privilege permissions still apply.
 
-CLI artifact discovery validates only canonical files located directly under the
-configured Artifact Root. It reads status and version data from each artifact's
-leading Metadata table, reports malformed canonical artifacts as an invalid graph,
-and excludes `history/`, backup directories, nested files, and non-canonical files
-from the active artifact set.
-
-### How Auto-Mode Works
-
-```python
-for step in range(MAX_STEPS=50):
-    before = detect_artifact_state(artifacts_dir)
-    authorization = resolve_pipeline_state(before)
-    current_workflow = authorization.current_workflow
-    current_scope = authorization.target_scope
-
-    llm_output = try_execute_llm(current_workflow, max_retries=3)
-    handoff = parse_handoff(
-        llm_output,
-        expected_source_workflow=current_workflow,
-        expected_source_scope=current_scope,
-    )
-
-    after = detect_artifact_state(artifacts_dir)
-    resolution = resolve_pipeline_state(after)
-    if not handoff_matches_graph(handoff, after, resolution):
-        return PIPELINE_BLOCKED
-
-    persist_step_history()
-    if resolution.pipeline_status in {"COMPLETE", "HALTED"}:
-        break
-```
-
-### Key Mechanisms
-
-| Mechanism | Default Value | Purpose |
-|-----------|---------------|---------|
-| `MAX_STEPS` | 50 total iterations | Prevents infinite loops |
-| `MAX_FAILURES_PER_WF` | 3 consecutive failures per workflow | Blocks after repeated execution or Handoff failure |
-| `artifacts_dir` | `.forgeflow/artifacts/` | Where all artifacts are persisted |
-| `runtime_dir` | `.forgeflow/runtime/` | Non-authoritative CLI step summaries |
-
-### Failure Safety
-
-When agent execution fails, or its response attempts an invalid canonical Handoff
-three times, the Runner returns `PIPELINE_BLOCKED`. A response with no Handoff marker
-and unchanged Workflow/Scope authorization returns `PIPELINE_WAITING` without a
-retry; if authorization changed, the missing Handoff blocks the run. The Runner
-never synthesizes a FORWARD, RETURN, or TERMINAL result from configuration. Step
-summaries are written under `.forgeflow/runtime/steps/`, outside the authoritative
-Artifact Root.
-
-### LLM Execution Hook
-
-When the engine calls `_execute_llm(name)`:
-
-1. Reads prompt from `.forgeflow/adapter/<adapter>/forge-<name>.prompt.md`
-2. Appends engine-derived Bootstrap or Recovery Entry context when the current graph authorizes one
-3. Appends an optional Plan User Intent as escaped, non-normative JSON invocation data
-4. Invokes the matching non-interactive agent CLI from the project root
-5. Grants workspace-scoped execution permissions needed by the workflow
-6. Returns the agent's final response from standard output
-7. HandoffParser attempts to parse the final `### Handoff` block
-
-The `codex` adapter uses `codex exec` with the `workspace-write` sandbox. The
-`copilot` adapter uses `gh copilot` with non-interactive `write` and `shell`
-permissions while retaining its default project-root path boundary. The optional
-`model` and `execution_timeout_seconds` keys in `forgeflow.json` select a model and
-bound each invocation. Process failures and malformed handoffs are retried by the
-Runner's workflow-level retry loop rather than by nested backend retries.
-
----
-
-## 8. Adapter Pattern
-
-ForgeFlow supports multiple **host adapters** -- each adapts the core workflows to a specific LLM interface.
-
-### Supported Adapters
-
-| Adapter | Files | When Used |
-|---------|-------|-----------|
-| `copilot` | `.forgeflow/adapter/copilot/*.prompt.md` | Default; IDE GitHub Copilot Chat |
-| `codex` | `.forgeflow/adapter/codex/*.prompt.md` | CLI Codex mode |
-
-### How Adapter Selection Works
+## 13. Repository and package architecture
 
 ```text
-forgeflow.json has "adapter": "copilot"
-     |
-     +- User runs: forge init --adapter codex
-     |       +- Refreshes managed framework files and updates forgeflow.json
-     |
-     +- Engine starts: runner.py reads forgeflow.json
-     |    +- Uses the configured adapter, defaulting to copilot
-     |
-     +- PromptResolver resolves:
-             .forgeflow/adapter/<selected>/forge-<workflow>.prompt.md
+forgeflow/
+├── .forgeflow/                 # canonical Markdown framework source
+│   ├── adapter/                # Codex and Copilot launchers
+│   ├── protocol/               # Artifact and Handoff/Transition protocols
+│   ├── rules/reviews/          # Review plugin registry and rules
+│   └── workflow/               # six Workflow specifications
+├── forgeflow/                  # Python package
+│   ├── cli/                    # forge command surface
+│   └── engine/                 # parser, resolver, runner, configuration
+├── npm/                        # installer-only Node implementation and tests
+├── tests/                      # Python protocol, resolver, runner, contract tests
+│   └── ide/                    # real-host acceptance assets and result capture
+├── examples/sample-project/    # installation walkthrough and valid evidence samples
+├── docs/                       # public guides and test plan
+├── .github/workflows/          # cross-version quality gates
+├── forgeflow.json              # canonical project configuration template
+├── pyproject.toml              # Python distribution metadata
+└── package.json                # npm installer distribution metadata
 ```
 
-### Adapter Differences
+The root `.forgeflow/` directory is not a generated copy. It is the single canonical
+framework source embedded by both installers. The sample project intentionally does
+not duplicate it.
 
-The copilot and codex adapters differ only in their **prompt templates** -- not in core logic. Each workflow has a separate `.prompt.md` file per adapter:
+## 14. Verification architecture
 
-```
-adapter/
-    copilot/
-     |-- forge-plan.prompt.md # Copilot-specific system prompt for Plan
-     +-- ...
-    codex/
-     |-- forge-plan.prompt.md # Codex-specific system prompt for Plan
-     +-- ...
-```
+### 14.1 Automated gates
 
-The `copilot` adapter is the recommended default. Use `codex` when running from CLI with a different LLM backend.
+The repository currently verifies:
 
----
+- strict JSON configuration;
+- canonical Artifact parsing and Review Findings validation;
+- canonical Handoff variants and scope/evidence rules;
+- every forward graph stage, blockers, returns, stale evidence, halt, and complete;
+- Runner graph/Handoff agreement and same-authorization rejection;
+- incremental-entry boundaries and paired evidence rotation;
+- adapter/workflow symmetry and removal of legacy protocol files;
+- sample-project graph validity and declared execution order;
+- npx initialization, refresh, preservation, symlink safety, and installer-only scope;
+- Python compilation, CLI smoke behavior, npm tests, and npm package contents in CI.
 
-## 9. CLI Reference
+### 14.2 Acceptance boundary
 
-### Available Subcommands
+Automated tests prove deterministic repository behavior, not model quality or host
+behavior. Real Copilot and Codex execution must be evaluated separately using the
+IDE acceptance assets under `tests/ide/`. A prepared test case is not a passed host
+acceptance test until its actual invocation and evidence are captured.
 
-| Command | Description | Parameters |
-|---------|-------------|------------|
-| `forge --help` | Show help message | None |
-| `forge plan` | Execute Plan workflow (Project scope) | `--intent TEXT`; add `--incremental` for explicit same-project scope |
-| `forge run [--auto\|--manual] [--reset]` | Start pipeline | See below |
-| `forge status` | Show current state, artifacts, handoff data | None |
-| `forge reset [--force]` | Rotate artifacts and supplemental reports (dry-run by default) | `--force` to archive and rotate |
-| `forge init [-a copilot\|codex]` | Install or refresh framework resources | `--adapter`, `--force` |
-| `forge handoff` | Debug latest handoff from artifacts/ | None |
+## 15. Comparison with related open-source projects
 
-Command exit status is deterministic: `0` means success, `1` means an execution or
-configuration error, `2` means the pipeline ended without successful completion,
-and `130` means the user interrupted execution.
+### 15.1 Method
 
-### Run Command Modes
+This comparison uses public official documentation available on 2026-08-18. It is
+not a benchmark or a claim that another project lacks undocumented behavior. The
+projects solve overlapping but different problems.
 
-| Flag | Behavior | Use Case |
-|------|----------|---------|
-| Default (no flags) | Use `forgeflow.json` `mode` | Project-configured behavior |
-| `--auto` | Override this invocation to auto mode | Loop until TERMINAL or blocked |
-| `--manual` | Override this invocation to manual mode | Execute Plan once; `--no-auto` is an alias |
-| `--reset` | Rotate artifacts and reports before running | Start fresh without mixing project evidence |
-| `--force` | Authorize `forge reset` rotation or `forge init` refresh | Explicit state-changing action |
+| Project | Primary abstraction | Workflow stance | Deterministic control emphasis | Integration breadth | Characteristic strength |
+| --- | --- | --- | --- | --- | --- |
+| **ForgeFlow** | Versioned Artifact Graph with Workflow/Scope ownership | Fixed, gated six-workflow lifecycle with explicit Return and Recovery | Parser and ordered resolver compute authorization from repository evidence | Dedicated Codex and Copilot launchers | Lightweight, opinionated execution-control protocol with typed evidence and recovery. |
+| **GitHub Spec Kit** | Specification-driven phases, templates, extensions, presets, and bundles | Default Spec → Plan → Tasks → Implement flow; extensible beyond it | Public docs emphasize phase tooling and agent integrations rather than ForgeFlow-style typed graph authorization | Broad documented agent integration catalog | Large integration ecosystem and extensible SDD toolchain. |
+| **OpenSpec** | Current specs plus per-change proposal, delta specs, design, tasks, and archive | Explicitly fluid and iterative; artifacts are enablers rather than rigid gates | CLI understands artifact schemas and change state; workflow is intentionally less phase-locked | Broad documented tool support | Lightweight brownfield-friendly agreement and delta/archive model. |
+| **BMAD Method** | Specialized agents, agile phases, stories, and context documents | Guided, scale-adaptive lifecycle with quick and full tracks | Public architecture centers guided workflows, agents, and progressive context | Multiple AI development tools through installed skills | Comprehensive role-based methodology and mature workflow/community breadth. |
+| **SpecDD** | Small source-adjacent `.sdd` contracts | Simple spec-first loop close to the code | Bootstrap and local authority rules guide agents; intentionally file-first and lightweight | Agent-agnostic by repository-file compatibility | Local, incremental specifications that stay beside implementation. |
+| **SpecD** | Specs, changes, schemas, lifecycle, compiled context, and code graph | Configurable lifecycle with verification and optional approvals | Explicitly computes merging, validation, status resolution, delta application, and context | Plugin packages plus CLI; MCP documented as in progress | Broad deterministic SDD platform, schema customization, code graph, and multi-workspace support. |
 
-`forge plan --incremental` requires a non-empty `--intent`. It is accepted only
-when Planning is READY, the Artifact Graph is valid, and neither a persisted blocker
-nor a current failed Review owns recovery. It can enter Plan even when the normal
-resolver currently authorizes a downstream workflow or reports project completion.
+### 15.2 Architectural interpretation
 
-### Example CLI Session
+#### ForgeFlow versus Spec Kit
 
-```bash
-# 1. Initialize project for GitHub Copilot Chat
-forge init --adapter copilot
+Spec Kit is stronger in integration breadth, presets, extensions, and community
+scale. ForgeFlow is narrower and more opinionated: it treats Workflow/Scope
+authorization, blocker precedence, exact Handoff evidence, and restartable graph
+resolution as first-class protocol concerns.
 
-# 2. Run auto-mode pipeline (will loop until complete or blocked)
-forge run
+Official source: [GitHub Spec Kit](https://github.com/github/spec-kit)
 
-# 3. Or run in manual mode to inspect each step
-forge run --manual
+#### ForgeFlow versus OpenSpec
 
-# 4. Check status at any time
-forge status
+OpenSpec optimizes for an approachable, fluid agreement loop around changes,
+deltas, and archive. ForgeFlow intentionally uses stronger barriers and refuses
+productive execution when the current graph does not authorize it. OpenSpec's model
+is easier to bend; ForgeFlow's model is easier to audit against one declared state
+machine.
 
-# 5. Add another module to the same project, then continue the pipeline
-forge plan --incremental --intent "Add organization-level audit logging"
-forge run
+Official sources: [OpenSpec overview](https://github.com/Fission-AI/OpenSpec/blob/main/docs/overview.md),
+[OpenSpec repository](https://github.com/Fission-AI/OpenSpec)
 
-# 6. Reset and start fresh
-forge reset --force
-```
+#### ForgeFlow versus BMAD Method
 
----
+BMAD is a broad, role-oriented methodology with specialized agents, multiple tracks,
+and many guided workflows. ForgeFlow uses only six fixed owners and places less
+emphasis on agent personas. Its abstraction is not “which expert agent should help?”
+but “which evidence-derived owner and scope may act now?”
 
-## Summary
+Official sources: [BMAD workflow map](https://github.com/bmad-code-org/BMAD-METHOD/blob/main/docs/reference/workflow-map.md),
+[BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD)
 
-ForgeFlow is a **pure-Markdown artifact-driven workflow** that coordinates AI development through:
+#### ForgeFlow versus SpecDD
 
-1. **6 canonical workflows** (Plan -> Grill -> Solution -> Slice -> TDD -> Review)
-2. **Typed handoff protocol** (FORWARD / RETURN / TERMINAL with validation)
-3. **Deterministic transition procedure** (ordered Markdown rules evaluated from the active artifact graph)
-4. **Plugin-based review system** (pure Markdown rules loaded from `_index.md`)
-5. **Adapter pattern** (supports copilot & codex hosts via separate prompt files)
+SpecDD keeps small contracts beside code and intentionally supports a simple,
+agent-agnostic implementation loop. ForgeFlow centralizes lifecycle evidence under
+one Artifact Root and adds cross-stage ownership, version chains, Review attempts,
+Return routing, and deterministic next-work resolution.
 
-The Markdown contracts are portable and require no database or hosted ForgeFlow
-service. Dedicated integration and automated CLI execution are currently limited to
-the documented Codex and GitHub Copilot surfaces.
+Official source: [SpecDD](https://github.com/specdd/specdd)
+
+#### ForgeFlow versus SpecD
+
+SpecD is the closest comparison in deterministic intent. It is substantially broader:
+configurable schemas, compiled context, code graphs, plugins, lifecycle hooks, and
+multi-workspace coordination. ForgeFlow's present advantage is not greater feature
+breadth; it is a smaller, human-readable, fixed protocol whose full control model can
+be inspected in a few Markdown contracts and run without a large runtime stack.
+
+Official source: [SpecD](https://github.com/specd-sdd/SpecD)
+
+## 16. ForgeFlow's open-source advantages
+
+The following are the strongest advantages of the current implementation. They are
+architectural properties, not claims of universal uniqueness.
+
+### 16.1 Protocol-first transparency
+
+Core behavior is expressed as versioned Markdown with normative precedence. Humans,
+agents, reviewers, and alternative implementations can inspect the same contract
+without depending on hidden prompts or hosted state.
+
+### 16.2 Evidence-derived authorization
+
+The next Workflow and Scope are derived from current Artifacts, not from a mutable
+conversation, agent assertion, task checkbox, or runtime cursor. This makes restarts,
+audits, and independent implementations practical.
+
+### 16.3 Typed ownership and scope
+
+Business, engineering, implementation, and acceptance decisions have separate
+owners. Project, Feature, and Slice scopes are explicit graph references, reducing
+the common agent failure mode of silently widening work.
+
+### 16.4 Return and recovery as first-class semantics
+
+ForgeFlow models upstream correction rather than treating every failure as “retry
+the current task.” Persisted blockers, Review findings, canonical Return routing,
+same-authorization waiting, and fresh-process Recovery are part of the protocol.
+
+### 16.5 Feature × Slice iteration
+
+The graph represents both product decomposition and implementation decomposition.
+This gives multi-Feature, multi-Slice projects a deterministic completion order and
+prevents one successful Slice from being mistaken for project completion.
+
+### 16.6 Scoped incremental evolution
+
+Feature Contract Versions, Feature Engineering Versions, exact Change Sets, and
+retirement transactions preserve unaffected evidence while invalidating what truly
+changed. Incremental development is a protocol behavior, not an ad hoc prompt.
+
+### 16.7 Evidence lifecycle and auditability
+
+Canonical history, Reports history, immutable Review attempts, paired project
+rotation, and non-authoritative runtime separation make replacement and reset
+behavior inspectable instead of destructive.
+
+### 16.8 Independent, extensible Review
+
+Review has exclusive PASS/FAIL ownership and cannot repair implementation. Markdown
+plugins add ordered security, architecture, coding-standard, and performance checks
+without changing the Python engine.
+
+### 16.9 Small deployment surface
+
+The normative core is Markdown. The npx installer has no runtime dependencies and
+does not duplicate orchestration. The optional Python CLI also has no third-party
+runtime dependencies. Teams can adopt the protocol manually before adopting CLI
+automation.
+
+### 16.10 Honest verification boundary
+
+ForgeFlow distinguishes protocol tests, installer tests, simulated evidence, and
+real IDE acceptance. That distinction is important for an open-source project whose
+execution still depends on nondeterministic external agents.
+
+## 17. Current limitations
+
+ForgeFlow should not hide the areas where related projects are currently stronger:
+
+- only Codex and GitHub Copilot have dedicated launchers;
+- launcher files do not guarantee host command registration;
+- the workflow graph is fixed rather than schema-configurable;
+- orchestration is sequential and local;
+- there is no code graph, MCP server, dashboard, hosted service, or multi-repository
+  coordinator;
+- the npm package is implemented but still requires publication for public npx use;
+- the Python package is installed from source rather than a documented PyPI release;
+- real IDE acceptance remains separate from automated protocol validation;
+- Review plugins are LLM-evaluated Markdown contracts, not compiled analyzers;
+- Technical Preview status means protocol and integration behavior may still evolve.
+
+These are boundaries for contributors and adopters, not promises of unimplemented
+features.
+
+## 18. Contribution boundaries
+
+The current architecture supports contributions in four main areas:
+
+1. **Protocol correctness:** clarify rules while preserving precedence, ownership,
+   existing successful scenarios, and executable tests.
+2. **Agent adapters:** add thin launchers only after validating the host's actual
+   discovery and invocation mechanism.
+3. **Review plugins:** add rules and registry entries without transferring canonical
+   Review ownership outside the Review Report.
+4. **Reference implementation:** improve parsers, resolver, Runner, installers,
+   diagnostics, and tests without creating a second source of workflow truth.
+
+Any architectural change should answer:
+
+- Which normative contract owns the behavior?
+- Which Artifact and version edge records the decision?
+- Which Workflow and Scope may write it?
+- Which ordered resolution rule authorizes the next action?
+- What happens after restart, stale evidence, failure, interruption, and Return?
+- Which automated tests and real-host acceptance evidence support the claim?
+
+That discipline is the core of ForgeFlow's open-source value.

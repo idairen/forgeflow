@@ -126,7 +126,8 @@ Slice]
 ```
 
 **Read the full deep-dive:**  
-📖 [ARCHITECTURE.md](./ARCHITECTURE.md) — Workflow graph, handoff protocol, plugin registry, auto-mode engine.
+📖 [ARCHITECTURE.md](./ARCHITECTURE.md) — Current architecture, state model,
+execution boundaries, open-source comparison, advantages, and limitations.
 
 ---
 

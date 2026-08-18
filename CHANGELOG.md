@@ -9,7 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- Added 37 dependency-free Python tests covering strict configuration, canonical
+- Added 39 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,
   paired Artifact/Report rotation, and repository integration contracts.
@@ -61,6 +61,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Rebuilt `ARCHITECTURE.md` around the current protocol and implementation, covering
+  the four core primitives, typed scopes, versioned Artifact Graph, ordered state
+  resolution, Return and Recovery, incremental evidence preservation, execution and
+  package boundaries, verification architecture, and current limitations. Added a
+  dated comparison with Spec Kit, OpenSpec, BMAD Method, SpecDD, and SpecD using
+  their official public documentation, plus an explicit account of ForgeFlow's
+  open-source advantages and tradeoffs.
 - Rebuilt `examples/sample-project` as an installation-driven walkthrough instead
   of a stale second copy of the ForgeFlow framework. The example now contains a
   reusable intent and protocol-valid comparison Artifacts, while a repository

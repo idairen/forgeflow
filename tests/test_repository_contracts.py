@@ -88,6 +88,31 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(resolution["current_workflow"], "grill")
         self.assertEqual(resolution["target_scope"], "Feature: F-02")
 
+    def test_architecture_declares_current_sources_comparison_and_boundaries(self):
+        architecture = (ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        required_references = {
+            "./.forgeflow/forgeflow.md",
+            "./.forgeflow/protocol/artifact.md",
+            "./.forgeflow/protocol/handoff.md",
+            "https://github.com/github/spec-kit",
+            "https://github.com/Fission-AI/OpenSpec",
+            "https://github.com/bmad-code-org/BMAD-METHOD",
+            "https://github.com/specdd/specdd",
+            "https://github.com/specd-sdd/SpecD",
+        }
+        required_boundaries = {
+            "Technical Preview",
+            "A Handoff does not make an Artifact true",
+            "There is currently no separate `update` command.",
+            "does not currently ship or claim validated dedicated integrations",
+            "real IDE acceptance",
+        }
+
+        for reference in required_references:
+            self.assertIn(reference, architecture)
+        for boundary in required_boundaries:
+            self.assertIn(boundary, architecture)
+
 
 if __name__ == "__main__":
     unittest.main()
