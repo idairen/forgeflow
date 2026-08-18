@@ -14,6 +14,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   or Codex workspaces, captures real IDE-generated snapshots, prepares isolated case
   copies and result records, plus a dependency-free Python fixture and reusable
   intent inputs. The tooling prepares evidence but never simulates an IDE workflow.
+- Added a UTF-8 CSV catalog for all 215 IDE acceptance cases, including priority,
+  adapter coverage, recommended baseline, actions, expected results, and editable
+  execution-result fields. The IDE case manager can reproduce the catalog through
+  its `export` command.
 - Added a 12-page Chinese enterprise roadshow deck for CTOs and engineering
   leaders at `output/pdf/forgeflow-enterprise-roadshow.pdf`, together with its
   purpose-built visual asset at `docs/assets/forgeflow-roadshow-hero.png`.

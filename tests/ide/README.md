@@ -41,9 +41,12 @@ Verified 215 IDE cases and 12 workflow Prompts (P0=194, P1=21, P2=0).
 python3 tests/ide/manage.py list --priority P0
 python3 tests/ide/manage.py list --area INV
 python3 tests/ide/manage.py show IDE-INV-003
+python3 tests/ide/manage.py export
 ```
 
 `list` 和 `show` 直接读取权威测试计划，不维护第二份容易过期的用例清单。
+仓库同时保存生成后的 `forgeflow-ide-test-cases.csv`，方便使用 Excel、Numbers
+或测试管理平台执行和记录结果。计划发生变化后，可用 `export` 重新生成 CSV。
 
 ## 3. 创建干净测试工作区
 

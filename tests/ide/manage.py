@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -42,23 +43,36 @@ AREA_BASELINES = {
     "PAR": "matched Codex/Copilot snapshot pair",
 }
 AREA_NAMES = {
-    "INV": "Prompt discovery and host isolation",
-    "PLAN": "Plan and project entry",
+    "INV": "Prompt 发现与宿主隔离",
+    "PLAN": "Plan 与项目入口",
     "GRILL": "Grill",
     "SOL": "Solution",
     "SLICE": "Slice",
     "TDD": "TDD",
-    "REV": "Review and plugins",
-    "HO": "Handoff and transitions",
-    "BLK": "Blockers and recovery",
-    "INC": "Same-project increments",
-    "HIS": "History, reports, and rotation",
-    "GRAPH": "Invalid Artifact Graph",
-    "VER": "Version freshness",
-    "ORD": "Declared ordering",
-    "RST": "Session restart",
-    "PAR": "Adapter parity",
+    "REV": "Review 与插件",
+    "HO": "Handoff 与转换",
+    "BLK": "Blocker 与 Recovery",
+    "INC": "同项目增量",
+    "HIS": "历史、报告与轮换",
+    "GRAPH": "无效 Artifact Graph",
+    "VER": "版本新鲜度",
+    "ORD": "声明顺序",
+    "RST": "会话重启",
+    "PAR": "Adapter 一致性",
 }
+CSV_HEADERS = (
+    "用例编号",
+    "测试域",
+    "优先级",
+    "适配器",
+    "推荐前置快照",
+    "场景与操作",
+    "期望结果",
+    "状态",
+    "证据",
+    "缺陷编号",
+    "备注",
+)
 
 
 @dataclass(frozen=True)
@@ -268,6 +282,35 @@ def command_show(args: argparse.Namespace, cases: dict[str, Case]) -> None:
     print(f"Expected: {case.expected}")
 
 
+def case_adapters(case: Case) -> str:
+    if case.case_id == "IDE-INV-007":
+        return "codex"
+    if case.area == "INV":
+        return "copilot"
+    return "copilot,codex"
+
+
+def command_export(cases: dict[str, Case]) -> None:
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(CSV_HEADERS)
+    for case in cases.values():
+        writer.writerow(
+            (
+                case.case_id,
+                AREA_NAMES[case.area],
+                case.priority,
+                case_adapters(case),
+                case.baseline,
+                case.action,
+                case.expected,
+                "NOT RUN",
+                "",
+                "",
+                "",
+            )
+        )
+
+
 def command_init(args: argparse.Namespace) -> None:
     output = args.output.resolve()
     ensure_new_directory(output)
@@ -352,6 +395,8 @@ def build_parser() -> argparse.ArgumentParser:
     show_parser = subparsers.add_parser("show", help="Show one case")
     show_parser.add_argument("case_id")
 
+    subparsers.add_parser("export", help="Export all cases as UTF-8 CSV")
+
     init_parser = subparsers.add_parser(
         "init", help="Create a clean IDE test workspace"
     )
@@ -386,6 +431,8 @@ def main() -> int:
             command_list(args, cases)
         elif args.command == "show":
             command_show(args, cases)
+        elif args.command == "export":
+            command_export(cases)
         elif args.command == "init":
             command_init(args)
         elif args.command == "snapshot":
