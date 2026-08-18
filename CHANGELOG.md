@@ -36,6 +36,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Standardized all Codex and Copilot workflow launchers with explicit metadata,
+  invocation identity, authoritative read order, graph-derived authorization, and
+  canonical Handoff output sections. Copilot launchers now force `agent: agent`,
+  and `forge-plan` explicitly prohibits substitution or delegation to Copilot's
+  native planning mode.
+- Kept adapter launchers thin by directing every workflow to its authoritative
+  Framework, Protocol, and Workflow contracts instead of copying or redefining
+  their normative procedures.
 - Planning readiness now represents all currently approved project scope rather
   than asserting that every future module must be known during the initial Plan.
 - Same-project incremental planning preserves the active Artifact Root, Reports
