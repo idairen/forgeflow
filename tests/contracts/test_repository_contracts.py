@@ -21,6 +21,7 @@ class RepositoryContractTests(unittest.TestCase):
             "docs/guides/concept-and-architecture.md",
             "docs/testing/ide-test-plan.zh-CN.md",
             "docs/presentations/forgeflow-enterprise-roadshow.pdf",
+            "ARCHITECTURE.zh-CN.md",
         }
         removed_paths = {
             "forgeflow",
@@ -114,6 +115,9 @@ class RepositoryContractTests(unittest.TestCase):
 
     def test_architecture_declares_current_sources_comparison_and_boundaries(self):
         architecture = (ROOT / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        chinese_architecture = (ROOT / "ARCHITECTURE.zh-CN.md").read_text(
+            encoding="utf-8"
+        )
         required_references = {
             "./.forgeflow/forgeflow.md",
             "./.forgeflow/protocol/artifact.md",
@@ -134,8 +138,33 @@ class RepositoryContractTests(unittest.TestCase):
 
         for reference in required_references:
             self.assertIn(reference, architecture)
+            self.assertIn(reference, chinese_architecture)
         for boundary in required_boundaries:
             self.assertIn(boundary, architecture)
+
+        chinese_boundaries = {
+            "Technical Preview",
+            "Handoff 不会让 Artifact 自动变为真实",
+            "当前没有独立的 `update` 命令。",
+            "不提供、也不宣称已经验证它们的专用集成",
+            "真实 IDE Acceptance",
+        }
+        for boundary in chinese_boundaries:
+            self.assertIn(boundary, chinese_architecture)
+
+        expected_sections = [str(number) for number in range(1, 19)]
+        english_sections = [
+            line.split(".", 1)[0].removeprefix("## ")
+            for line in architecture.splitlines()
+            if line.startswith("## ") and line.removeprefix("## ")[:1].isdigit()
+        ]
+        chinese_sections = [
+            line.split(".", 1)[0].removeprefix("## ")
+            for line in chinese_architecture.splitlines()
+            if line.startswith("## ") and line.removeprefix("## ")[:1].isdigit()
+        ]
+        self.assertEqual(english_sections, expected_sections)
+        self.assertEqual(chinese_sections, expected_sections)
 
 
 if __name__ == "__main__":

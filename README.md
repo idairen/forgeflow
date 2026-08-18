@@ -126,8 +126,9 @@ Slice]
 ```
 
 **Read the full deep-dive:**  
-📖 [ARCHITECTURE.md](./ARCHITECTURE.md) — Current architecture, state model,
-execution boundaries, open-source comparison, advantages, and limitations.
+📖 [English](./ARCHITECTURE.md) · [中文](./ARCHITECTURE.zh-CN.md) — Current
+architecture, state model, execution boundaries, open-source comparison,
+advantages, and limitations.
 
 Public guides, testing documentation, and presentations are indexed in
 [docs/README.md](./docs/README.md).

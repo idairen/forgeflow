@@ -9,6 +9,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added `ARCHITECTURE.zh-CN.md` as the complete Chinese counterpart of the public
+  architecture document, preserving the same implemented architecture, comparison
+  scope, open-source advantages, limitations, and normative-source boundaries.
 - Added 40 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,

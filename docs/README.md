@@ -1,5 +1,10 @@
 # ForgeFlow Documentation
 
+## Architecture
+
+- [ForgeFlow Architecture](../ARCHITECTURE.md)
+- [ForgeFlow 架构](../ARCHITECTURE.zh-CN.md)
+
 ## Guides
 
 - [Concept and Architecture Guide](./guides/concept-and-architecture.md)
