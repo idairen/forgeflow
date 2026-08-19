@@ -9,6 +9,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added bilingual Markdown presentation guides under `docs/presentations/` that
+  position ForgeFlow as an Agent-Agnostic Engineering Protocol for leadership
+  audiences. The guides focus on strategic motivation, governing principles,
+  organizational value, a simplified leadership architecture, differentiation,
+  adoption guidance, and a sourced comparison with GitHub Spec Kit, OpenSpec,
+  BMAD Method, and SpecDD. They also present Plugin-Based Review as a governed
+  quality extension that preserves Review's canonical PASS/FAIL ownership while
+  keeping current capability boundaries explicit.
 - Added 13-page English and Chinese executive architecture briefs under
   `docs/presentations/`, positioning ForgeFlow as an AI engineering protocol above
   SDLC methods. The light executive layout covers protocol architecture, Workflow
@@ -18,7 +26,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Added `ARCHITECTURE.zh-CN.md` as the complete Chinese counterpart of the public
   architecture document, preserving the same implemented architecture, comparison
   scope, open-source advantages, limitations, and normative-source boundaries.
-- Added 42 dependency-free Python tests covering strict configuration, canonical
+- Added 43 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,
   paired Artifact/Report rotation, and repository integration contracts.

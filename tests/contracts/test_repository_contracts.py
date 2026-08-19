@@ -23,6 +23,8 @@ class RepositoryContractTests(unittest.TestCase):
             "docs/presentations/forgeflow-enterprise-roadshow.pdf",
             "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
             "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
+            "docs/presentations/forgeflow-engineering-protocol.en.md",
+            "docs/presentations/forgeflow-engineering-protocol.zh-CN.md",
             "scripts/build_executive_brief.py",
             "ARCHITECTURE.zh-CN.md",
         }
@@ -64,6 +66,40 @@ class RepositoryContractTests(unittest.TestCase):
             "方向，不是当前能力声明",
         ):
             self.assertIn(concept, generator)
+
+    def test_engineering_protocol_presentations_are_bilingual_and_current(self):
+        presentations = {
+            "en": ROOT / "docs/presentations/forgeflow-engineering-protocol.en.md",
+            "zh-CN": ROOT
+            / "docs/presentations/forgeflow-engineering-protocol.zh-CN.md",
+        }
+        required_concepts = {
+            "Agent-Agnostic Engineering Protocol",
+            "Artifact Graph",
+            "Return",
+            "Recovery",
+            "Codex",
+            "Copilot",
+            "GitHub Spec Kit",
+            "OpenSpec",
+            "BMAD Method",
+            "SpecDD",
+            "Plugin-Based Review",
+        }
+        for locale, path in presentations.items():
+            content = path.read_text(encoding="utf-8")
+            with self.subTest(locale=locale):
+                self.assertEqual(content.count("```mermaid"), 4)
+                for concept in required_concepts:
+                    self.assertIn(concept, content)
+                if locale == "en":
+                    self.assertIn("What makes ForgeFlow distinctive", content)
+                    self.assertIn("Recommended adoption path", content)
+                    self.assertIn("not a current validated-integration claim", content)
+                else:
+                    self.assertIn("ForgeFlow 与众不同的地方", content)
+                    self.assertIn("建议采用路径", content)
+                    self.assertIn("不是当前已验证集成", content)
 
     def test_json_documents_are_parseable(self):
         for relative in (

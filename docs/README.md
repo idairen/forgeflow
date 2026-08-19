@@ -20,5 +20,7 @@
 - [ForgeFlow enterprise roadshow](./presentations/forgeflow-enterprise-roadshow.pdf)
 - [Executive architecture brief - English](./presentations/forgeflow-executive-architecture-brief.en.pdf)
 - [管理层架构简报 - 中文](./presentations/forgeflow-executive-architecture-brief.zh-CN.pdf)
+- [Agent-Agnostic Engineering Protocol - English](./presentations/forgeflow-engineering-protocol.en.md)
+- [Agent-Agnostic Engineering Protocol - 中文](./presentations/forgeflow-engineering-protocol.zh-CN.md)
 
 The normative ForgeFlow contracts remain under [`.forgeflow/`](../.forgeflow/).
