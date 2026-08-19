@@ -1,212 +1,131 @@
 # Security Policy
 
-This document describes ForgeFlow's security posture and provides guidance for reporting vulnerabilities.
+ForgeFlow is a repository-native engineering protocol with optional IDE launchers
+and a Python orchestrator. This policy describes the implemented trust boundaries,
+supported versions, safe-use expectations, and vulnerability-reporting process.
 
----
+## Reporting A Vulnerability
 
-## Table of Contents
+Do not disclose suspected vulnerabilities in a public issue.
 
-- [1. How To Report A Vulnerability](#1-how-to-report-a-vulnerability)
-- [2. Supported Versions](#2-supported-versions)
-- [3. What Constitutes A Vulnerability](#3-what-constitutes-a-vulnerability)
-- [4. Security Considerations For Users](#4-security-considerations-for-users)
-- [5. Security Features Built Into ForgeFlow](#5-security-features-built-into-forgeflow)
-- [6. Incident Response Process](#6-incident-response-process)
+Report them by email to [idairen@qq.com](mailto:idairen@qq.com) with the subject
+`ForgeFlow Security Vulnerability Report`. Include:
 
----
+- the affected version, commit, Adapter, and host;
+- reproduction steps or a minimal repository;
+- expected and observed behavior;
+- the potential impact and affected files or credentials;
+- a proposed mitigation, if available.
 
-## 1. How To Report A Vulnerability
+The maintainer aims to acknowledge reports within 48 hours and provide an initial
+assessment within seven days. Resolution and disclosure timing depend on severity
+and whether an upstream Agent host or CLI is involved. Reporters receive credit
+unless they request anonymity.
 
-### Reporting Process
+GitHub Private Vulnerability Reporting should become the preferred channel after it
+is enabled for the public repository. Until then, use the email address above.
 
-If you discover a security vulnerability in ForgeFlow:
+## Supported Versions
 
-1. **Do NOT open a public GitHub issue** — vulnerabilities should be reported privately
-2. Email the maintainers at: **[idairen@qq.com](mailto:idairen@qq.com)** 
-3. Include a clear subject line: **"ForgeFlow Security Vulnerability Report"**
-4. Provide as much detail as possible:
-    - Description of the vulnerability
-    - Steps to reproduce
-    - Potential impact assessment
-    - Suggested fix (optional but helpful)
+ForgeFlow is currently a Technical Preview. Only the latest published release and
+the current default branch are eligible for security fixes. Pre-release protocol,
+Adapter, CLI, and installer behavior may change between minor versions.
 
-### Response Timeline
+| Version | Support |
+|---------|---------|
+| Latest published release | Security fixes when practicable |
+| Default branch | Development fixes; not a stable release |
+| Older releases | Upgrade required unless explicitly announced otherwise |
 
-| Stage | Target Timeframe | Action |
-|-------|------------------|--------|
-| Acknowledgment | Within 48 hours | Confirm receipt of report |
-| Initial Assessment | Within 1 week | Classify severity and impact |
-| Fix Development | Variable (P0: days, P3: months) | Develop patch |
-| Public Disclosure | Coordinated with maintainers | Release fix + announcement |
+## Trust Boundaries
 
-### What To Expect
+### Markdown Protocol Core
 
-- A maintainer will respond within 48 hours acknowledging your report
-- You may be asked for additional information or clarification
-- The team will keep you updated throughout the fix process
-- Credit will be given unless anonymity is requested
+The normative `.forgeflow/` framework is Markdown and JSON. Reading those files does
+not itself execute code. However, their content is consumed as instructions by an AI
+Agent. Treat framework files, project Artifacts, supplemental Reports, source code,
+and user input as potentially untrusted prompt input.
 
----
+Artifact ownership and Handoff validation constrain ForgeFlow state transitions.
+They do not sandbox an Agent, prove generated content is safe, or prevent a host from
+misinterpreting instructions.
 
-## 2. Supported Versions
+### IDE Hosts
 
-ForgeFlow follows a **rolling release** model. Only the latest version receives security patches.
+IDE execution inherits the permissions, network access, data-retention policy,
+authentication, model behavior, and tool controls of the selected host. ForgeFlow
+does not override those controls. Review host settings before exposing proprietary
+source code, secrets, customer data, or regulated information.
 
-| Version | Status | End of Support |
-|---------|--------|----------------|
-| Latest (e.g., v0.2.0) | Active development, all patches applied | N/A |
-| Previous minor versions | Bug fixes only, no new features | 6 months after latest release |
-| Older versions | No longer supported | Discontinued |
+### Python CLI Runner
 
-**Recommendation:** Always stay on the latest version for security updates.
+The optional `forge` CLI starts an external Agent process in the project root:
 
----
+- the Codex Adapter uses `codex exec` with a workspace-write sandbox;
+- the Copilot Adapter uses `gh copilot` with project-scoped `write` and `shell`
+  tools enabled non-interactively.
 
-## 3. What Constitutes A Vulnerability
+Commands are constructed with `asyncio.create_subprocess_exec` rather than shell
+interpolation, but the selected Agent may still read project files, modify source
+code, invoke tools, execute shell commands, and communicate with external services
+according to host permissions. ForgeFlow validates protocol output after execution;
+it cannot guarantee that an Agent made no unauthorized change before validation.
 
-### Examples Of Security Vulnerabilities
+### Installer And Local Evidence
 
-| Type | Example | Severity |
-|------|---------|----------|
-| **Remote Code Execution** | LLM prompt injection leading to arbitrary code execution | P0 (Critical) |
-| **Data Exfiltration** | Artifact files containing sensitive credentials sent to external API | P0 (Critical) |
-| **Local File Read** | ForgeFlow reads files outside the project directory without authorization | P1 (High) |
-| **Command Injection** | Unsafe shell execution in workflow commands | P1 (High) |
-| **Dependency Vulnerability** | Outdated package with known CVE | P2 (Medium) |
-| **Information Disclosure** | Sensitive metadata leaked in error messages | P2 (Medium) |
+The npx installer copies managed framework files into the current project. Forced
+refresh rejects symbolic links and preserves project-owned Artifacts, Reports,
+runtime evidence, supported configuration, and custom Review plugins.
 
-### Examples Of Non-Vulnerabilities
+`forge reset --force` rotates active Artifacts and Reports into timestamped sibling
+directories. It does not intentionally delete project source code. Backups are local
+files and are not encrypted by ForgeFlow.
 
-| Type | Example | Reason |
-|------|---------|--------|
-| Documentation typos | Wrong word in README.md | Not a security risk |
-| Minor style inconsistencies | Inconsistent code formatting | Cosmetic, not security-relevant |
-| Feature requests without security impact | "Add X feature" | Enhancement, not vulnerability |
+## Relevant Vulnerability Classes
 
----
+Reports are especially useful for:
 
-## 4. Security Considerations For Users
+- command, argument, path, or symlink injection in the CLI or installer;
+- reads or writes escaping the selected project root;
+- unsafe refresh or rotation that loses or overwrites project-owned evidence;
+- malformed Artifact or Handoff input bypassing authorization checks;
+- prompt injection that bypasses an implemented ForgeFlow security boundary;
+- secrets exposed through logs, runtime evidence, errors, packages, or fixtures;
+- supply-chain compromise of published npm or Python artifacts;
+- discrepancies that grant broader Agent permissions than documented.
 
-### Important Notes About ForgeFlow's Architecture
+Model hallucinations, insecure generated application code, and host behavior outside
+an implemented ForgeFlow boundary are not automatically ForgeFlow vulnerabilities.
+They may still justify a safety issue or documentation correction when ForgeFlow
+creates a misleading expectation.
 
-ForgeFlow is a **Markdown-driven orchestration tool**. It does not directly execute code or make network requests. However, users should be aware of:
+## Safe-Use Guidance
 
-#### Risk #1: LLM Backend Communication
+1. Run ForgeFlow on an isolated branch, worktree, or disposable copy.
+2. Apply the least privileges supported by the selected Agent host.
+3. Keep secrets out of prompts, Artifacts, Reports, fixtures, and source files
+   exposed to the Agent.
+4. Inspect `git diff`, generated evidence, executed commands, and Agent output before
+   accepting changes.
+5. Require the project's normal code review, tests, security checks, and deployment
+   controls; a ForgeFlow Review PASS is not a production approval.
+6. Treat third-party Review plugins and modified `.forgeflow/` files as executable
+   instructions for trust purposes, even though they are Markdown.
+7. Verify package provenance and checksums when installing published releases.
+8. Stop execution and preserve evidence if unexpected file access, network activity,
+   or tool invocation occurs.
 
-| Aspect | Detail | Mitigation |
-|--------|--------|------------|
-| Where data goes | Prompt content is sent to the configured LLM backend (OpenAI, Anthropic, etc.) | Only project-relevant Markdown is sent |
-| What gets sent | Workflow prompts + user intent | No source code is automatically included unless explicitly referenced |
-| Network dependency | Required for LLM API calls | Can be used offline with local models |
+## Maintainer Response Process
 
-#### Risk #2: Artifact File Content
+For a confirmed vulnerability, the maintainer will:
 
-| Aspect | Detail | Mitigation |
-|--------|--------|------------|
-| Who writes artifacts | The LLM generates Markdown content for `planning.md`, `solution-plan.md`, etc. | Review generated content before trusting it |
-| Where artifacts are stored | `.forgeflow/artifacts/` (local directory) | No external storage, no cloud sync |
-| Can artifacts be modified? | Only the owning workflow can modify its artifact | Cross-workflow modification is prevented by design |
+1. classify the affected trust boundary and versions;
+2. reproduce the issue in an isolated environment;
+3. develop a minimal fix and regression test when feasible;
+4. validate Python and npm package artifacts as applicable;
+5. publish a patched release and security advisory;
+6. credit the reporter and document mitigations unless disclosure must be delayed.
 
-#### Risk #3: CLI Execution Safety
-
-| Aspect | Detail | Mitigation |
-|--------|--------|------------|
-| Does `forge run` execute code? | **No** — it reads prompts and writes Markdown files | No shell commands are executed by the engine |
-| Does `reset --force` delete files? | Yes — removes `.forgeflow/artifacts/` | Only project-local files; never deletes source code |
-
-### Best Practices For Safe Usage
-
-1. **Review LLM-generated content** before trusting it for production decisions
-2. **Never store sensitive credentials** in artifact files (planning.md, solution-plan.md, etc.)
-3. **Use version control** to track changes and revert if needed
-4. **Limit LLM API access** — use tokens with minimum required permissions
-5. **Keep ForgeFlow updated** — install the latest version for security fixes
-
----
-
-## 5. Security Features Built Into ForgeFlow
-
-ForgeFlow incorporates several design principles that inherently reduce security risk:
-
-| Feature | How It Helps | Limitations |
-|---------|-------------|-------------|
-| **Local-first architecture** | All data stays on your machine; no cloud storage dependency | No built-in encryption for stored artifacts |
-| **No external service calls** | ForgeFlow itself does not make HTTP requests | LLM backends (OpenAI, Anthropic) do communicate externally |
-| **Artifacts are Markdown only** | No executable code is generated or executed by ForgeFlow | Users may place code in artifacts; review recommended |
-| **Single data source (config.json)** | Centralized configuration reduces inconsistency attacks | Config file permissions not enforced by ForgeFlow |
-| **Plugin system validation** | Plugin rules must follow checklist format | LLM executes rule interpretation; quality depends on user-written rules |
-
-### Security By Design Principles
-
-1. **Zero Trust**: Assume every LLM-generated artifact could contain incorrect or harmful content
-2. **Least Privilege**: ForgeFlow only has read/write access to project-local files
-3. **Fail Securely**: Handoff validation failures stop execution rather than proceeding with invalid state
-4. **Audit Trail**: All artifacts are version-tracked (via git); resets create timestamped archives
-
----
-
-## 6. Incident Response Process
-
-When a security vulnerability is confirmed:
-
-### Step 1: Classification
-
-| Severity | Definition | Response Time |
-|----------|------------|---------------|
-| **P0 (Critical)** | RCE, data breach, arbitrary code execution, credential theft | Immediate — fix within hours/days |
-| **P1 (High)** | Local file read, command injection, significant privilege escalation | Within days |
-| **P2 (Medium)** | Information disclosure, minor privilege escalation, DoS vector | Within weeks |
-| **P3 (Low)** | Cosmetic security concern, informational vulnerability, hardening suggestion | Next release cycle |
-
-### Step 2: Patch Development
-
-- Develop patch against `dev` branch
-- Add regression test if applicable
-- Self-review and peer-review required
-
-### Step 3: Testing
-
-| Test | Description |
-|------|-------------|
-| Unit test | Verify the fix resolves the vulnerability |
-| Regression test | Ensure no existing functionality is broken |
-| Integration test | End-to-end flow with `forge run --reset` |
-
-### Step 4: Release
-
-- Bump version in `pyproject.toml`
-- Write changelog entry under "Security Fixes" section
-- Merge to `dev`, then to `main`
-- Publish release announcement with advisory details
-
----
-
-## Quick Reference
-
-### Reporting A Vulnerability — Checklist
-
-- [ ] Do NOT open a public issue
-- [ ] Email: dairen@example.com (subject: "ForgeFlow Security Vulnerability Report")
-- [ ] Include description, reproduction steps, impact assessment
-- [ ] Expect acknowledgment within 48 hours
-- [ ] Stay updated through private communication channel
-
-### Supported Versions
-
-| Version | Support Status |
-|---------|---------------|
-| Latest | Active (all patches applied) |
-| Previous minor | Bug fixes only |
-| Older | No longer supported — upgrade immediately |
-
-### Security Best Practices
-
-1. Review LLM-generated artifacts before trusting
-2. Never store credentials in artifact files
-3. Keep ForgeFlow updated to latest version
-4. Use local models when available for sensitive projects
-5. Enable version control (git) for artifact tracking
-
----
-
-Thank you for helping keep ForgeFlow secure!
+No response-time guarantee is made for this Technical Preview, but critical reports
+involving code execution, credential exposure, project-root escape, or destructive
+file operations receive priority.

@@ -1,0 +1,40 @@
+name: Protocol change proposal
+description: Propose a change to normative ForgeFlow behavior
+title: "[Protocol]: "
+labels: [protocol]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Protocol problem
+      description: Identify the current contradiction, ambiguity, or missing invariant.
+    validations:
+      required: true
+  - type: textarea
+    id: ownership
+    attributes:
+      label: Ownership and scope impact
+      description: List affected Workflows, Scopes, Artifacts, and decision owners.
+    validations:
+      required: true
+  - type: textarea
+    id: transitions
+    attributes:
+      label: Transition impact
+      description: Explain Forward, Return, Recovery, incremental, stale-evidence, and terminal consequences.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and migration
+      description: Describe existing evidence or installations that could become invalid.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Proposed validation
+      description: Include deterministic tests and any required real-host acceptance cases.
+    validations:
+      required: true

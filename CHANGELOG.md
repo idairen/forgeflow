@@ -9,6 +9,22 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added an open-source community baseline with a Code of Conduct, maintainer-led
+  governance, support boundaries, public roadmap, CODEOWNERS, structured bug,
+  feature, and protocol-change issue forms, a pull-request template, and monthly
+  Dependabot checks for GitHub Actions, Python, and npm metadata.
+- Added a maintainer release checklist covering synchronized versions, clean-tree
+  verification, installable Python and npm artifacts, critical real-host acceptance,
+  GitHub repository controls, publication prerequisites, and post-release checks.
+- Added a packaged-artifact CI job that builds Python source and wheel distributions,
+  installs the wheel into a clean environment, verifies the embedded framework, and
+  installs the npx command from its packed tarball into a temporary project.
+- Added repository contract coverage for public governance files and synchronized
+  versions across `pyproject.toml`, `package.json`, and the Python module.
+- Added IDE acceptance `summary` and `release-gate` commands. They parse centralized
+  real-host result records, reject incomplete or duplicate evidence, report outcomes
+  by priority and Adapter, require all 199 P0 cases to pass, and block releases for
+  recorded P1 failures or blockers. Added focused unit coverage for the gate.
 - Added bilingual Markdown presentation guides under `docs/presentations/` that
   position ForgeFlow as an Agent-Agnostic Engineering Protocol for leadership
   audiences. The guides focus on strategic motivation, governing principles,
@@ -78,6 +94,24 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Rewrote the security policy around the implemented Markdown, IDE-host, external
+  Agent CLI, installer, and local-evidence trust boundaries. It now documents that
+  CLI execution can grant project writes and shell tools, identifies relevant
+  vulnerability classes, and removes inaccurate no-code-execution, offline-model,
+  config-name, reset-deletion, and branch-support claims.
+- Replaced the stale contribution workflow with the current `main`-based process,
+  repository layout, quality commands, protocol and package contribution rules,
+  real-host evidence requirements, and MIT contribution terms.
+- Tightened README claims by describing ForgeFlow as a gated lifecycle with Return
+  and Recovery, limiting deterministic claims to validated authorization, and making
+  npm registry availability conditional on a corresponding public release.
+- Ignored local `tmp/` document-generation scratch data without deleting existing
+  macOS or browser-generated files.
+- Centralized newly prepared IDE result records under the ignored
+  `tests/acceptance/ide/results/` root and documented evidence-completion and
+  machine-checkable release-gate usage without changing any case to PASS.
+- Resynchronized the generated IDE acceptance CSV with the authoritative test plan
+  for the two invocation-scope cases whose scenario punctuation had drifted.
 - Enforced invocation-scoped execution across the Core, Handoff Protocol, and
   scoped Workflow contracts. Grill and Slice now process exactly one
   Feature per execution; TDD and Review process exactly one Slice or Slice attempt.

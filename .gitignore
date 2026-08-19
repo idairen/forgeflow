@@ -55,5 +55,8 @@ Thumbs.db
 .forgeflow/reports.*/
 *.forgeflow.zip
 
+# Local document-generation scratch data
+/tmp/
+
 # Config overrides / local testing
 local_*.json

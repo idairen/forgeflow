@@ -585,6 +585,17 @@ Copilot total / passed
 Codex total / passed
 ```
 
+仓库提供本地汇总和准出命令：
+
+```bash
+python3 tests/acceptance/ide/manage.py summary
+python3 tests/acceptance/ide/manage.py release-gate
+```
+
+`release-gate` 不执行 IDE 或 Agent。它只检查结果目录中的真实执行记录，
+拒绝仍含 `TODO` 的 PASS，并要求所有 P0 都通过；已记录的 P1 FAIL/BLOCKED
+同样阻止发布。
+
 ## 25. 发布准出标准
 
 只有同时满足以下条件，才能认为当前 ForgeFlow IDE 核心框架通过验收：

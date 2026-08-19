@@ -1,4 +1,5 @@
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -15,6 +16,7 @@ class RepositoryContractTests(unittest.TestCase):
         required_paths = {
             "src/forgeflow/__init__.py",
             "tests/unit/test_artifact_parser.py",
+            "tests/unit/test_ide_acceptance_manager.py",
             "tests/integration/test_runner_protocol.py",
             "tests/contracts/test_repository_contracts.py",
             "tests/acceptance/ide/manage.py",
@@ -27,6 +29,19 @@ class RepositoryContractTests(unittest.TestCase):
             "docs/presentations/forgeflow-engineering-protocol.zh-CN.md",
             "scripts/build_executive_brief.py",
             "ARCHITECTURE.zh-CN.md",
+            "CODE_OF_CONDUCT.md",
+            "GOVERNANCE.md",
+            "ROADMAP.md",
+            "SUPPORT.md",
+            "SECURITY.md",
+            "CONTRIBUTING.md",
+            ".github/CODEOWNERS",
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            ".github/ISSUE_TEMPLATE/protocol_change.yml",
+            ".github/dependabot.yml",
+            "docs/maintainers/releasing.md",
         }
         removed_paths = {
             "forgeflow",
@@ -110,6 +125,26 @@ class RepositoryContractTests(unittest.TestCase):
             with self.subTest(path=relative):
                 parsed = json.loads((ROOT / relative).read_text(encoding="utf-8"))
                 self.assertIsInstance(parsed, dict)
+
+    def test_distribution_versions_are_synchronized(self):
+        package_version = json.loads(
+            (ROOT / "package.json").read_text(encoding="utf-8")
+        )["version"]
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        package_init = (ROOT / "src/forgeflow/__init__.py").read_text(
+            encoding="utf-8"
+        )
+        pyproject_version = re.search(
+            r'^version = "([^"]+)"$', pyproject, re.MULTILINE
+        )
+        module_version = re.search(
+            r'^__version__ = "([^"]+)"$', package_init, re.MULTILINE
+        )
+
+        self.assertIsNotNone(pyproject_version)
+        self.assertIsNotNone(module_version)
+        self.assertEqual(pyproject_version.group(1), package_version)
+        self.assertEqual(module_version.group(1), package_version)
 
     def test_workflow_and_adapter_sets_are_symmetric(self):
         workflows = {

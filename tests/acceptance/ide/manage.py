@@ -8,6 +8,7 @@ import csv
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 
@@ -15,6 +16,7 @@ import sys
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 PLAN_PATH = REPOSITORY_ROOT / "docs" / "testing" / "ide-test-plan.zh-CN.md"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "python-project"
+RESULTS_PATH = Path(__file__).resolve().parent / "results"
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",
     "forgeflow.schema.json",
@@ -73,6 +75,7 @@ CSV_HEADERS = (
     "缺陷编号",
     "备注",
 )
+RESULT_STATUSES = ("PASS", "FAIL", "BLOCKED", "NOT RUN")
 
 
 @dataclass(frozen=True)
@@ -86,6 +89,15 @@ class Case:
     @property
     def baseline(self) -> str:
         return AREA_BASELINES[self.area]
+
+
+@dataclass(frozen=True)
+class Result:
+    case_id: str
+    adapter: str
+    status: str
+    defect_id: str
+    path: Path
 
 
 def _cells(line: str) -> list[str]:
@@ -257,6 +269,155 @@ def render_result(case: Case, adapter: str) -> str:
 """
 
 
+def _result_table_value(content: str, field: str, path: Path) -> str:
+    pattern = re.compile(
+        rf"^\|\s*{re.escape(field)}\s*\|\s*(.*?)\s*\|$",
+        re.MULTILINE,
+    )
+    values = pattern.findall(content)
+    if len(values) != 1:
+        raise ValueError(f"Expected one {field!r} field in result: {path}")
+    return values[0].strip()
+
+
+def load_results(root: Path, cases: dict[str, Case]) -> list[Result]:
+    if not root.exists():
+        return []
+    if not root.is_dir():
+        raise ValueError(f"Results root is not a directory: {root}")
+
+    results: list[Result] = []
+    seen: set[tuple[str, str]] = set()
+    for path in sorted(root.rglob("*.result.md")):
+        content = path.read_text(encoding="utf-8")
+        heading = re.search(r"^# (IDE-[A-Z]+-\d{3}) Test Result$", content, re.MULTILINE)
+        if heading is None:
+            raise ValueError(f"Missing canonical result heading: {path}")
+        case_id = heading.group(1)
+        case = cases.get(case_id)
+        if case is None:
+            raise ValueError(f"Unknown case in result {path}: {case_id}")
+
+        adapter = _result_table_value(content, "Adapter", path).lower()
+        if adapter not in case_adapters(case).split(","):
+            raise ValueError(
+                f"Adapter {adapter!r} is not applicable to {case_id}: {path}"
+            )
+        status = _result_table_value(content, "Status", path).upper()
+        if status not in RESULT_STATUSES:
+            raise ValueError(f"Unsupported result status {status!r}: {path}")
+        defect_id = _result_table_value(content, "Defect ID", path)
+        if status == "PASS":
+            unresolved_table_value = re.search(
+                r"^\|\s*[^|]+\s*\|\s*TODO\s*\|$", content, re.MULTILINE
+            )
+            unresolved_evidence = re.search(
+                r"^- [^:\n]+: TODO$", content, re.MULTILINE
+            )
+            if unresolved_table_value or unresolved_evidence:
+                raise ValueError(
+                    f"PASS result still contains TODO placeholders: {path}"
+                )
+            if defect_id.upper() != "NONE":
+                raise ValueError(f"PASS result must use Defect ID NONE: {path}")
+
+        key = (case_id, adapter)
+        if key in seen:
+            raise ValueError(
+                f"Duplicate result for {case_id} and {adapter} under {root}"
+            )
+        seen.add(key)
+        results.append(Result(case_id, adapter, status, defect_id, path))
+    return results
+
+
+def case_outcomes(
+    cases: dict[str, Case], results: list[Result]
+) -> dict[str, str]:
+    by_case: dict[str, list[str]] = {}
+    for result in results:
+        by_case.setdefault(result.case_id, []).append(result.status)
+
+    outcomes: dict[str, str] = {}
+    for case_id in cases:
+        statuses = by_case.get(case_id, [])
+        if "FAIL" in statuses:
+            outcomes[case_id] = "FAIL"
+        elif "BLOCKED" in statuses:
+            outcomes[case_id] = "BLOCKED"
+        elif "PASS" in statuses:
+            outcomes[case_id] = "PASS"
+        else:
+            outcomes[case_id] = "NOT RUN"
+    return outcomes
+
+
+def print_summary(cases: dict[str, Case], results: list[Result]) -> None:
+    outcomes = case_outcomes(cases, results)
+    for priority in ("P0", "P1", "P2"):
+        selected = [
+            outcomes[case.case_id]
+            for case in cases.values()
+            if case.priority == priority
+        ]
+        counts = {status: selected.count(status) for status in RESULT_STATUSES}
+        print(
+            f"{priority}: total={len(selected)} pass={counts['PASS']} "
+            f"fail={counts['FAIL']} blocked={counts['BLOCKED']} "
+            f"not_run={counts['NOT RUN']}"
+        )
+
+    for adapter in ("copilot", "codex"):
+        selected = [result for result in results if result.adapter == adapter]
+        passed = sum(result.status == "PASS" for result in selected)
+        print(f"{adapter}: recorded={len(selected)} pass={passed}")
+
+
+def command_summary(args: argparse.Namespace, cases: dict[str, Case]) -> None:
+    results = load_results(args.results.resolve(), cases)
+    print_summary(cases, results)
+
+
+def command_release_gate(args: argparse.Namespace, cases: dict[str, Case]) -> int:
+    results = load_results(args.results.resolve(), cases)
+    outcomes = case_outcomes(cases, results)
+    print_summary(cases, results)
+
+    incomplete_p0 = [
+        case_id
+        for case_id, case in cases.items()
+        if case.priority == "P0" and outcomes[case_id] != "PASS"
+    ]
+    recorded_p1_failures = [
+        case_id
+        for case_id, case in cases.items()
+        if case.priority == "P1" and outcomes[case_id] in {"FAIL", "BLOCKED"}
+    ]
+    if incomplete_p0 or recorded_p1_failures:
+        print("RELEASE GATE: BLOCKED")
+        if incomplete_p0:
+            print(
+                f"P0 cases not passed ({len(incomplete_p0)}): "
+                + _format_case_ids(incomplete_p0)
+            )
+        if recorded_p1_failures:
+            print(
+                "Recorded P1 failures/blockers "
+                f"({len(recorded_p1_failures)}): "
+                + _format_case_ids(recorded_p1_failures)
+            )
+        return 1
+
+    print("RELEASE GATE: PASS")
+    return 0
+
+
+def _format_case_ids(case_ids: list[str], limit: int = 20) -> str:
+    visible = case_ids[:limit]
+    suffix = "" if len(case_ids) <= limit else f", ... (+{len(case_ids) - limit} more)"
+    return ", ".join(visible) + suffix
+
+
 def command_list(args: argparse.Namespace, cases: dict[str, Case]) -> None:
     selected = sorted(cases.values(), key=lambda case: case.case_id)
     if args.area:
@@ -342,7 +503,7 @@ def command_prepare(args: argparse.Namespace, cases: dict[str, Case]) -> None:
     result_path = (
         args.result.resolve()
         if args.result
-        else output.parent / f"{output.name}.{case.case_id}.result.md"
+        else RESULTS_PATH / f"{case.case_id}.{args.adapter}.result.md"
     )
     if result_path.exists() or result_path.is_symlink():
         raise FileExistsError(f"Result file already exists: {result_path}")
@@ -418,6 +579,16 @@ def build_parser() -> argparse.ArgumentParser:
     prepare_parser.add_argument("--output", type=Path, required=True)
     prepare_parser.add_argument("--result", type=Path)
 
+    summary_parser = subparsers.add_parser(
+        "summary", help="Summarize recorded real-host results"
+    )
+    summary_parser.add_argument("--results", type=Path, default=RESULTS_PATH)
+
+    gate_parser = subparsers.add_parser(
+        "release-gate", help="Require all P0 real-host cases to pass"
+    )
+    gate_parser.add_argument("--results", type=Path, default=RESULTS_PATH)
+
     subparsers.add_parser("verify", help="Verify the case catalog and Prompt set")
     return parser
 
@@ -439,6 +610,10 @@ def main() -> int:
             command_snapshot(args)
         elif args.command == "prepare":
             command_prepare(args, cases)
+        elif args.command == "summary":
+            command_summary(args, cases)
+        elif args.command == "release-gate":
+            return command_release_gate(args, cases)
         elif args.command == "verify":
             command_verify(cases)
         else:

@@ -16,8 +16,8 @@ evidence authoritative across CLI and IDE-assisted execution.
 - 🔄 **Artifact-Driven**: All project state lives in structured Markdown files — no database, external services, or heavy runtimes required.
 - 🤖 **Portable Protocol**: Dedicated launchers are supplied for Codex and GitHub Copilot. Other Markdown-capable agents can read the framework manually, but are not currently supported integrations.
 - 🔌 **Plugin-Based Reviews**: Extensible review pipeline for security, coding standards, architecture, performance, and more — all defined in pure Markdown rules.
-- 🛡️ **Deterministic Handoffs**: Strict transition protocol ensures every AI agent follows the same decision path, eliminating context drift.
-- ⚡ **Zero Runtime Dependency**: The core framework is pure Markdown. Python provides a lightweight CLI orchestrator, but the logic runs entirely through LLM prompts and artifact validation.
+- 🛡️ **Validated Handoffs**: Strict transition validation narrows the authorized next Workflow and Scope, reducing silent state drift without claiming control over every external Agent action.
+- ⚡ **Lightweight Core**: The normative framework is Markdown and JSON. The optional dependency-free Python runtime adds parsing, state resolution, validation, and Agent CLI orchestration.
 
 ---
 
@@ -29,7 +29,8 @@ The `@idairen/forgeflow` npm distribution is an installer only. It copies the
 current Markdown framework and `forgeflow.json` into the current project; it does
 not install or replace the Python `forge` CLI. Node.js 18 or newer is required.
 
-When consuming the published npm distribution, run this from the target project:
+After a corresponding public npm release is available, run this from the target
+project:
 
 ```bash
 npx @idairen/forgeflow@latest init --adapter copilot   # or codex
@@ -44,7 +45,9 @@ npx @idairen/forgeflow@latest init --adapter copilot --force
 
 The npx package intentionally provides no `plan`, `run`, `status`, `reset`, or
 `handoff` command. Install the Python CLI below when command-line orchestration is
-required.
+required. Until the first public npm release is verified, use a source checkout and
+run `node npm/bin/forgeflow.js init --adapter copilot` instead of assuming the
+`@latest` command is available.
 
 ### Install the optional Python CLI
 
@@ -75,7 +78,7 @@ python -m pip install -e .
 
 ## Quick Start
 
-For IDE-only use:
+For IDE-only use after the public npm package is available:
 
 ```bash
 npx @idairen/forgeflow@latest init --adapter copilot   # or codex
@@ -101,7 +104,9 @@ temporary project and includes protocol-valid comparison artifacts, see
 
 ## Architecture Overview
 
-ForgeFlow follows a **6-stage linear pipeline** driven by an artifact graph and deterministic handoff protocol:
+ForgeFlow defines a **gated six-Workflow execution lifecycle** driven by an Artifact
+Graph and validated Handoff protocol. Forward progress is ordered, while Return and
+Recovery paths deliberately make the model non-linear:
 
 ```mermaid
 graph LR
@@ -262,7 +267,14 @@ A: ForgeFlow does not claim that autonomous model output is safe for production.
 
 ## Contributing
 
-We welcome contributions! Please see [ARCHITECTURE.md](./ARCHITECTURE.md) for the official workflow specification and [PLUGINS.md](./PLUGINS.md) for extension guidelines.  
+We welcome contributions. Start with [CONTRIBUTING.md](./CONTRIBUTING.md), use
+[ARCHITECTURE.md](./ARCHITECTURE.md) for the public architecture, and see
+[PLUGINS.md](./PLUGINS.md) for Review extension guidelines. Community expectations,
+support boundaries, governance, roadmap direction, and private security reporting
+are documented in [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md),
+[SUPPORT.md](./SUPPORT.md), [GOVERNANCE.md](./GOVERNANCE.md),
+[ROADMAP.md](./ROADMAP.md), and [SECURITY.md](./SECURITY.md).
+
 Before submitting a PR, ensure:
 1. Your changes align with the artifact-driven contract (no hardcoded state).
 2. Handoff blocks follow the canonical format (`### Handoff` with typed transitions).

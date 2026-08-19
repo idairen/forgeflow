@@ -133,10 +133,10 @@ python3 tests/acceptance/ide/manage.py prepare IDE-GRAPH-002 \
 
 ## 7. 记录结果
 
-默认结果文件示例：
+默认结果文件集中保存在本地 `results/` 目录，并且不会提交到 Git：
 
 ```text
-tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
+tests/acceptance/ide/results/IDE-GRAPH-002.copilot.result.md
 ```
 
 填写：
@@ -151,7 +151,29 @@ tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
 
 结果文件位于测试工作区之外，避免被 Agent 当作项目需求或 Review 输入。
 
-## 8. 推荐执行顺序
+将 `Status` 改为 `PASS` 前，必须替换结果模板里的全部 `TODO`，并保持
+`Defect ID = NONE`。包含占位内容的 PASS 会被汇总工具拒绝。
+
+## 8. 汇总与发布门禁
+
+汇总当前本地真实执行结果：
+
+```bash
+python3 tests/acceptance/ide/manage.py summary
+```
+
+执行 IDE 发布准出门禁：
+
+```bash
+python3 tests/acceptance/ide/manage.py release-gate
+```
+
+门禁要求全部 199 个 P0 用例有完整的真实 `PASS` 证据。任何未执行、失败
+或阻塞的 P0，以及已经记录的 P1 `FAIL`/`BLOCKED`，都会返回非零退出码。
+该命令只读取结果记录，不执行 IDE、不调用 Agent，也不会把准备好的用例
+视为通过。
+
+## 9. 推荐执行顺序
 
 ```text
 1. manage.py verify
@@ -160,7 +182,8 @@ tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot.IDE-GRAPH-002.result.md
 4. 执行批次 B：生成 S1–S7
 5. 从快照复制批次 C/D/E 用例
 6. 执行 Adapter parity
-7. 汇总发布准出结果
+7. 执行 `manage.py summary`
+8. 执行 `manage.py release-gate`
 ```
 
 完整期望结果、优先级和准出规则以 `docs/testing/ide-test-plan.zh-CN.md` 为准。
