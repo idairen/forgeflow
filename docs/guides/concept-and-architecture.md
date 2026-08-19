@@ -2,7 +2,7 @@
 
 > Public introduction to the current ForgeFlow framework.
 >
-> Framework version: 2.5 · Artifact Protocol: 2.5 · Handoff Protocol: 2.7 · Workflow specifications: 2.5
+> Framework version: 2.6 · Artifact Protocol: 2.5 · Handoff Protocol: 2.8 · Workflow specifications: 2.5-2.6
 
 [中文版](./concept-and-architecture.zh-CN.md)
 
@@ -111,6 +111,19 @@ numbers, creation timestamps, or remembered conversation order as work priority.
 
 This makes execution restartable: a new process can determine the next legal action
 without relying on the process that ran before it.
+
+### 3.5 Each execution consumes one authorization
+
+A workflow invocation may perform productive work only for its validated Workflow
+and Target Scope. Resolving the next Feature, Slice, or Workflow does not authorize
+the current invocation to continue into it. The current invocation emits a
+Canonical Handoff and stops; a subsequent invocation validates that Handoff before
+working at the new scope.
+
+In practice, Grill and Slice each process one Feature per execution, TDD implements
+one Slice, and Review evaluates one Slice attempt. A Slice Plan may define multiple
+future Slices, but defining them is not permission to execute them. This boundary
+prevents one Agent turn from silently consuming several ordered units of work.
 
 ## 4. Architecture at a glance
 

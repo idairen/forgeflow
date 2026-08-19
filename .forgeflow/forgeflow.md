@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.5
+Version: 2.6
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.5 | `forgeflow.md` |
+| Framework | 2.6 | `forgeflow.md` |
 | Artifact Protocol | 2.5 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.7 | `protocol/handoff.md` |
+| Handoff and Transition Protocol | 2.8 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -159,6 +159,34 @@ ForgeFlow defines exactly six canonical workflows, each owning one artifact type
 
 These workflows communicate through handoffs. The Transition Resolution Procedure
 determines which workflow runs next; the Handoff Protocol carries the decision.
+
+## Execution scope isolation
+
+A workflow execution is one authorized invocation of exactly one Workflow at exactly
+one Target Scope. A workflow execution MUST NOT consume a future execution scope
+unless that scope is explicitly provided by the incoming Canonical Handoff. A
+Bootstrap, Incremental Intent, or Recovery Entry authorizes only its exact entry
+scope and never authorizes future progression.
+
+A future execution scope is any Workflow or Target Scope other than the invocation's
+validated authorization, including a different Feature owned by the same Workflow
+or a later Slice selected after the current Slice completes. Once the Transition
+Resolution Procedure selects such a scope, the current execution MUST only emit the
+required Canonical Handoff and stop. It MUST NOT analyze, question, create or modify
+artifacts, run commands, implement, or review work for that future scope.
+
+Therefore:
+
+- one Grill execution processes at most one Feature and writes at most that
+  Feature's Requirement;
+- one Slice execution processes at most one Feature and writes at most that
+  Feature's Slice Plan, although that plan may declare multiple future Slices;
+- one TDD execution implements at most one Slice; and
+- one Review execution evaluates at most one Slice attempt.
+
+Clarification turns may continue without a Handoff only while the Workflow and
+Target Scope remain identical. A same-Workflow transition to another Feature or
+Slice is a new execution, not an in-invocation loop.
 
 ## Canonical flow
 
@@ -314,7 +342,8 @@ A conforming implementation MUST:
 4. enforce all four barriers;
 5. use typed handoffs and the deterministic Transition Resolution Procedure;
 6. preserve immutable review attempts;
-7. reject execution whose Target Scope differs from a fresh procedure result;
+7. reject execution whose Target Scope differs from a fresh procedure result and
+   prevent an execution from consuming any subsequently selected future scope;
 8. construct the active artifact graph only from valid Canonical Artifact Paths;
 9. preserve unaffected Feature evidence across valid same-project increments; and
 10. exclude both Artifact History and Reports History from current progression.

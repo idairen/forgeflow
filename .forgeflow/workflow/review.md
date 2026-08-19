@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.5
+Version: 2.6
 
 ## Contract
 
@@ -13,6 +13,10 @@ Version: 2.5
 
 Review independently evaluates exactly one resolver-authorized Slice attempt. It
 is read-only with respect to code, tests, upstream plans, and the TDD Record.
+The incoming Slice Target Scope and attempt are the complete authorization boundary
+for this execution. A PASS or FAIL may select a future execution scope, but Review
+MUST only emit that Handoff and stop; it MUST NOT fix, implement, review, or create
+evidence for the selected target in this execution.
 
 ## Entry validation
 
@@ -76,7 +80,7 @@ never replace or independently determine the core Review Report fields.
    include return metadata only when applicable.
 8. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
-   final content of the response.
+   final content of the response, then stop without consuming its Target Scope.
 
 
 

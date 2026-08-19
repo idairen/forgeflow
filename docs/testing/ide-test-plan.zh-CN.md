@@ -25,7 +25,7 @@
 
 “全场景”在本文中指覆盖当前规范定义的全部行为类别、入口类型、转换类型、工作流所有权和错误类型，而不是穷举所有自然语言表达或所有文件系统故障组合。
 
-当前基线包含 215 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
+当前基线包含 220 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
 
 ## 2. 不在本轮范围内
 
@@ -256,6 +256,7 @@ pyproject.toml
 | IDE-GRILL-010 | 当前 Feature 完成，另一个 Feature Requirement 缺失 | FORWARD 到声明顺序中的下一个 Feature，而不是按文件名/编号排序 | P0 |
 | IDE-GRILL-011 | 全部 Requirement 当前且 READY | FORWARD 到 Solution Project scope，满足 BUSINESS_READY | P0 |
 | IDE-GRILL-012 | Requirement 已存在且规范内容变化 | 先将旧版本精确归档，再写更高版本；其他工作流制品不被修改 | P0 |
+| IDE-GRILL-013 | Handoff 指向 F-02，F-03 仍缺 Requirement | 本轮只生成 F-02 Requirement；输出指向 F-03 的 FORWARD 并立即停止，不分析、提问或生成 F-03 Requirement | P0 |
 
 ## 10. Solution 场景
 
@@ -294,6 +295,7 @@ pyproject.toml
 | IDE-SLICE-012 | 只有部分 Feature 具备 Slice Plan | 不得提前进入 TDD | P0 |
 | IDE-SLICE-013 | 所有 Feature 的 Slice Plan 当前且 READY | 达到 DELIVERY_READY，FORWARD 到第一个声明顺序中的 Slice/TDD | P0 |
 | IDE-SLICE-014 | 修改一个 Feature 的拆分 | 只提高该 Slice Plan 版本；该 Feature 旧 TDD/Review 变过期，其他 Feature 不受影响 | P0 |
+| IDE-SLICE-015 | Handoff 指向 F-02，F-03 仍缺 Slice Plan | 本轮只生成 F-02 Slice Plan；输出指向 F-03 的 FORWARD 并立即停止，不生成 F-03 Slice Plan 或执行任何 Slice | P0 |
 
 ## 12. TDD 场景
 
@@ -319,6 +321,7 @@ pyproject.toml
 | IDE-TDD-018 | 连续运行多个测试命令 | 复用同一终端/会话并顺序执行；不为每条命令创建新终端 | P1 |
 | IDE-TDD-019 | Slice 需要短时启动服务 | 记录必要并发原因，并在 Handoff 前终止所有启动进程 | P0 |
 | IDE-TDD-020 | 前一个 Feature 尚有未完成 Slice | 不得跳到后续 Feature，即使其编号更小或用户明确要求 | P0 |
+| IDE-TDD-021 | 当前 Slice 达到 READY_FOR_REVIEW | 只写当前 TDD Record 并 FORWARD Review；本轮不得执行 Review 或开始下一个 Slice | P0 |
 
 ## 13. Review 与插件场景
 
@@ -347,6 +350,7 @@ pyproject.toml
 | IDE-REV-021 | PASS 后仍有未完成 Slice | FORWARD 到 Resolver 选出的下一 TDD Slice | P0 |
 | IDE-REV-022 | 最后一个 Slice PASS | 输出 TERMINAL/COMPLETE，Completed Scope 为 Project | P0 |
 | IDE-REV-023 | FAIL 后修复并生成新 TDD attempt | 旧 FAIL 保留但不再控制新 attempt；新 Review 独立判断 | P0 |
+| IDE-REV-024 | 当前 Slice PASS 且 Resolver 选出下一 Slice | 只写当前 Review Report 并 FORWARD TDD；本轮不得实现下一 Slice | P0 |
 
 ## 14. Handoff 与转换场景
 
@@ -368,6 +372,7 @@ pyproject.toml
 | IDE-HO-014 | 在新聊天中提供上一步有效 Handoff | 重新读取当前图并验证，不依赖旧聊天记忆 | P0 |
 | IDE-HO-015 | 在新聊天中提供旧版本 Handoff | 因证据过期拒绝执行 | P0 |
 | IDE-HO-016 | 复制 Handoff 但遗漏前导标题或表结构 | 视为无效 Handoff，不执行生产性工作 | P1 |
+| IDE-HO-017 | 当前执行解析出不同 Workflow 或 Target Scope | 仅输出对应 Canonical Handoff 并停止；不得在同一执行中预先消费目标 Scope | P0 |
 
 ## 15. Blocker 与 Recovery 场景
 

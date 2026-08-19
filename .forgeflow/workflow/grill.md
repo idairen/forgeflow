@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.5
+Version: 2.6
 
 ## Contract
 
@@ -13,6 +13,9 @@ Version: 2.5
 
 Grill resolves the complete business contract for exactly one Feature. It may
 challenge ambiguity and obtain stakeholder decisions, but it may not invent them.
+The incoming Target Scope is the complete authorization boundary for this
+execution. Planning may contain other Features, but they are future execution
+scopes and MUST NOT be analyzed, questioned, or written during this execution.
 
 ## Entry behavior
 
@@ -22,7 +25,8 @@ through Recovery Entry when a fresh Rule 3 result selects Grill at the exact Fea
 Target Scope from a current BUSINESS_GAP. Once entry is valid, Grill MUST begin the
 Required process and MUST NOT emit a handoff to the same Feature scope or instruct
 the user to restart that scope. When the procedure selects another Feature, Grill
-emits a FORWARD handoff to Grill at that different Target Scope.
+emits a FORWARD handoff to Grill at that different Target Scope and stops. The next
+Feature requires a new Grill execution that accepts that Canonical Handoff.
 
 ## Question boundary
 
@@ -88,7 +92,8 @@ that assumes an answer violates the Question boundary.
 
 ## Required process
 
-1. Validate that Target Scope identifies one Feature in the current Planning.
+1. Validate that Target Scope identifies exactly one Feature in the current
+   Planning. Freeze that Feature as the only productive scope for this execution.
 2. Inspect relevant existing behavior and dependencies.
 3. Analyze goal, actors, triggers, rules, observable behavior, edge cases,
    acceptance criteria, dependencies, and out-of-scope behavior to identify the
@@ -104,9 +109,11 @@ that assumes an answer violates the Question boundary.
    Feature ID and that Feature's current Feature Contract Version rendered as
    Planning Version. The enclosing Planning artifact may have a later version.
 8. Mark it READY only when no unresolved business decision remains.
-9. Apply the Transition Resolution Procedure. If it requires a handoff, validate
+9. Confirm that no Requirement other than the targeted Feature's Requirement was
+   created or modified during this execution.
+10. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
-   final content of the response.
+   final content of the response, then stop without consuming its Target Scope.
 
 While waiting for a stakeholder answer, Grill remains active at the same Target
 Scope and emits no handoff. A pending answer is not itself a blocker. After entry
@@ -126,6 +133,12 @@ missing Requirement; Solution is not eligible until every planned Requirement is
 current and READY. An unchanged READY Requirement remains current across an
 incremental Planning version when its Planning Version still matches its Feature
 Contract Version.
+
+Completing the targeted Feature does not continue the Grill loop inside this
+execution. Even when the next result is Grill at another Feature, this execution
+MUST emit that FORWARD Handoff and MUST NOT create the next Requirement. A Grill
+execution that creates or modifies Requirements for more than one Feature is
+non-conforming.
 
 ### Emit conditions after Grill completes a Feature
 

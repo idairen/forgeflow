@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.5
+Version: 2.6
 
 ## Contract
 
@@ -13,6 +13,10 @@ Version: 2.5
 
 Slice decomposes exactly one approved Feature into the smallest useful ordered
 delivery increments while preserving the project engineering baseline.
+The Feature Target Scope is the complete authorization boundary for this execution.
+Other planned Features are future execution scopes and MUST NOT be decomposed or
+written during this execution. The resulting Slice Plan may declare multiple
+Slices, but it does not authorize executing any of them.
 
 ## READY quality gate
 
@@ -32,7 +36,8 @@ upstream contract gap by inventing behavior or engineering policy.
 1. On Handoff Entry, execute the Unified Entry Validation Procedure defined in the
    Handoff Protocol. Without an incoming handoff, proceed only through Recovery Entry
    when a fresh Rule 3 result selects Slice at the exact Feature Target Scope from a
-   current SLICE_VIOLATION. Validate that Target Scope identifies one planned Feature.
+   current SLICE_VIOLATION. Validate that Target Scope identifies exactly one planned
+   Feature and freeze it as the only productive scope for this execution.
 2. Validate the Feature's Requirement and the current Solution Plan. Resolve this
    Feature's Feature Engineering Version from the Solution Plan.
 3. Inspect existing implementation boundaries relevant to the Feature.
@@ -46,9 +51,11 @@ upstream contract gap by inventing behavior or engineering policy.
 8. Persist an immutable Slice Plan version at its Canonical Artifact Path with
    Feature ID and Based On Solution equal to this Feature's current Feature
    Engineering Version.
-9. Apply the Transition Resolution Procedure. If it requires a handoff, validate
+9. Confirm that no Slice Plan other than the targeted Feature's Slice Plan was
+   created or modified during this execution.
+10. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
-   final content of the response.
+   final content of the response, then stop without consuming its Target Scope.
 
 Slice Plans MUST NOT store dynamic execution state. They contain no mutable cursor,
 PENDING/IN_PROGRESS/BLOCKED/COMPLETE field, or review result. Runtime state is
@@ -57,6 +64,11 @@ derived from TDD and Review evidence.
 Slice MUST NOT change business behavior, redesign the Solution Plan, write code,
 or select an execution target independently. All planned Features require current
 READY Slice Plans before the procedure may target the first TDD Slice.
+
+Completing one Feature's Slice Plan does not continue the Slice loop inside this
+execution. A FORWARD to another Feature starts a new Slice execution. A FORWARD to
+TDD authorizes a later TDD execution for exactly one Slice; Slice MUST NOT begin
+implementation or create TDD evidence in the current execution.
 
 ## Emit conditions after Slice completes a Feature
 

@@ -1,6 +1,6 @@
 # Handoff and Transition Protocol
 
-Version: 2.7
+Version: 2.8
 
 ## Purpose
 
@@ -115,6 +115,23 @@ they own. Review owns no persisted BLOCKED artifact and cannot use Recovery Entr
 Any direct invocation without a valid Bootstrap, Incremental Intent, Handoff, or
 Recovery Entry performs no productive work.
 
+### Invocation-scoped authorization
+
+Entry validation authorizes exactly one Workflow and one Target Scope for the
+current execution. A workflow execution MUST NOT consume a future execution scope
+unless that scope is explicitly provided by the incoming Canonical Handoff. The
+current execution cannot treat a fresh Transition Resolution Procedure result as
+permission to begin the selected future scope.
+
+When resolution selects a different Workflow or a different Target Scope owned by
+the same Workflow, the current execution MUST render the applicable Canonical
+Handoff as its final content and stop. Only a subsequent execution that accepts
+that Handoff may perform productive work at the new scope. It is forbidden for the
+current execution to ask questions, inspect scope-specific implementation, create
+or modify artifacts, run commands, implement, or review on behalf of that future
+scope. Recovery Entry remains limited to its exact persisted-blocker scope and
+cannot be used to skip this boundary for normal forward progression.
+
 For Incremental Intent Entry, Plan MUST verify before productive work that:
 
 1. no incoming Handoff Block is being accepted or inferred;
@@ -148,7 +165,7 @@ When a workflow receives a handoff block, it must verify:
 4. **Input Artifacts resolve**: Every entry in `Input Artifacts` uses the exact rendering `<canonical filename> = <version>` and resolves under the Artifact Root. Multiple entries use exactly `; ` as their separator. FORWARD, RETURN, and `TERMINAL / COMPLETE` state the active `major.minor` version of every entry. `TERMINAL / HALTED` exactly matches the Rule 2 terminal evidence projection and may use `NONE` only for an empty projection or `INVALID_VERSION` only under its version rule. No directory path, unreplaced metavariable, duplicate filename, blank value, unrelated evidence, or evidence omission is allowed.
 5. **Scope values are canonical and resolvable**: Every scope field uses exactly one of `Project`, `Feature: F-XX`, or `Slice: F-XX/S-XX`. `Source Scope` matches the emitting workflow's authorized scope. `Target Scope` matches the canonical scope of `Next Workflow`: Project for Plan and Solution, Feature for Grill and Slice, and Slice for TDD and Review. Every Feature identifier resolves in active Planning, and every Slice identifier resolves in the Canonical Slice Plan for that Feature, except when Plan is repairing Planning itself. A BLOCKED Affected Scope or FAIL Review Return Scope that does not resolve is a Rule 2 contradiction, not a scope to ignore, sort last, or infer. `TERMINAL / HALTED` uses Affected Scope `Project` because an invalid graph cannot authorize a narrower identifier.
 6. **Blocker Category is valid where required**: RETURN and `TERMINAL / HALTED` require a category from the Blocker Routing Rules; FORWARD and `TERMINAL / COMPLETE` forbid it.
-7. **No scope widening from context**: The receiving workflow's Target Scope must not be widened by conversation text or prior context beyond what is explicitly stated in the handoff block.
+7. **No scope widening or pre-consumption**: The receiving workflow's Target Scope must not be widened by conversation text or prior context beyond what is explicitly stated in the handoff block. Completion of that scope does not authorize the same execution to consume the next resolved Workflow or Target Scope.
 
 If any check fails, the handoff is invalid. The receiving workflow performs no productive work until the source workflow corrects and re-emits a complete, valid handoff block. The receiving workflow must not infer missing fields or normalize a malformed block.
 
@@ -161,6 +178,9 @@ A FORWARD handoff advances execution from one workflow to the next. It is emitte
 **When to emit FORWARD:**
 - The Transition Resolution Procedure selects a different workflow or a different Target Scope owned by the same workflow.
 - Rules 4–Rule 7, Rule 9, or Rule 10 match.
+
+Emission ends the current execution. The emitter MUST NOT begin the target
+Workflow or Target Scope after rendering, deciding, or preparing this handoff.
 
 **Required fields:** `Transition`, `Next Workflow`, `Source Scope`, `Target Scope`, `Input Artifacts`, `Reason`
 
@@ -341,5 +361,8 @@ Before accepting a handoff, the target workflow must confirm:
 6. The Target Scope equals a fresh run of the Transition Resolution Procedure (not inferred from conversation context);
 7. The block exactly matches its variant template and value-rendering rules;
 8. Exactly one handoff block is present and it is the response's final content.
+9. The execution performed productive work only for the Workflow and Target Scope
+   authorized by this handoff's receiving entry; it did not pre-consume the next
+   resolved scope.
 
 Failure of any check makes the handoff invalid. The target workflow performs no work until the source workflow corrects and re-emits the complete Canonical Handoff Block. The target must not infer missing fields or normalize a malformed block.

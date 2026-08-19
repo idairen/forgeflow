@@ -18,7 +18,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Added `ARCHITECTURE.zh-CN.md` as the complete Chinese counterpart of the public
   architecture document, preserving the same implemented architecture, comparison
   scope, open-source advantages, limitations, and normative-source boundaries.
-- Added 41 dependency-free Python tests covering strict configuration, canonical
+- Added 42 dependency-free Python tests covering strict configuration, canonical
   Artifact and Handoff parsing, every forward graph stage, terminal and recovery
   resolution, stale evidence, incremental authorization, Runner Handoff validation,
   paired Artifact/Report rotation, and repository integration contracts.
@@ -35,11 +35,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   validation, symbolic-link rejection, packaged help/version output, and continued
   availability of the Python CLI.
 - Added executable IDE acceptance-test assets under `tests/acceptance/ide/`: a case manager
-  that reads all 215 scenarios from the canonical test plan, creates clean Copilot
+  that reads all 220 scenarios from the canonical test plan, creates clean Copilot
   or Codex workspaces, captures real IDE-generated snapshots, prepares isolated case
   copies and result records, plus a dependency-free Python fixture and reusable
   intent inputs. The tooling prepares evidence but never simulates an IDE workflow.
-- Added a UTF-8 CSV catalog for all 215 IDE acceptance cases, including priority,
+- Added a UTF-8 CSV catalog for all 220 IDE acceptance cases, including priority,
   adapter coverage, recommended baseline, actions, expected results, and editable
   execution-result fields. The IDE case manager can reproduce the catalog through
   its `export` command.
@@ -70,6 +70,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Enforced invocation-scoped execution across the Core, Handoff Protocol, and
+  scoped Workflow contracts. Grill and Slice now process exactly one
+  Feature per execution; TDD and Review process exactly one Slice or Slice attempt.
+  Resolving a different Workflow or Target Scope only permits emitting a Canonical
+  Handoff and stopping, never consuming that future scope in the same execution.
+  Added five P0 IDE acceptance cases for multi-Feature and multi-Slice isolation.
 - Clarified in both architecture documents that ForgeFlow's normative Core is
   agent-agnostic by design, while dedicated Adapters and real-host acceptance
   evidence remain explicitly host-specific and currently limited to Codex and
@@ -148,7 +154,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Documentation
 
-- Added a Chinese IDE acceptance test plan with 215 uniquely identified scenarios
+- Added a Chinese IDE acceptance test plan with 220 uniquely identified scenarios
   covering prompt discovery and host isolation, all six workflows, entry and
   Handoff variants, blockers and recovery, incremental evolution, evidence history,
   Review plugins, invalid graphs, session restart, and Codex/Copilot parity.

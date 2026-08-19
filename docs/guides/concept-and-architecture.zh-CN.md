@@ -2,7 +2,7 @@
 
 > 面向公众介绍当前 ForgeFlow 框架。
 >
-> 框架版本：2.5 · Artifact Protocol：2.5 · Handoff Protocol：2.7 · 工作流规范：2.5
+> 框架版本：2.6 · Artifact Protocol：2.5 · Handoff Protocol：2.8 · 工作流规范：2.5-2.6
 
 [English](./concept-and-architecture.md)
 
@@ -72,6 +72,17 @@ ForgeFlow 识别四种转换结果：
 每次调用都会从当前制品重新构建状态。转换解析器依次检查图有效性、持久化阻塞、就绪门禁、失败的 Review，以及声明的 Feature 和 Slice 顺序。它不会使用文件名顺序、标识符数字、创建时间或记忆中的对话顺序来决定工作优先级。
 
 因此执行过程可以安全重启：新进程无需依赖上一个进程的内存，也能确定下一项合法操作。
+
+### 3.5 每次执行只消费一项授权
+
+一次 Workflow 调用只能在已经验证的 Workflow 与 Target Scope 内进行生产性
+工作。解析出下一个 Feature、Slice 或 Workflow，并不授权当前调用继续处理它。
+当前调用必须输出 Canonical Handoff 并停止；后续调用验证该 Handoff 后，才能在
+新的 Scope 工作。
+
+具体来说，Grill 与 Slice 每次执行各处理一个 Feature，TDD 每次实现一个 Slice，
+Review 每次检查一个 Slice Attempt。Slice Plan 可以定义多个未来 Slice，但定义
+它们并不等于获准执行它们。这个边界防止 Agent 在同一轮中静默消费多个有序工作单元。
 
 ## 4. 总体架构
 

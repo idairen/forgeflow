@@ -1,6 +1,6 @@
 # TDD Workflow
 
-Version: 2.5
+Version: 2.6
 
 ## Contract
 
@@ -16,6 +16,9 @@ one Feature ID and Slice ID, and it MUST equal a fresh Transition Resolution
 Procedure result.
 Conversation text, filenames, or a previously remembered cursor cannot widen or
 replace it.
+Completion of the targeted Slice does not authorize Review or the next Slice in
+this execution. A different Workflow or Slice selected afterward is a future
+execution scope and may only be reported through a Canonical Handoff.
 
 ## Entry validation
 
@@ -77,7 +80,8 @@ This self-check is preparation evidence, not an independent Review decision.
 10. Persist the TDD Record at its Canonical Artifact Path with Status
     READY_FOR_REVIEW and apply the Transition Resolution Procedure. If it requires
     a handoff, validate and render exactly one Canonical Handoff Block from the
-    Handoff Protocol as the final content of the response.
+    Handoff Protocol as the final content of the response, then stop without
+    consuming its Target Scope.
 
 The TDD Record MUST reference the exact Solution Plan and Slice Plan versions.
 Review findings are addressed in the same Slice scope with new TDD evidence; Review

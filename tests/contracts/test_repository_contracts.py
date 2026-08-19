@@ -111,6 +111,30 @@ class RepositoryContractTests(unittest.TestCase):
                     for reference in expected:
                         self.assertIn(reference, content)
 
+    def test_scoped_workflows_cannot_preconsume_future_scope(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        principle = (
+            "A workflow execution MUST NOT consume a future execution scope\n"
+            "unless that scope is explicitly provided by the incoming Canonical Handoff."
+        )
+        self.assertIn(principle, framework)
+        self.assertIn(principle, handoff)
+
+        workflow_rules = {
+            "grill": "more than one Feature is\nnon-conforming",
+            "slice": "does not continue the Slice loop inside this\nexecution",
+            "tdd": "does not authorize Review or the next Slice",
+            "review": "MUST only emit that Handoff and stop",
+        }
+        for workflow, rule in workflow_rules.items():
+            spec = (ROOT / f".forgeflow/workflow/{workflow}.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(rule, spec)
+
     def test_removed_protocol_files_do_not_return(self):
         protocol = ROOT / ".forgeflow" / "protocol"
         self.assertFalse((protocol / "compatibility.md").exists())
