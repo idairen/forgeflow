@@ -15,13 +15,18 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_uses_segmented_public_layout(self):
         required_paths = {
             "src/forgeflow/__init__.py",
+            "src/forgeflow/engine/project_impact.py",
             "tests/unit/test_artifact_parser.py",
+            "tests/unit/test_project_knowledge.py",
+            "tests/unit/test_project_impact.py",
             "tests/unit/test_ide_acceptance_manager.py",
             "tests/integration/test_runner_protocol.py",
+            "tests/integration/test_cli_knowledge.py",
             "tests/contracts/test_repository_contracts.py",
             "tests/acceptance/ide/manage.py",
             "docs/guides/concept-and-architecture.md",
             "docs/testing/ide-test-plan.zh-CN.md",
+            "docs/testing/cli-knowledge-test-plan.md",
             "docs/presentations/forgeflow-enterprise-roadshow.pdf",
             "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
             "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
@@ -205,6 +210,108 @@ class RepositoryContractTests(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn(rule, spec)
+
+    def test_subsequent_plan_is_default_and_solution_is_project_coherent(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+        solution = (ROOT / ".forgeflow/workflow/solution.md").read_text(
+            encoding="utf-8"
+        )
+
+        for contract in (framework, handoff, plan):
+            self.assertIn("Subsequent Plan Entry", contract)
+        self.assertIn("Semantic similarity", plan)
+        self.assertIn("MUST NOT be used to infer a different\n     project", plan)
+        self.assertIn("every current\nactive business contract", solution)
+        self.assertIn("Shared Components and Utilities", solution)
+        self.assertIn("Cross-Feature Impact", solution)
+
+    def test_project_knowledge_is_derived_and_traceable(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        workflows = {
+            name: (ROOT / f".forgeflow/workflow/{name}.md").read_text(
+                encoding="utf-8"
+            )
+            for name in WORKFLOWS
+        }
+
+        self.assertIn("Project Knowledge View", framework)
+        self.assertIn("Project Knowledge View", artifact)
+        self.assertIn("not an Artifact Type", artifact)
+        self.assertIn("Planning Change Set", artifact)
+        self.assertIn("intent-evolution summary", workflows["plan"])
+        self.assertIn("Planning Change Set context", workflows["grill"])
+        self.assertIn("Engineering Decision Register", workflows["solution"])
+        self.assertIn("shared components or utilities", workflows["slice"])
+        self.assertIn("implemented engineering decisions", workflows["tdd"])
+        self.assertIn("complete knowledge", workflows["review"])
+
+    def test_structured_impact_model_remains_non_authoritative(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        solution = (ROOT / ".forgeflow/workflow/solution.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Project Impact View", framework)
+        self.assertIn("MUST NOT authorize a Workflow", framework)
+        for field in (
+            "Shared Component IDs",
+            "Feature Dependencies",
+            "Feature Shared Components",
+            "Feature Decision References",
+            "Cross-Feature Impact",
+        ):
+            self.assertIn(field, artifact)
+            self.assertIn(field, solution)
+
+    def test_source_and_test_placement_are_upstream_engineering_contracts(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        workflows = {
+            name: (ROOT / f".forgeflow/workflow/{name}.md").read_text(
+                encoding="utf-8"
+            )
+            for name in ("solution", "slice", "tdd", "review")
+        }
+        architecture_rules = (
+            ROOT / ".forgeflow/rules/reviews/architecture/rules.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("not local TDD preferences", framework)
+        for section in (
+            "## Implementation Structure",
+            "## Test Structure",
+            "Planned File Placement",
+            "File Placement\nConformance",
+        ):
+            self.assertIn(section, artifact)
+        self.assertIn("package-by-Feature", workflows["solution"])
+        self.assertIn("Planned File Placement", workflows["slice"])
+        self.assertIn("MUST NOT\n   choose a new package", workflows["tdd"])
+        self.assertIn("TDD File\n   Placement Conformance", workflows["review"])
+        self.assertIn(
+            "ARC-003 | Contracted Source Structure Conformance | P1",
+            architecture_rules,
+        )
+        self.assertIn(
+            "ARC-009 | Contracted Test Structure Conformance | P1",
+            architecture_rules,
+        )
+        self.assertIn(
+            "ARC-008 | General Package/Module Cohesion | P2",
+            architecture_rules,
+        )
 
     def test_removed_protocol_files_do_not_return(self):
         protocol = ROOT / ".forgeflow" / "protocol"

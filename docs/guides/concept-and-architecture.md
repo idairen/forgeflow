@@ -216,6 +216,15 @@ unit with an explicit verification boundary, not merely a task-list item.
 `DELIVERY_READY` is reached only when every active Feature has a current READY Slice
 Plan matching its engineering version.
 
+Source and test organization are decided before implementation. Solution records
+the project's implementation/test structure and dependency direction. Slice maps
+each responsibility to production and test paths or resolvable patterns. TDD may
+choose concrete filenames from established naming conventions, but cannot invent a
+new package, module, layer, or test topology. Review treats violation of an explicit
+layout contract as blocking while keeping general organization preferences
+non-blocking. This supports layered Java packages when selected without imposing
+them on Python, Go, Rust, or feature-oriented repositories.
+
 ### 5.3 Implementation and review
 
 After `DELIVERY_READY`, ForgeFlow walks Features in Planning order and Slices in
@@ -311,6 +320,32 @@ the same logical path is replaced, its prior revision is preserved under
 `.forgeflow/reports/history/`. Files below either history root do not participate in
 current state or current Review evidence.
 
+### 6.5 A unified project knowledge view
+
+The canonical Artifacts already form ForgeFlow's project knowledge base. A derived
+Project Knowledge View links the current Planning Change Set to Feature contracts,
+Requirements, the project-wide Solution, Slice Plans, implementation attempts, and
+Review outcomes. It also indexes preserved Artifact and Report history for
+navigation.
+
+The view is deliberately non-authoritative. It creates no new Artifact Type or
+owner, never participates in transition resolution, and never makes historical
+evidence current. `forge status` exposes this projection for CLI users; an invalid
+Artifact Graph makes the active view unavailable rather than silently presenting a
+partial project baseline.
+
+The optional `forge knowledge` command narrows the view to one active Feature or
+Slice, includes archived contract timelines only with `--history`, and renders JSON
+or Markdown to standard output. Querying never creates a new state file and never
+changes resolver authorization.
+
+New or revised Solution Plans also provide a structured impact model. ForgeFlow can
+query direct and transitive Feature dependents, shared-component membership, and
+engineering-decision references through `--impact F-XX` or `--component SC-XX`.
+Shared-component peers are not silently treated as dependency edges. Older
+Solutions remain readable with an explicitly unavailable impact view until revised,
+and no derived result can authorize a Workflow or Scope.
+
 ## 7. Deterministic transitions, blockers, and recovery
 
 The resolver evaluates the graph in a fixed order. In public terms, it performs the
@@ -347,12 +382,12 @@ Most workflow entries require a validated transition. Three controlled cases can
 start without an incoming Handoff:
 
 - **Bootstrap Entry:** Plan begins a clean project.
-- **Incremental Intent Entry:** Plan merges an explicitly confirmed same-project
-  addition or change.
+- **Subsequent Plan Entry:** Plan merges a later non-empty intent into current
+  READY Planning without requiring an incremental label or project confirmation.
 - **Recovery Entry:** the resolver re-authorizes the exact owner and scope of a
   valid persisted blocker.
 
-No other workflow can use Bootstrap or Incremental Intent Entry.
+No other workflow can use Bootstrap or Subsequent Plan Entry.
 
 ### 7.3 Invalid graphs fail closed
 
@@ -400,12 +435,12 @@ Plugin reports are supplemental evidence. They never replace the canonical Revie
 Report and are not an independent transition authority. The Review workflow
 aggregates applicable findings into the canonical artifact.
 
-## 9. Incremental development within one project
+## 9. Subsequent requirements and incremental evolution
 
-ForgeFlow supports projects whose requirements arrive module by module. A later
-request can use Incremental Intent Entry when the user explicitly confirms that it
-belongs to the same project and the current graph is valid, has READY Planning, and
-has no actionable blocker or current failed Review.
+ForgeFlow supports software projects whose requirements arrive module by module. A
+later non-empty intent automatically uses Subsequent Plan Entry when the current
+graph is valid, has READY Planning, and has no actionable blocker or current failed
+Review. The user does not need to restate project identity.
 
 Plan may then add, modify, reorder, or explicitly retire Features while preserving
 stable Feature identifiers. Retired identifiers are not reused.
@@ -414,18 +449,19 @@ The scoped version model limits invalidation:
 
 - A Planning update advances business contract versions only for affected Features.
 - Requirements for unchanged Features remain current.
-- Solution analyzes cross-Feature impact and advances engineering versions only
-  where needed.
+- Solution reads all current Requirements and the prior engineering baseline,
+  records shared components or utilities and cross-Feature impact, and advances
+  engineering versions only where needed.
 - Slice, TDD, and Review evidence for compatible completed Features remains valid.
 - Replaced artifacts and plugin reports are retained in their respective history
   roots.
 
-This is different from starting a new project. Same-project increments preserve the
-active artifact and report roots. They do not rotate all project evidence.
+Subsequent changes preserve the active artifact and report roots. Semantic
+dissimilarity does not rotate project evidence.
 
-### 9.1 New project or explicit reset
+### 9.1 Explicit reset or archive maintenance
 
-An explicitly authorized new project or reset uses Project Evidence Rotation.
+Only an explicitly requested reset or archive maintenance operation uses Project Evidence Rotation.
 ForgeFlow captures one UTC timestamp and rotates both roots as a transaction:
 
 ```text
@@ -460,9 +496,10 @@ The Python package exposes the `forge` command. Its current public commands are:
 | Command | Purpose |
 |---|---|
 | `forge init [-a copilot\|codex] [--force]` | Install or refresh managed framework files and create project configuration. |
-| `forge plan [--intent TEXT] [--incremental]` | Run Plan, including an explicit same-project increment. |
+| `forge plan [--intent TEXT] [--incremental]` | Run Plan; a later intent automatically becomes a subsequent change (`--incremental` is a compatibility alias). |
 | `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | Execute the configured or one-time selected orchestration mode. |
 | `forge status` | Inspect the parsed Artifact Graph and resolved pipeline state. |
+| `forge knowledge [--feature F-XX] [--slice F-XX/S-XX] [--impact F-XX] [--component SC-XX] [--history] [--format json\|markdown]` | Query the non-authoritative project knowledge and structured impact views. |
 | `forge reset [--force]` | Preview or execute paired project evidence rotation. |
 | `forge handoff` | Display the latest validated CLI Handoff snapshot for debugging. |
 
@@ -486,9 +523,10 @@ and Handoff, and stops on completion, a blocker, a halt, interruption, or the
 iteration limit. The current runner allows up to 50 total steps and stops after
 three consecutive execution or Handoff failures for a workflow.
 
-Manual mode executes Plan once only when the graph authorizes Plan, then validates
-the result. `forge plan --incremental --intent "..."` is the explicit same-project
-entry; a later `forge run` continues from the graph it produced.
+Manual mode executes Plan once when the graph authorizes Plan or a non-empty intent
+selects Subsequent Plan Entry, then validates the result. `forge plan --intent
+"..."` is the normal later-requirement entry; a later `forge run` continues from the
+graph it produced. `--incremental` remains a compatibility alias.
 
 The Codex adapter invokes `codex exec` with an ephemeral session and a
 `workspace-write` sandbox. The Copilot adapter invokes `gh copilot` non-interactively
@@ -551,8 +589,8 @@ maturity or autonomous model correctness.
 - Controlled forward, return, complete, and halted transitions.
 - Persistent blockers and independent, attempt-specific Review decisions.
 - Ordered, dependency-aware Markdown review plugins and report history.
-- Same-project incremental planning with scoped invalidation.
-- Transactional artifact-and-report rotation for a new project or reset.
+- Subsequent Plan changes with scoped invalidation.
+- Transactional artifact-and-report rotation for explicit reset or archive maintenance.
 - Dedicated Codex and Copilot launchers plus optional CLI orchestration.
 - Strict parser and Handoff validation in the Python CLI.
 
@@ -636,13 +674,13 @@ version-control branch and review generated changes before merging them.
 ### 13.3 Add a later module to the same project
 
 ```bash
-forge plan --incremental --intent "Add the reporting module to this project"
+forge plan --intent "Add the reporting module"
 forge run
 ```
 
-Use incremental mode only when the request truly belongs to the same project. An
-ambiguous relationship must be confirmed before evidence changes. Use reset or an
-explicit new-project flow when the intent belongs to a different project.
+ForgeFlow treats this as another requirement for the current software project even
+when its wording is semantically distant from earlier modules. Use `forge reset
+--force` only for an explicit evidence reset or archive maintenance operation.
 
 ### 13.4 Follow progress
 

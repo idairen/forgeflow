@@ -94,7 +94,7 @@ Python Engine 实现解析、状态解析、编排和运行记录，但不会重
 - 根据当前证据解析下一项获准执行的 Workflow 和 Scope。
 - 分离业务、工程、实现和 Review 的决策所有权。
 - 显式表达推进、返回、恢复、完成和非法状态。
-- 在同项目增量变更中保留未受影响的证据。
+- 在后续 Plan 变更中保留未受影响的证据。
 - 同时支持 IDE 手动执行和可选的 CLI 顺序编排。
 - 让 Review 保持独立所有权，并通过 Markdown 规则扩展。
 - 在证据缺失、过期、格式错误或相互矛盾时采用失败关闭策略。
@@ -239,6 +239,41 @@ Parser 和 Resolver 会拒绝以下情况：
 
 相互矛盾的 Graph 会解析为 `TERMINAL / HALTED`，ForgeFlow 不会猜测修复路径。
 
+### 6.5 Project Knowledge View
+
+ForgeFlow 不创建第二个知识库 Artifact。Project Knowledge View 是基于已验证当前
+Artifacts 与保留历史生成的只读投影，它连接 Planning Change Set、Feature Contract
+Version、Requirement、Solution 工程边界、Slice Plan、TDD attempt 与 Review decision。
+
+Python CLI 会在 `forge status` 中输出该投影，保持声明的 Feature/Slice 顺序，并索引
+Artifact History、当前补充 Reports、Reports History 和已轮换证据根。该视图不具备
+权威性：不能授权工作、修复缺失引用或让历史证据重新生效。Graph 无效时，当前项目
+知识直接标记为 unavailable，而不是拼接出一个不完整基线。
+
+`forge knowledge` 提供只读的 Feature/Slice 过滤、可选历史契约时间线，以及 JSON 或
+Markdown 渲染。实现位于独立 knowledge builder 中，而不是继续扩大 Artifact Parser，
+从而分离验证与展示责任。查询会拒绝非当前标识符，并默认只写标准输出。
+
+Artifact Protocol 2.9 为新建或修订的 Solution Plan 增加兼容迁移的结构化影响模型：
+Feature 依赖、共享组件关系、工程决策引用和当前 Solution 变更分类。独立 impact
+analyzer 可以推导反向及传递依赖，同时把“共同使用组件”与“存在依赖方向”严格区分。
+旧 Solution 仍然有效，但在下一次规范修订补齐元数据前，影响视图明确标记为
+unavailable。派生结果不具备权威性，不能影响 Resolver 顺序或 Handoff Scope。
+
+### 6.6 源码与测试布局契约
+
+Artifact Protocol 2.10 不再让 TDD 临时决定文件组织。新建或修订的 Solution 记录
+`Implementation Structure` 与 `Test Structure`；Slice 记录 `Planned File
+Placement`；TDD 记录 `File Placement Conformance`；Review 沿着这条链验证实际路径。
+
+该规则保持 Agent 与技术栈无关。Solution 根据仓库惯例和明确工程决策选择按 Feature、
+按层或混合组织，在契约要求时分离责任，但不制造“一类一包”的形式主义。单元/组件
+测试在既有或选定惯例要求时镜像生产结构；集成和端到端测试可以使用明确声明的独立根。
+
+架构规则区分契约与偏好：`ARC-003`、`ARC-009` 是显式源码/测试布局违约的 P1
+检查，因此会被内置阈值阻塞；`ARC-008` 是 P2 内聚性建议，不能仅因审查者偏好另一种
+组织方式就让 Review FAIL。
+
 ## 7. Workflow 与 Scope 模型
 
 ### 7.1 所有权链
@@ -325,17 +360,17 @@ flowchart BT
 
 FAIL Review 会记录阻塞 Findings，选择最高优先级 Owner，并指定一个匹配的 Affected Scope。非 Review Blocker 会记录自己的 Category、Owner、Scope、Reason 和 Evidence。过期 Blocker 与 Review Attempt 保留为历史证据，但不能授权 Recovery。
 
-## 9. 增量变更与恢复
+## 9. 后续变更与恢复
 
-### 9.1 同项目增量意图
+### 9.1 后续 Plan 意图
 
-`forge plan --incremental --intent "..."` 是显式添加或修改同一项目时使用的特殊 Plan Entry。它要求：
+当前存在 READY Planning 时，`forge plan --intent "..."` 会自动使用 Subsequent Plan Entry。每次后续意图都视为当前软件项目的变更，不要求用户标记 incremental 或再次确认项目归属。它要求：
 
 - Graph 合法；
 - Planning 当前有效且为 `READY`；
 - 不存在可执行的持久化 Blocker；
 - 不存在等待处理的当前 FAIL Review；
-- 新意图与现有项目的关系已经明确或确认。
+- 提供非空 User Intent。
 
 Plan 记录精确 Change Set，并保持稳定的 Feature ID。新增或受影响 Feature 获得新的 Contract Version；未受影响 Feature 保留原版本和可用下游证据。
 
@@ -347,9 +382,9 @@ Plan 记录精确 Change Set，并保持稳定的 Feature ID。新增或受影�
 
 新进程可以在没有记忆 Handoff 的情况下恢复当前持久化 Blocker。它重新构建 Graph、应用 Rule 3，并只重新授权选定的 Owner 与 Scope。Runtime History 仅用于诊断，不是 Recovery Authority。
 
-### 9.4 新项目轮换
+### 9.4 显式证据轮换
 
-无关的新项目请求或显式 Reset 使用成对的 Project Evidence Rotation。当前 `artifacts/` 和 `reports/` 使用同一 UTC 后缀一起轮换；部分轮换会被回滚。
+只有显式 reset 或 archive maintenance 操作才使用成对的 Project Evidence Rotation。意图之间的语义差异不能触发轮换。当前 `artifacts/` 和 `reports/` 使用同一 UTC 后缀一起轮换；部分轮换会被回滚。
 
 ## 10. 执行界面
 
@@ -382,6 +417,7 @@ Launcher 按规定顺序读取 Framework、Artifact Protocol、Handoff Protocol 
 | `forge plan` | 执行获准 Plan，包括显式增量意图。 |
 | `forge run` | 运行顺序 Manual 或 Auto 编排。 |
 | `forge status` | 解析证据并显示 Graph 推导状态。 |
+| `forge knowledge` | 按 Feature 或 Slice 查询当前项目知识，并可包含历史或输出 Markdown。 |
 | `forge reset` | 预览或执行成对 Evidence Rotation。 |
 | `forge handoff` | 显示最近一次验证通过的 Runtime Handoff 快照。 |
 

@@ -156,7 +156,7 @@ test("validates config before changing managed files", (testContext) => {
 
 test("rejects Node implementations of Python CLI commands", (testContext) => {
   const project = temporaryProject(testContext);
-  for (const command of ["plan", "run", "status", "reset", "handoff"]) {
+  for (const command of ["plan", "run", "status", "knowledge", "reset", "handoff"]) {
     const result = runInstaller(project, command);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /supports installation only/);

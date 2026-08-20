@@ -9,6 +9,28 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added source and test placement contracts across Solution, Slice, TDD, and Review.
+  New or revised Solutions define Implementation/Test Structure, Slices define
+  Planned File Placement, and TDD Records prove actual-path conformance without
+  imposing one language-specific package strategy.
+- Added a migration-safe structured Solution impact model covering Feature
+  dependencies, shared-component membership, engineering-decision references, and
+  current change classifications. Added a non-authoritative analyzer for reverse
+  and transitive dependents plus shared-component peers.
+- Added `forge knowledge --impact F-XX` and `--component SC-XX`. Legacy Solutions
+  remain readable with an explicitly unavailable impact view; partial, cyclic, or
+  unresolved structured models are rejected instead of producing partial results.
+- Added `forge knowledge` with active Feature and Slice filters, opt-in history,
+  and JSON or Markdown output. It renders to standard output and never creates a
+  second project-state file.
+- Added Planning and Solution contract timelines derived from current contracts and
+  valid archived versions, with non-authoritative warnings for unreadable or invalid
+  historical metadata. Added a dedicated CLI knowledge test plan.
+- Added a derived Project Knowledge View to Python CLI state output. It preserves
+  declared Feature and Slice order, links the active Planning, Requirement,
+  Solution, Slice, TDD, and Review version chain, and indexes Artifact History,
+  supplemental Reports, Reports History, and rotated evidence roots. The view is
+  explicitly non-authoritative and becomes unavailable for an invalid graph.
 - Added an open-source community baseline with a Code of Conduct, maintainer-led
   governance, support boundaries, public roadmap, CODEOWNERS, structured bug,
   feature, and protocol-change issue forms, a pull-request template, and monthly
@@ -94,6 +116,47 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- Expanded the IDE acceptance baseline from 226 to 236 cases with structured impact,
+  migration, source/test placement, missing upstream structure, Review conformance,
+  and non-blocking preference scenarios. Solution, Slice, and Review specifications
+  are now version 2.9; TDD is 2.8; unchanged Workflow contracts remain at 2.7.
+- Upgraded the architecture Review plugin to 1.1. Explicit source/test layout
+  violations are P1 blocking checks (`ARC-003`, `ARC-009`), while general package
+  cohesion remains a P2 non-blocking recommendation (`ARC-008`).
+- Updated Artifact validation so a legacy Solution may omit the complete impact
+  metadata set, while a partial set, dependency cycle, inactive Feature target, or
+  unknown shared-component reference makes the active graph invalid.
+- Extracted Project Knowledge construction from `ArtifactParser` into the dedicated
+  `ProjectKnowledgeBuilder`, separating canonical validation from querying,
+  filtering, timeline construction, and presentation.
+- Strengthened all six Workflow contracts as one traceable project knowledge model:
+  Plan records intent evolution, Grill traces business contracts to current change
+  context, Solution maintains an Engineering Decision Register, Slice references
+  current decisions and shared utilities, TDD records implemented decisions and
+  deviation ownership, and Review verifies the complete current knowledge chain.
+- Expanded the IDE acceptance baseline from 220 to 226 cases with six P1 scenarios
+  covering knowledge traceability across Plan, Grill, Solution, Slice, TDD, and
+  Review. Updated the generated CSV and acceptance tooling counts accordingly.
+- Replaced explicit same-project `Incremental Intent Entry` with default
+  `Subsequent Plan Entry`. Any non-empty Plan intent received after current READY
+  Planning is now treated as another requirement for the current software project,
+  without requiring an incremental label or project-identity confirmation.
+  Semantic similarity can no longer infer another project or trigger evidence
+  rotation; paired Artifact/Report rotation is reserved for explicit reset or
+  archive maintenance.
+- Updated the Python Runner so both `forge plan --intent "..."` and `forge run
+  --intent "..."` can re-enter Plan from an active downstream or completed graph,
+  while still refusing invalid graphs, persisted blockers, and current failed
+  Reviews. `--incremental` remains as a deprecated compatibility alias.
+- Strengthened Solution as a project-wide engineering knowledge baseline. Every
+  Solution execution must read all current active Requirements and the prior
+  Solution, record shared components and utilities, classify cross-Feature impact
+  for every active Feature, and invalidate only directly or indirectly affected
+  engineering versions.
+- Updated the then-current 220-case IDE acceptance baseline, generated CSV catalog, bilingual
+  architecture guides, CLI documentation, and repository contracts for the new
+  subsequent-requirement model. Adapter launchers remain unchanged and contain no
+  new protocol rules.
 - Rewrote the security policy around the implemented Markdown, IDE-host, external
   Agent CLI, installer, and local-evidence trust boundaries. It now documents that
   CLI execution can grant project writes and shell tools, identifies relevant

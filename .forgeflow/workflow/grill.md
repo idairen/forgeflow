@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.6
+Version: 2.7
 
 ## Contract
 
@@ -105,13 +105,17 @@ that assumes an answer violates the Question boundary.
    follow-up questions when needed.
 6. Resolve all questions that could change observable business behavior and
    complete the business contract without inventing stakeholder decisions.
-7. Persist a new Requirement version at its Canonical Artifact Path with its
+7. Record why the current business contract exists by tracing its objectives,
+   rules, and acceptance evidence to the targeted Feature boundary and current
+   Planning Change Set context. Retired or superseded intent remains history and
+   MUST NOT be cited as an active constraint.
+8. Persist a new Requirement version at its Canonical Artifact Path with its
    Feature ID and that Feature's current Feature Contract Version rendered as
    Planning Version. The enclosing Planning artifact may have a later version.
-8. Mark it READY only when no unresolved business decision remains.
-9. Confirm that no Requirement other than the targeted Feature's Requirement was
+9. Mark it READY only when no unresolved business decision remains.
+10. Confirm that no Requirement other than the targeted Feature's Requirement was
    created or modified during this execution.
-10. Apply the Transition Resolution Procedure. If it requires a handoff, validate
+11. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
    final content of the response, then stop without consuming its Target Scope.
 

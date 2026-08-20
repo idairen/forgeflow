@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.5
+Version: 2.10
 
 ## Purpose
 
@@ -67,15 +67,17 @@ replacing `report-feature-01-slice-02-attempt-03.html` archives the prior file a
 with different content is a blocker; Review MUST NOT overwrite or merge it.
 
 Project Evidence Rotation moves the complete Reports Root, including its History
-Root. Same-project incremental work never rotates either root; it archives only the
+Root. A subsequent Plan change never rotates either root; it archives only the
 specific artifact or supplemental report that is actually replaced.
 
 ## Project Evidence Rotation Procedure
 
-This procedure archives the prior active artifact graph and its supplemental Review
-plugin reports before a new Plan run. It is a platform-independent Markdown
-procedure performed by the active participant; it requires no platform-specific
-script or executable framework component.
+This explicit maintenance procedure archives the prior active artifact graph and
+its supplemental Review plugin reports. It runs only when the user explicitly
+requests reset or archive maintenance; Plan MUST NOT select it from semantic
+similarity or dissimilarity between User Intents. It is a platform-independent
+Markdown procedure performed by the active participant; it requires no
+platform-specific script or executable framework component.
 
 When invoked, the participant MUST apply these steps in order:
 
@@ -104,6 +106,65 @@ When invoked, the participant MUST apply these steps in order:
 Artifact and Reports Backup Paths are outside the active artifact graph and MUST NOT
 participate in transition resolution. Supplemental reports remain non-authoritative
 evidence even when their backup suffix associates them with one archived graph.
+
+## Project Knowledge View
+
+The Project Knowledge View is a read-only projection over the canonical current
+Artifacts and preserved history. It is not an Artifact Type, has no owner Workflow,
+has no Canonical Artifact Path, and MUST NOT participate in transition resolution.
+Deleting or regenerating the view cannot change project state.
+
+The active portion MUST be derived exclusively from validated canonical Artifacts
+and preserve Planning Feature order and Slice Plan Slice order. For every active
+Feature it exposes, when present:
+
+1. the Feature Contract Version from Planning;
+2. the current Requirement version and its Planning Version;
+3. the Feature Engineering Version and Requirement version used by Solution;
+4. the current Slice Plan version and Based On Solution reference;
+5. each declared Slice's current TDD attempt and upstream versions; and
+6. immutable Review attempts and their decisions.
+
+The historical portion MAY index filenames from Artifact History, Reports History,
+current supplemental Reports, and rotated evidence roots. Historical entries remain
+non-authoritative and MUST NOT be interpreted as current contracts merely because
+they appear in the view. A projection over an invalid Artifact Graph MUST report
+that current knowledge is unavailable rather than combining partial valid files
+into an apparent baseline.
+
+The canonical traceability chain is:
+
+```text
+Planning Change Set
+  -> Feature Contract Version
+  -> Requirement / Planning Version
+  -> Solution / Based On Requirements / Feature Engineering Version
+  -> Slice Plan / Based On Solution
+  -> TDD Record / Solution Version / Slice Plan Version / Attempt
+  -> Review Report / matching versions / Attempt / Decision
+```
+
+Human-readable summaries, CLI output, dashboards, and generated indexes MAY render
+this view, but they MUST link back to canonical filenames and versions and MUST NOT
+invent missing relationships.
+
+### Knowledge queries and timeline
+
+A knowledge query MAY select one active Feature or one declared Slice. Feature
+filters use `F-XX`; Slice filters use `F-XX/S-XX` and imply their Feature. A query
+MUST reject malformed or inactive identifiers, preserve Planning and Slice Plan
+order, and return only the requested subtree without changing the underlying view.
+
+The default query exposes current knowledge only. An explicit history option MAY
+also expose immutable history indexes and a contract timeline assembled from
+current Planning and Solution plus valid archived `planning-v<Version>.md` and
+`solution-plan-v<Version>.md` files. Invalid or unreadable historical metadata is a
+non-authoritative query warning; it MUST NOT invalidate an otherwise valid current
+Artifact Graph or be silently interpreted as a contract.
+
+JSON and Markdown are permitted rendering formats. Implementations SHOULD write
+them to standard output by default rather than persist another potentially stale
+knowledge file. Any persisted cache remains disposable and non-authoritative.
 
 ## Required metadata block
 
@@ -148,7 +209,7 @@ graph contradiction rather than an actionable or stale route.
 | --- | --- |
 | Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Empty Feature Approval only for `NONE` |
 | Requirement | Feature ID; Planning Version |
-| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version` |
+| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version`; structured impact metadata defined below for Solutions created under this protocol version |
 | Slice Plan | Feature ID; Based On Solution; Slice IDs in declared order |
 | TDD Record | Feature ID; Slice ID; Attempt; Solution Version; Slice Plan Version |
 | Review Report | Feature ID; Slice ID; Attempt; Decision; Solution Version; Slice Plan Version; Blocking Findings; Non-blocking Findings; Return Workflow and Return Scope when Decision is FAIL |
@@ -181,6 +242,39 @@ Solution Plan Version. An unaffected Feature retains its prior engineering versi
 `Based On Solution` and `Solution Version` fields in Feature- and Slice-scoped
 artifacts refer to the applicable Feature Engineering Version, not necessarily the
 current Solution Plan artifact's own Version.
+
+### Structured Solution impact metadata
+
+A Solution Plan created or normatively revised under Artifact Protocol 2.9 MUST
+include all of the following metadata fields. A pre-2.9 Solution that omits the
+entire set remains readable during migration; the derived Project Impact View is
+then `unavailable`. A partial set is invalid.
+
+| Field | Canonical value |
+| --- | --- |
+| Shared Component IDs | `NONE` or ordered unique `SC-XX` identifiers separated by `; ` |
+| Feature Dependencies | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = F-YY, F-ZZ` |
+| Feature Shared Components | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = SC-YY, SC-ZZ` |
+| Feature Decision References | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = ED-YY, ED-ZZ` |
+| Cross-Feature Impact | one ordered entry per active Feature: `F-XX = DIRECT`, `INDIRECT`, or `UNAFFECTED` |
+
+Every map MUST contain exactly the active Feature IDs in Planning order. A Feature
+dependency target MUST be another active Feature and MUST NOT be the source Feature.
+Dependencies MUST be acyclic. Component references MUST resolve through `Shared
+Component IDs`. Decision references MUST resolve to current entries in the
+Solution Plan's `Engineering Decision Register`. `NONE` cannot be combined with an
+identifier in the same value.
+
+`Feature Dependencies` means that the Feature on the left consumes an engineering
+contract owned or exposed by the Features on the right. Therefore a change to a
+dependency can directly or transitively affect its dependents. Shared-component
+membership means co-usage, not dependency direction. `Cross-Feature Impact`
+classifies the current Solution revision rather than predicting every possible
+future change.
+
+The derived Project Impact View may calculate reverse and transitive relationships
+from these fields. Such calculations are non-authoritative and MUST NOT replace the
+Solution-owned impact decision or alter transition resolution.
 
 Planning represents an explicitly approved empty Feature list with the exact value
 `NONE`; a blank metadata value is never an empty list. When `Feature IDs` is `NONE`,
@@ -256,7 +350,7 @@ Review Report and required return metadata instead of using Status `BLOCKED`.
 Planning contains project intent, constraints, exclusions, success measures, and
 the complete ordered Feature list for the currently approved scope. READY means the
 list covers all intent approved so far; it does not assert that the user will never
-add another same-project module.
+add another module through a Subsequent Plan Entry.
 
 ### Requirement
 
@@ -273,11 +367,65 @@ smallest compatibility boundary for downstream reuse. Adding or changing one Fea
 does not invalidate another Feature unless Solution records a material cross-Feature
 engineering impact by advancing that Feature's engineering version.
 
+A Solution Plan created or normatively revised under Artifact Protocol 2.10 MUST
+contain exactly one `## Implementation Structure` section and exactly one
+`## Test Structure` section. A pre-2.10 Solution that omits both remains readable
+during migration. A revised Solution MUST add both; one without the other is an
+incomplete engineering contract.
+
+`Implementation Structure` defines repository-relative source roots, the chosen
+organization strategy, responsibility boundaries, module or package patterns,
+allowed dependency direction, applicable Features or Shared Components, and the
+evidence supporting the choice. It MUST use this table header:
+
+```markdown
+| Component or Role | Source Root | Module or Package Pattern | Responsibility | Allowed Dependencies | Applies To | Evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+```
+
+`Test Structure` defines where unit, component, integration, contract, or end-to-end
+tests belong and how they relate to production structure. It MUST use this table
+header:
+
+```markdown
+| Test Level | Test Root | Module or Package Pattern | Production Relationship | Applies To | Evidence |
+| --- | --- | --- | --- | --- | --- |
+```
+
+Paths and patterns are repository-relative. Solution MUST prefer observable project
+conventions when they are coherent. When introducing multiple architectural roles,
+it MUST state whether organization is by Feature, by layer, or a justified hybrid;
+it MUST NOT silently place unrelated responsibilities into one package or module.
+Likewise, it MUST NOT create a generic catch-all `utility` area when a cohesive
+domain, mapping, validation, serialization, infrastructure, or shared-component
+responsibility can be named. Shared placement is valid only when the responsibilities
+are cohesive and the Solution records the reason.
+
+Tests MUST follow the repository's established convention or an explicit Test
+Structure. Unit and component tests SHOULD mirror the production package/module
+they exercise when the language and framework support that convention. Integration,
+contract, and end-to-end tests MAY use dedicated roots or packages when explicitly
+defined. ForgeFlow does not require Java, Spring, or any one test topology.
+
 ### Slice Plan
 
 A Slice Plan is Feature-level and immutable for its version. It contains an ordered
 list of independently implementable and reviewable Slices. Slice Plans MUST NOT
 store dynamic execution state, cursors, or Review decisions.
+
+Every Slice that creates, moves, or materially changes production or test files
+MUST include a `Planned File Placement` table with this exact header:
+
+```markdown
+| Slice ID | Responsibility | Production Path or Pattern | Test Path or Pattern | Governing Decision | Notes |
+| --- | --- | --- | --- | --- | --- |
+```
+
+Each row MUST resolve to the current Solution's Implementation Structure and Test
+Structure. A directory pattern may leave a filename to repository naming
+conventions, but it cannot leave the package, module, source root, test root, or
+architectural responsibility undecided. Slices that change no files record `NONE`
+with the reason.
 
 ### TDD Record
 
@@ -286,6 +434,20 @@ results, changed files, deviations, and the Review attempt being prepared. Attem
 starts at 1 and increments after each FAIL. Its Canonical Artifact Path contains
 the latest authorized TDD attempt; the owning TDD workflow replaces that current
 record when preparing a higher attempt. Review never edits this artifact.
+
+A TDD Record for a Slice that changes files MUST contain a `File Placement
+Conformance` table linking every created or moved production/test path to its Slice
+placement row and governing Solution decision. The table uses this exact header:
+
+```markdown
+| Actual Path | Kind | Responsibility | Planned Path or Pattern | Governing Decision | Conformance |
+| --- | --- | --- | --- | --- | --- |
+```
+
+`Kind` is `PRODUCTION` or `TEST`; `Conformance` is `CONFORMS` or `DEVIATES`. Every
+`DEVIATES` row records its owner and resolution in the TDD Record deviations
+evidence. Merely passing tests does not make an architectural placement deviation
+conforming.
 
 ### Review Report
 
@@ -346,7 +508,7 @@ needed. No workflow may change another workflow's artifact or status.
 
 ### Feature retirement
 
-Removing a Feature from same-project Planning requires explicit user authorization.
+Removing a Feature from current Planning requires explicit user authorization.
 Before the new Planning version is written, the active participant MUST move every
 canonical Requirement, Slice Plan, TDD Record, and Review Report owned by that
 Feature, without changing content, below

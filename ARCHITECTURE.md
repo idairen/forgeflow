@@ -34,7 +34,7 @@ the normative files listed in [Authoritative sources](#2-authoritative-sources) 
 6. [Artifact Graph](#6-artifact-graph)
 7. [Workflow and scope model](#7-workflow-and-scope-model)
 8. [Transition and Handoff model](#8-transition-and-handoff-model)
-9. [Incremental change and recovery](#9-incremental-change-and-recovery)
+9. [Subsequent change and recovery](#9-subsequent-change-and-recovery)
 10. [Execution surfaces](#10-execution-surfaces)
 11. [Review plugin architecture](#11-review-plugin-architecture)
 12. [Persistence, history, and safety](#12-persistence-history-and-safety)
@@ -109,7 +109,7 @@ instructions and cannot override them.
 - Resolve the next authorized Workflow and Scope from current evidence.
 - Separate business, engineering, implementation, and review ownership.
 - Make forward progress, return, recovery, completion, and invalid state explicit.
-- Preserve unaffected evidence during same-project incremental change.
+- Preserve unaffected evidence during subsequent Plan change.
 - Support manual IDE-assisted execution and optional sequential CLI orchestration.
 - Keep Review independently owned and extensible through Markdown rules.
 - Fail closed when graph evidence is missing, stale, malformed, or contradictory.
@@ -270,6 +270,52 @@ The parser and resolver reject, among other conditions:
 A contradictory graph resolves to `TERMINAL / HALTED`; ForgeFlow does not guess a
 repair transition.
 
+### 6.5 Project Knowledge View
+
+ForgeFlow does not create a second knowledge-base artifact. The Project Knowledge
+View is a read-only projection over validated current Artifacts and preserved
+history. It connects Planning Change Sets, Feature Contract Versions, Requirements,
+Solution engineering boundaries, Slice Plans, TDD attempts, and Review decisions.
+
+The Python CLI includes this projection in `forge status`, preserving declared
+Feature and Slice order and indexing Artifact History, current supplemental Reports,
+Reports History, and rotated evidence roots. The view is non-authoritative: it
+cannot authorize work, repair missing references, or make historical evidence
+current. An invalid graph produces an unavailable view instead of a partial one.
+
+`forge knowledge` provides read-only Feature and Slice filters, optional historical
+contract timelines, and JSON or Markdown rendering. The implementation lives in a
+dedicated knowledge builder rather than the Artifact parser, keeping validation and
+presentation responsibilities separate. Queries reject inactive identifiers and
+write to standard output by default.
+
+Artifact Protocol 2.9 adds a migration-safe structured impact model to new or
+revised Solution Plans: Feature dependencies, shared-component membership,
+engineering-decision references, and the current Solution change classification.
+The independent impact analyzer derives reverse and transitive dependents and
+shared-component peers without treating co-usage as dependency direction. Legacy
+Solutions remain valid but expose an unavailable impact view until revised. Impact
+output is non-authoritative and cannot influence Resolver ordering or Handoff scope.
+
+### 6.6 Source and test placement contracts
+
+Artifact Protocol 2.10 moves file organization out of TDD improvisation and into
+the engineering baseline. A new or revised Solution records `Implementation
+Structure` and `Test Structure`; each Slice records `Planned File Placement`; TDD
+records `File Placement Conformance`; Review checks actual paths against the chain.
+
+The policy is Agent- and technology-agnostic. Solution derives package-by-Feature,
+package-by-layer, or hybrid organization from repository conventions and explicit
+engineering decisions. It separates responsibilities when the contract requires
+it, without imposing artificial one-class packages. Unit/component tests mirror
+production structure when that is the established or selected convention, while
+integration and end-to-end tests may use dedicated declared roots.
+
+Architecture rules distinguish contract from preference. `ARC-003` and `ARC-009`
+are P1 checks for explicit source/test layout violations and therefore block under
+the built-in architecture threshold. `ARC-008` remains a P2 cohesion recommendation
+and cannot fail Review merely because an evaluator prefers another organization.
+
 ## 7. Workflow and scope model
 
 ### 7.1 Ownership chain
@@ -388,18 +434,20 @@ names one matching affected scope. A persisted non-Review blocker records its ow
 category, owner, scope, reason, and evidence. Stale blockers and stale Review
 attempts remain evidence but cannot authorize recovery.
 
-## 9. Incremental change and recovery
+## 9. Subsequent change and recovery
 
-### 9.1 Same-project incremental intent
+### 9.1 Subsequent Plan intent
 
-`forge plan --incremental --intent "..."` is a special Plan entry for an explicit
-addition or change to the same project. It is allowed only when:
+`forge plan --intent "..."` automatically uses Subsequent Plan Entry when current
+READY Planning exists. Every later intent is treated as a change to the current
+software project; no incremental label or project-identity confirmation is needed.
+It is allowed only when:
 
 - the graph is valid;
 - Planning is current and `READY`;
 - no actionable persisted blocker exists;
 - no current FAIL Review is awaiting its owner;
-- the relationship to the existing project is explicit or confirmed.
+- a non-empty User Intent is supplied.
 
 Plan records an exact Change Set and retains stable Feature IDs. Added or affected
 Features receive new contract versions; unaffected Features retain their versions
@@ -417,11 +465,12 @@ A new process may resume a current persisted blocker without a remembered Handof
 It rebuilds the graph, applies Rule 3, and re-authorizes only the selected owner and
 scope. Runtime history is diagnostic; it is not the recovery authority.
 
-### 9.4 New-project rotation
+### 9.4 Explicit evidence rotation
 
-An unrelated project request or explicit reset uses paired Project Evidence
-Rotation. Active `artifacts/` and `reports/` roots receive the same UTC suffix and
-are rotated as one transaction. Partial rotation is rolled back.
+Only an explicit reset or archive maintenance operation uses paired Project
+Evidence Rotation. Semantic distance between intents never selects rotation.
+Active `artifacts/` and `reports/` roots receive the same UTC suffix and are rotated
+as one transaction. Partial rotation is rolled back.
 
 ## 10. Execution surfaces
 
@@ -457,9 +506,10 @@ The optional `forge` CLI provides:
 | Command | Responsibility |
 | --- | --- |
 | `forge init` | Install or refresh managed framework files. |
-| `forge plan` | Execute authorized Plan, including explicit incremental intent. |
+| `forge plan` | Execute authorized Plan, including default Subsequent Plan intent. |
 | `forge run` | Run sequential manual or automatic orchestration. |
 | `forge status` | Parse evidence and display graph-derived state. |
+| `forge knowledge` | Query current project knowledge by Feature, Slice, dependency impact, or shared component, with optional history and Markdown rendering. |
 | `forge reset` | Preview or execute paired evidence rotation. |
 | `forge handoff` | Display the latest validated runtime Handoff snapshot. |
 
@@ -526,6 +576,10 @@ resolution.
 | `.forgeflow/reports/` | Supplemental | Current plugin-specific Review detail. |
 | `.forgeflow/reports/history/` | Historical | Replaced supplemental reports with revision suffixes. |
 | `.forgeflow/runtime/` | Non-authoritative | CLI step history, run summaries, latest validated Handoff snapshot. |
+
+The Project Knowledge View spans these stores without merging their authority.
+Current Artifacts define the active baseline; history explains evolution; Reports
+remain supplemental; Runtime remains diagnostic.
 
 Safety properties implemented by the current architecture include:
 

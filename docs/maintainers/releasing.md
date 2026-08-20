@@ -43,7 +43,9 @@ minimum, cover:
 - single and multiple Slice progression;
 - Return to the correct decision owner;
 - Recovery from stale or contradictory evidence;
-- same-project incremental Plan behavior;
+- default Subsequent Plan behavior;
+- structured Solution dependency and shared-component impact behavior;
+- source/test placement contracts and blocking layout conformance;
 - Plugin-Based Review PASS and FAIL behavior;
 - terminal Project completion.
 

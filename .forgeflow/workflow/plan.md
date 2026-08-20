@@ -1,6 +1,6 @@
 # Plan Workflow
 
-Version: 2.5
+Version: 2.7
 
 ## Contract
 
@@ -21,15 +21,15 @@ behavior or engineering design.
    - Bootstrap Entry requires both an absent or empty Artifact Root and an absent or
      empty supplemental Reports Root. It creates either root if needed and starts
      Planning without rotation.
-   - An explicit user request to start a new project or reset the active project
-     executes the Project Evidence Rotation Procedure before Planning.
-   - An explicit same-project addition or change uses Incremental Intent Entry,
-     preserves both evidence roots, and merges the approved intent into a higher
-     Planning version.
-   - If the request appears unrelated to current Planning but does not explicitly
-     authorize a new project or reset, explain that the current Artifact Root and
-     supplemental Reports Root would be rotated together, then ask and wait for
-     confirmation. Semantic similarity alone MUST NOT authorize rotation.
+   - A non-empty User Intent received after current READY Planning uses Subsequent
+     Plan Entry, preserves both evidence roots, and merges the intent into a higher
+     Planning version. The user does not need to label it incremental or restate
+     that it belongs to the current software project.
+   - Semantic similarity to current Planning MUST NOT be used to infer a different
+     project, request confirmation of project identity, or rotate evidence. Every
+     later Plan intent is a change to the current software project.
+   - Project Evidence Rotation occurs only through an explicit reset or archive
+     maintenance operation. Rotation is not a Plan classification outcome.
    - An empty Artifact Root with a non-empty Reports Root is not a clean Bootstrap
      Entry. Ask and wait for explicit reset authorization before rotating the
      residual reports or creating Planning.
@@ -38,8 +38,8 @@ behavior or engineering design.
      is valid only when Rule 3 selects Plan at Project scope from a current PLAN_GAP.
    - A non-empty Artifact Root without Planning is not Bootstrap Entry; Rule 2
      produces `TERMINAL / HALTED`. Do not rotate or repair it unless the user starts
-     a separate explicit new-project/reset operation.
-2. On Incremental Intent Entry, execute every incremental validation check in the
+     a separate explicit reset or archive maintenance operation.
+2. On Subsequent Plan Entry, execute every subsequent-entry validation check in the
    Handoff Protocol. Read current Planning and classify the requested change as added,
    modified, removed, reordered, or project-constraint impact before changing files.
 3. Inspect existing project context and constraints.
@@ -55,14 +55,18 @@ behavior or engineering design.
 7. Build Feature Contract Versions and the Change Set according to the Artifact
    Protocol. Unchanged Features retain their prior contract versions. Added and
    business-affected Features use the new Planning Version.
-8. Confirm that the Feature set covers the currently approved project intent without
-   overlap. A later module may extend that approved scope through another Incremental
-   Intent Entry.
-9. Before replacement, archive the prior Planning exactly. For explicit Feature
+8. Record an intent-evolution summary that explains how the current Change Set
+   changes the complete approved scope. It MUST distinguish retained, added,
+   modified, reordered, and explicitly retired Features without copying historical
+   Planning into a second current contract.
+9. Confirm that the Feature set covers the currently approved project intent without
+   overlap. A later module may extend that approved scope through another Subsequent
+   Plan Entry.
+10. Before replacement, archive the prior Planning exactly. For explicit Feature
    removal, complete the Artifact Protocol's Feature retirement transaction. Persist
    the new Planning at its Canonical Artifact Path and mark it READY only when the
    current approved scope and Change Set are complete.
-10. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Incremental Intent
+11. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Subsequent Plan
    Entry, retain its Plan-only authorization until the new Planning is persisted.
    For Handoff Entry, execute the Unified Entry Validation Procedure defined in the
    Handoff Protocol.
@@ -83,7 +87,7 @@ explicitly approves that the project has no delivery objective. It uses the exac
 `NONE` representation and approval metadata defined by the Artifact Protocol; a
 blank Feature IDs value is invalid.
 
-For an incremental version, READY also requires an exact Change Set and one Feature
+For a subsequent version, READY also requires an exact Change Set and one Feature
 Contract Version for every active Feature. Additive intent normally appends Features
 without changing earlier Feature versions or evidence. Modification advances only
 the affected Feature versions. Reordering alone preserves versions unless it changes

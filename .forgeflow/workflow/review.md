@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.6
+Version: 2.9
 
 ## Contract
 
@@ -67,7 +67,8 @@ never replace or independently determine the core Review Report fields.
    any supplemental report path that already exists, archive its exact prior content
    through the Reports History Root procedure.
 4. Inspect correctness, regressions, scope discipline, security, maintainability,
-   and conformance with the Solution Plan.
+   conformance with the Solution Plan, and consistency of the complete knowledge
+   trace from Feature Contract through implementation evidence.
 5. For every finding, record severity, Owner Workflow, Affected Scope, observable
    Evidence details (code snippets, test output excerpts, log lines), and
    Violated Contract. These finding records must be written into the Review Report
@@ -78,7 +79,17 @@ never replace or independently determine the core Review Report fields.
 7. Persist a new immutable Review Report at its Canonical Artifact Path. Write the
    exact canonical Findings table first, derive its counts and disposition, and
    include return metadata only when applicable.
-8. Apply the Transition Resolution Procedure. If it requires a handoff, validate
+8. Confirm that cited current decisions and versions resolve to canonical Artifacts;
+   historical evidence may explain evolution but MUST NOT satisfy a current gate.
+   When the current Solution contains structured impact metadata, also confirm that
+   implemented dependencies, shared-component use, and decision references agree
+   with the targeted Feature's mappings and that every current impact entry resolves.
+9. Compare every created or moved production/test path with the Solution
+   Implementation/Test Structure, Slice Planned File Placement, and TDD File
+   Placement Conformance table. A concrete violation of an explicit structure
+   contract is blocking according to the architecture plugin; a mere preference
+   not established by repository evidence or Solution remains non-blocking.
+10. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
    final content of the response, then stop without consuming its Target Scope.
 

@@ -8,7 +8,7 @@ logger = get_logger()
 
 
 class ArtifactParser:
-    """Build the active artifact set defined by Artifact Protocol 2.5."""
+    """Build and validate the canonical active artifact set."""
 
     _FILE_RULES = (
         (re.compile(r"planning\.md"), "Planning", "Plan"),
@@ -65,6 +65,16 @@ class ArtifactParser:
     _VERSION = re.compile(r"\d+\.\d+")
     _FEATURE = re.compile(r"F-(\d{2})")
     _SLICE = re.compile(r"S-(\d{2})")
+    _SHARED_COMPONENT = re.compile(r"SC-(\d{2})")
+    _ENGINEERING_DECISION = re.compile(r"ED-(\d{2})")
+    _IMPACT_VALUES = {"DIRECT", "INDIRECT", "UNAFFECTED"}
+    _SOLUTION_IMPACT_FIELDS = (
+        "Shared Component IDs",
+        "Feature Dependencies",
+        "Feature Shared Components",
+        "Feature Decision References",
+        "Cross-Feature Impact",
+    )
     _EMPTY_FEATURES = "NONE"
     _EMPTY_FEATURE_APPROVAL = re.compile(r"APPROVED: \S.*")
     _SCOPE = re.compile(r"(?:Project|Feature: F-\d{2}|Slice: F-\d{2}/S-\d{2})")
@@ -88,6 +98,28 @@ class ArtifactParser:
         "Violated Contract |"
     )
     _FINDINGS_SEPARATOR = "| --- | --- | --- | --- | --- | --- | --- |"
+    _STRUCTURE_TABLES = {
+        "Implementation Structure": (
+            "| Component or Role | Source Root | Module or Package Pattern | "
+            "Responsibility | Allowed Dependencies | Applies To | Evidence |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ),
+        "Test Structure": (
+            "| Test Level | Test Root | Module or Package Pattern | "
+            "Production Relationship | Applies To | Evidence |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ),
+        "Planned File Placement": (
+            "| Slice ID | Responsibility | Production Path or Pattern | "
+            "Test Path or Pattern | Governing Decision | Notes |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ),
+        "File Placement Conformance": (
+            "| Actual Path | Kind | Responsibility | Planned Path or Pattern | "
+            "Governing Decision | Conformance |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ),
+    }
 
     @classmethod
     def detect_artifact_state(cls, root_dir):
@@ -161,6 +193,20 @@ class ArtifactParser:
                 {
                     "code": "non_empty_artifact_root_without_valid_planning",
                     "artifacts": canonical_evidence,
+                }
+            )
+
+        graph_errors = cls._validate_solution_graph_metadata(artifacts)
+        if graph_errors:
+            errors.extend(graph_errors)
+            diagnostics.append(
+                {
+                    "code": "invalid_solution_impact_model",
+                    "artifacts": [
+                        cls._artifact_evidence(root / filename)
+                        for filename in ("planning.md", "solution-plan.md")
+                        if (root / filename).is_file()
+                    ],
                 }
             )
 
@@ -254,6 +300,7 @@ class ArtifactParser:
 
         cls._validate_identifiers(metadata, filename_match, expected_type, errors)
         cls._validate_type_metadata(metadata, expected_type, errors)
+        cls._validate_structure_sections(text, expected_type, errors)
         findings = []
         if expected_type == "Review Report":
             findings, finding_errors = cls._parse_review_findings(text)
@@ -394,6 +441,48 @@ class ArtifactParser:
         return findings, errors
 
     @classmethod
+    def _validate_structure_sections(cls, text, artifact_type, errors):
+        section_names = {
+            "Solution Plan": ("Implementation Structure", "Test Structure"),
+            "Slice Plan": ("Planned File Placement",),
+            "TDD Record": ("File Placement Conformance",),
+        }.get(artifact_type, ())
+        if not section_names:
+            return
+
+        lines = text.splitlines()
+        positions = {
+            name: [
+                index for index, line in enumerate(lines) if line == f"## {name}"
+            ]
+            for name in section_names
+        }
+        if artifact_type == "Solution Plan":
+            present = [name for name, indexes in positions.items() if indexes]
+            if present and len(present) != len(section_names):
+                errors.append(
+                    "Solution structure sections must include both "
+                    "Implementation Structure and Test Structure"
+                )
+
+        for name, indexes in positions.items():
+            if not indexes:
+                continue
+            if len(indexes) != 1:
+                errors.append(f"Artifact must contain exactly one ## {name} section")
+                continue
+            index = indexes[0] + 1
+            while index < len(lines) and not lines[index].strip():
+                index += 1
+            header, separator = cls._STRUCTURE_TABLES[name]
+            if (
+                index + 1 >= len(lines)
+                or lines[index] != header
+                or lines[index + 1] != separator
+            ):
+                errors.append(f"invalid {name} table header")
+
+    @classmethod
     def _validate_review_findings(cls, metadata, findings, errors):
         blocking = [
             finding for finding in findings if finding["severity"] == "BLOCKING"
@@ -501,6 +590,7 @@ class ArtifactParser:
                 "Feature Engineering Versions",
                 errors,
             )
+            cls._validate_solution_impact_metadata(metadata, errors)
         elif artifact_type == "Slice Plan":
             cls._validate_identifier_list(
                 metadata.get("Slice IDs", ""), cls._SLICE, "Slice IDs", errors
@@ -579,6 +669,151 @@ class ArtifactParser:
             features.append(parts[0])
         if expected_features is not None and features != expected_features:
             errors.append(f"{field} does not match Feature IDs")
+
+    @classmethod
+    def _validate_solution_impact_metadata(cls, metadata, errors):
+        present = [field for field in cls._SOLUTION_IMPACT_FIELDS if field in metadata]
+        if not present:
+            return
+        if len(present) != len(cls._SOLUTION_IMPACT_FIELDS):
+            missing = [
+                field for field in cls._SOLUTION_IMPACT_FIELDS if field not in metadata
+            ]
+            errors.append("partial Solution impact metadata: " + ", ".join(missing))
+            return
+
+        component_ids = metadata["Shared Component IDs"]
+        if component_ids != "NONE":
+            cls._validate_identifier_list(
+                component_ids,
+                cls._SHARED_COMPONENT,
+                "Shared Component IDs",
+                errors,
+            )
+        cls._validate_relation_map(
+            metadata["Feature Dependencies"],
+            "Feature Dependencies",
+            cls._FEATURE,
+            errors,
+        )
+        cls._validate_relation_map(
+            metadata["Feature Shared Components"],
+            "Feature Shared Components",
+            cls._SHARED_COMPONENT,
+            errors,
+        )
+        cls._validate_relation_map(
+            metadata["Feature Decision References"],
+            "Feature Decision References",
+            cls._ENGINEERING_DECISION,
+            errors,
+        )
+        cls._validate_relation_map(
+            metadata["Cross-Feature Impact"],
+            "Cross-Feature Impact",
+            None,
+            errors,
+            allowed_values=cls._IMPACT_VALUES,
+        )
+
+    @classmethod
+    def _validate_relation_map(
+        cls,
+        value,
+        field,
+        target_pattern,
+        errors,
+        allowed_values=None,
+    ):
+        sources = []
+        for entry in value.split("; "):
+            parts = entry.split(" = ", 1)
+            if len(parts) != 2 or cls._FEATURE.fullmatch(parts[0]) is None:
+                errors.append(f"invalid {field}")
+                return
+            source, targets_value = parts
+            if source in sources:
+                errors.append(f"duplicate Feature ID in {field}")
+                return
+            sources.append(source)
+            targets = targets_value.split(", ")
+            if targets_value == "NONE":
+                continue
+            if "NONE" in targets or len(set(targets)) != len(targets):
+                errors.append(f"invalid {field}")
+                return
+            if allowed_values is not None:
+                if len(targets) != 1 or targets[0] not in allowed_values:
+                    errors.append(f"invalid {field}")
+                    return
+            elif any(target_pattern.fullmatch(target) is None for target in targets):
+                errors.append(f"invalid {field}")
+                return
+
+    @classmethod
+    def _validate_solution_graph_metadata(cls, artifacts):
+        planning = artifacts.get("planning.md")
+        solution = artifacts.get("solution-plan.md")
+        if planning is None or solution is None:
+            return []
+        metadata = solution["metadata"]
+        if not all(field in metadata for field in cls._SOLUTION_IMPACT_FIELDS):
+            return []
+
+        feature_ids_value = planning["metadata"].get("Feature IDs", "NONE")
+        feature_ids = [] if feature_ids_value == "NONE" else feature_ids_value.split("; ")
+        errors = []
+        relation_maps = {
+            field: cls._relation_map_values(metadata[field])
+            for field in cls._SOLUTION_IMPACT_FIELDS[1:]
+        }
+        for field, mapping in relation_maps.items():
+            if list(mapping) != feature_ids:
+                errors.append(f"solution-plan.md: {field} does not match Feature IDs")
+
+        dependencies = relation_maps["Feature Dependencies"]
+        active_features = set(feature_ids)
+        for source, targets in dependencies.items():
+            if source in targets:
+                errors.append("solution-plan.md: Feature Dependencies contains self dependency")
+            if any(target not in active_features for target in targets):
+                errors.append("solution-plan.md: Feature Dependencies references inactive Feature")
+        if cls._dependency_cycle(dependencies):
+            errors.append("solution-plan.md: Feature Dependencies contains a cycle")
+
+        component_ids = metadata["Shared Component IDs"]
+        components = set() if component_ids == "NONE" else set(component_ids.split("; "))
+        component_map = relation_maps["Feature Shared Components"]
+        if any(component not in components for values in component_map.values() for component in values):
+            errors.append("solution-plan.md: Feature Shared Components references unknown component")
+        return errors
+
+    @staticmethod
+    def _relation_map_values(value):
+        mapping = {}
+        for entry in value.split("; "):
+            source, targets_value = entry.split(" = ", 1)
+            mapping[source] = [] if targets_value == "NONE" else targets_value.split(", ")
+        return mapping
+
+    @staticmethod
+    def _dependency_cycle(dependencies):
+        visiting = set()
+        visited = set()
+
+        def visit(feature_id):
+            if feature_id in visiting:
+                return True
+            if feature_id in visited:
+                return False
+            visiting.add(feature_id)
+            if any(visit(target) for target in dependencies.get(feature_id, [])):
+                return True
+            visiting.remove(feature_id)
+            visited.add(feature_id)
+            return False
+
+        return any(visit(feature_id) for feature_id in dependencies)
 
     @classmethod
     def _validate_blocker(cls, metadata, errors):

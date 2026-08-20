@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.6
+Version: 2.9
 
 ## Contract
 
@@ -44,10 +44,18 @@ upstream contract gap by inventing behavior or engineering policy.
 4. Define ordered `S-XX` Slices that are independently implementable, testable,
    reviewable, and valuable.
 5. For each Slice record intent, acceptance evidence, dependencies, expected
-   components/files, tests, risks, and completion conditions.
+   components/files, tests, risks, completion conditions, applicable engineering
+   decision references, and shared components or utilities it reuses or changes.
+   Add the Artifact Protocol's Planned File Placement rows for every production and
+   test responsibility the Slice creates, moves, or materially changes. Paths or
+   directory patterns MUST resolve to the current Implementation Structure and Test
+   Structure and must distinguish responsibilities when Solution does.
 6. Validate dependency order and reject cycles.
 7. Perform the READY quality gate and record Requirement-and-Solution-to-Slice
-   traceability in the Slice Plan.
+   traceability in the Slice Plan. Every referenced shared component or engineering
+   decision MUST resolve in the current Solution Plan and in that Feature's
+   structured component or decision mapping. Slice MUST NOT infer a relationship
+   omitted from the current Solution impact metadata.
 8. Persist an immutable Slice Plan version at its Canonical Artifact Path with
    Feature ID and Based On Solution equal to this Feature's current Feature
    Engineering Version.
@@ -64,6 +72,11 @@ derived from TDD and Review evidence.
 Slice MUST NOT change business behavior, redesign the Solution Plan, write code,
 or select an execution target independently. All planned Features require current
 READY Slice Plans before the procedure may target the first TDD Slice.
+
+If the Solution does not decide a required package/module or test-layout strategy,
+Slice returns `ENGINEERING_GAP` to Solution. If the strategy exists but the current
+Slice cannot map its responsibilities to it without overlapping or incomplete file
+ownership, Slice persists `SLICE_VIOLATION` rather than leaving placement for TDD.
 
 Completing one Feature's Slice Plan does not continue the Slice loop inside this
 execution. A FORWARD to another Feature starts a new Slice execution. A FORWARD to

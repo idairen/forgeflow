@@ -28,7 +28,7 @@ Options:
   -v, --version         Show the npm installer version
 
 This package installs or refreshes ForgeFlow project files only.
-Use the Python 'forge' CLI for plan, run, status, reset, and handoff commands.`);
+Use the Python 'forge' CLI for plan, run, status, knowledge, reset, and handoff commands.`);
 }
 
 

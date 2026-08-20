@@ -9,7 +9,7 @@ workflow. Each enabled plugin lives under `.forgeflow/rules/reviews/<name>/`.
 |------|-----------|-----------|----------|----------|------------|-------|---------------|---------------|-------------------|-------------|
 | security | `security/` | `security/rules.md` | true | 1 | — | code, docs | Projects containing executable code or security-relevant configuration; individual rules may be N/A | md, csv | P0–P1 | Security vulnerability detection and compliance |
 | coding-standard | `coding-standard/` | `coding-standard/rules.md` | true | 2 | security | code | Python source files only | md, csv | P0–P1 | Python coding style, naming, documentation, and typing conventions |
-| architecture | `architecture/` | `architecture/rules.md` | true | 3 | — | code, docs | Implemented architectural surfaces only; API, database, and scaling rules may be N/A | md, html, csv | P0–P1 | Design boundaries, coupling, and modularity assessment |
+| architecture | `architecture/` | `architecture/rules.md` | true | 3 | — | code, docs | Implemented architectural surfaces only; API, database, scaling, and explicit source/test layout rules may be N/A | md, html, csv | P0–P1 | Design boundaries, coupling, source/test structure, and modularity assessment |
 | performance | `performance/` | `performance/rules.md` | true | 4 | architecture | code | Implemented runtime and data-processing surfaces only; absent technologies are N/A | md, csv | P0–P1 | Performance anti-patterns and efficiency analysis |
 
 ## Field Definitions

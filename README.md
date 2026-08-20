@@ -145,9 +145,10 @@ Public guides, testing documentation, and presentations are indexed in
 | Command | Description |
 |---------|-------------|
 | `forge --help` | Show help message |
-| `forge plan [--intent TEXT] [--incremental]` | Execute Plan; use `--incremental` with an explicit same-project intent |
+| `forge plan [--intent TEXT] [--incremental]` | Execute Plan; a later non-empty intent automatically starts a subsequent Plan change (`--incremental` is a compatibility alias) |
 | `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | Run using the configured mode or an explicit one-time override. |
-| `forge status` | Show current pipeline state, active artifact graph, and handoff data |
+| `forge status` | Show current pipeline state, active Artifact Graph, derived Project Knowledge View, history indexes, and handoff data |
+| `forge knowledge [--feature F-XX] [--slice F-XX/S-XX] [--impact F-XX] [--component SC-XX] [--history] [--format json\|markdown]` | Query the derived knowledge tree, structured impact model, and optional contract history without changing state |
 | `forge reset [--force]` | Rotate active artifacts and supplemental reports (dry-run by default) |
 | `forge init [-a copilot\|codex] [--force]` | Install or refresh the framework and create `forgeflow.json` |
 | `forge handoff` | Debug tool: display the latest validated CLI handoff snapshot |
@@ -165,6 +166,36 @@ Pipeline transitions come only from validated canonical Handoff blocks, never
 configuration fallbacks.
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full schema.
 
+`forge status` also renders a read-only `project_knowledge` projection. It preserves
+declared Feature/Slice order, links every current contract and execution record by
+filename and version, and indexes Artifact/Report history. This projection is for
+navigation only: canonical Artifacts remain the sole source of truth, and an invalid
+Artifact Graph makes current project knowledge unavailable rather than partially
+reconstructing it.
+
+Use `forge knowledge` for a focused view. Feature and Slice filters accept only
+active canonical identifiers and preserve declared order. History is opt-in;
+Markdown and JSON are rendered to standard output so ForgeFlow does not create a
+second, stale knowledge file.
+
+Solutions created under Artifact Protocol 2.9 record structured Feature
+dependencies, shared-component membership, decision references, and current change
+impact. `--impact F-XX` derives direct and transitive dependents while keeping
+shared-component peers separate; `--component SC-XX` lists mapped Features. These
+results are navigation aids and never authorize workflow execution. Older Solution
+Plans remain readable, but their impact view is explicitly unavailable until the
+next normative Solution revision supplies the complete metadata set.
+
+Artifact Protocol 2.10 also treats source and test placement as an engineering
+contract. Solution records the repository's implementation and test structure;
+Slice maps each planned responsibility to production and test paths; TDD records
+actual-path conformance; Review blocks concrete violations. ForgeFlow follows
+observable project conventions and does not universally require Java-style layers.
+When a layered Java/Spring design is selected, controller, service/use-case,
+repository/data-access, domain, and cohesive support responsibilities can be mapped
+to separate Feature-local packages with corresponding tests. A catch-all `utility`
+package is not a substitute for an explicit responsibility or shared component.
+
 ---
 
 ## IDE Usage (Copilot / Codex)
@@ -176,7 +207,7 @@ ForgeFlow supplies dedicated launcher prompts for two AI coding environments:
 - **Manual vs Auto Mode**:  
   - `auto-mode`: The engine resolves each step from the active Artifact Graph and accepts a Handoff only when its transition, scope, and evidence versions match that graph.
   - `manual-mode`: The CLI executes Plan once only when the active Artifact Graph authorizes Plan, then validates any emitted Handoff against the updated graph. `--no-auto` remains an alias for `--manual`.
-  - `incremental Plan`: Run `forge plan --incremental --intent "..."` for an explicit same-project addition or change, then run `forge run` to continue from the scoped graph result. This preserves active artifacts, reports, and both history roots; it cannot bypass an invalid graph, persisted blocker, or current failed Review.
+  - `subsequent Plan`: Run `forge plan --intent "..."` for each later requirement or module. READY Planning makes this a Subsequent Plan Entry automatically; no incremental label or project-identity confirmation is required. It preserves active artifacts, reports, and both history roots, and cannot bypass an invalid graph, persisted blocker, or current failed Review. `--incremental` remains only as a compatibility alias.
 
 You can switch the active adapter by editing `forgeflow.json` or running `forge init -a <adapter> --force`. Forced refresh overwrites managed framework files while preserving artifacts, runtime state, custom plugins, and supported project configuration values.
 

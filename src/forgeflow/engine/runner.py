@@ -10,6 +10,7 @@ import pathlib as plib
 from .yaml_parser import YAMLParser, ForgeflowConfig
 from .handoff_parser import HandoffParser
 from .artifact_parser import ArtifactParser
+from .project_knowledge import ProjectKnowledgeBuilder
 from .state_resolver import StateResolver
 from .config import PromptResolver
 from ..logging_config import get_logger
@@ -91,6 +92,29 @@ class ForgeRunner:
             self.artifacts_dir
         )
         initial_resolution = StateResolver.resolve(initial_artifact_state)
+        initial_entry_error = None
+        initial_has_planning = (
+            initial_artifact_state.get("artifacts", {}).get("planning.md")
+            is not None
+        )
+        if (initial_intent or "").strip() and initial_has_planning:
+            initial_entry_error = self._subsequent_plan_error(
+                initial_artifact_state,
+                initial_resolution,
+            )
+            if initial_entry_error is None:
+                initial_resolution = self._subsequent_plan_resolution()
+        if initial_entry_error is not None:
+            return self._finish_run(
+                {
+                    "result": "PIPELINE_BLOCKED",
+                    "error": "subsequent_plan_entry_not_authorized",
+                    "validation_errors": [initial_entry_error],
+                    "resolution": initial_resolution,
+                },
+                run_started_at,
+                history_start,
+            )
         if initial_resolution["pipeline_status"] != "ACTIVE":
             return self._finish_run(
                 {
@@ -107,7 +131,14 @@ class ForgeRunner:
             artifact_state = ArtifactParser.detect_artifact_state(
                 self.artifacts_dir,
                )
-            step_resolution = StateResolver.resolve(artifact_state)
+            step_resolution = (
+                initial_resolution
+                if step == 0
+                else StateResolver.resolve(artifact_state)
+            )
+            is_subsequent_plan = (
+                step_resolution.get("entry_mode") == "subsequent_plan"
+            )
             if step_resolution["pipeline_status"] != "ACTIVE":
                 return self._finish_run(
                     {
@@ -171,10 +202,18 @@ class ForgeRunner:
                 except Exception as e:
                     exec_failures += 1
                     last_failure = f"execution_error: {e}"
-                    post_resolution = self._resolve_pipeline_state()
-                    if not self._same_authorization(
-                        post_resolution, source_workflow, source_scope
-                    ):
+                    post_artifact_state = ArtifactParser.detect_artifact_state(
+                        self.artifacts_dir
+                    )
+                    post_resolution = StateResolver.resolve(post_artifact_state)
+                    graph_changed = (
+                        post_artifact_state != artifact_state
+                        if is_subsequent_plan
+                        else not self._same_authorization(
+                            post_resolution, source_workflow, source_scope
+                        )
+                    )
+                    if graph_changed:
                         validation_errors = [
                             "artifact_graph_changed_after_execution_error"
                         ]
@@ -198,10 +237,18 @@ class ForgeRunner:
                 if llm_output is None or not isinstance(llm_output, str):
                     exec_failures += 1
                     last_failure = "empty_or_non_text_output"
-                    post_resolution = self._resolve_pipeline_state()
-                    if not self._same_authorization(
-                        post_resolution, source_workflow, source_scope
-                    ):
+                    post_artifact_state = ArtifactParser.detect_artifact_state(
+                        self.artifacts_dir
+                    )
+                    post_resolution = StateResolver.resolve(post_artifact_state)
+                    graph_changed = (
+                        post_artifact_state != artifact_state
+                        if is_subsequent_plan
+                        else not self._same_authorization(
+                            post_resolution, source_workflow, source_scope
+                        )
+                    )
+                    if graph_changed:
                         validation_errors = [
                             "artifact_graph_changed_after_empty_output"
                         ]
@@ -237,9 +284,17 @@ class ForgeRunner:
                     break
 
                 if not self.handoff_parser.has_handoff_attempt(llm_output):
-                    if self._same_authorization(
-                        post_resolution, source_workflow, source_scope
-                    ):
+                    waiting_authorized = (
+                        post_artifact_state == artifact_state
+                        or self._same_authorization(
+                            post_resolution, source_workflow, source_scope
+                        )
+                        if is_subsequent_plan
+                        else self._same_authorization(
+                            post_resolution, source_workflow, source_scope
+                        )
+                    )
+                    if waiting_authorized:
                         waiting_without_handoff = True
                         break
                     validation_errors = [
@@ -250,9 +305,14 @@ class ForgeRunner:
 
                 exec_failures += 1
                 last_failure = "invalid_handoff"
-                if not self._same_authorization(
-                    post_resolution, source_workflow, source_scope
-                ):
+                graph_changed = (
+                    post_artifact_state != artifact_state
+                    if is_subsequent_plan
+                    else not self._same_authorization(
+                        post_resolution, source_workflow, source_scope
+                    )
+                )
+                if graph_changed:
                     validation_errors = [
                         "artifact_graph_changed_after_invalid_handoff"
                     ]
@@ -391,24 +451,26 @@ class ForgeRunner:
             self.artifacts_dir,
              )
         workflow_resolution = StateResolver.resolve(artifact_state)
-        incremental_error = None
-        if incremental:
-            incremental_error = self._incremental_plan_error(
+        has_planning = (
+            artifact_state.get("artifacts", {}).get("planning.md") is not None
+        )
+        subsequent_plan_entry = (
+            workflow_name == "plan"
+            and bool((user_input or "").strip())
+            and (has_planning or incremental)
+        )
+        subsequent_error = None
+        if subsequent_plan_entry:
+            subsequent_error = self._subsequent_plan_error(
                 artifact_state,
                 workflow_resolution,
             )
-            if incremental_error is None:
-                workflow_resolution = {
-                    "pipeline_status": "ACTIVE",
-                    "current_workflow": "plan",
-                    "target_scope": "Project",
-                    "resolution_rule": "incremental_intent",
-                    "entry_mode": "incremental",
-                }
+            if subsequent_error is None:
+                workflow_resolution = self._subsequent_plan_resolution()
         status = artifact_state.get("status", "unknown")
         logger.debug("Artifacts status: %s", status)
 
-        if incremental_error is not None or (
+        if subsequent_error is not None or (
             workflow_resolution["pipeline_status"] != "ACTIVE"
             or workflow_resolution["current_workflow"] != workflow_name
         ):
@@ -417,8 +479,8 @@ class ForgeRunner:
                 "workflow": workflow_name,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "result": "STEP_REJECTED",
-                "error": "incremental_entry_not_authorized"
-                if incremental_error is not None
+                "error": "subsequent_plan_entry_not_authorized"
+                if subsequent_error is not None
                 else (
                     "pipeline_not_active"
                     if workflow_resolution["pipeline_status"] != "ACTIVE"
@@ -426,9 +488,9 @@ class ForgeRunner:
                 ),
                 "graph_resolution": workflow_resolution,
             }
-            if incremental_error is not None:
-                entry["entry_mode"] = "incremental"
-                entry["validation_errors"] = [incremental_error]
+            if subsequent_error is not None:
+                entry["entry_mode"] = "subsequent_plan"
+                entry["validation_errors"] = [subsequent_error]
             await self._record_step(entry)
             logger.warning(
                 "[manual] Rejected %s; graph authorizes %s",
@@ -470,7 +532,7 @@ class ForgeRunner:
                 entry["entry_mode"] = workflow_resolution["entry_mode"]
             graph_changed = (
                 post_artifact_state != artifact_state
-                if incremental
+                if subsequent_plan_entry
                 else not self._same_authorization(
                     post_resolution,
                     workflow_name,
@@ -521,7 +583,10 @@ class ForgeRunner:
                 entry["validation_errors"] = ["invalid_handoff"]
             elif (
                 post_artifact_state == artifact_state
-                if incremental
+                or self._same_authorization(
+                    post_resolution, workflow_name, source_scope
+                )
+                if subsequent_plan_entry
                 else self._same_authorization(
                     post_resolution, workflow_name, source_scope
                 )
@@ -567,6 +632,10 @@ class ForgeRunner:
         """Return current runner state as dict."""
         artifact_state = ArtifactParser.detect_artifact_state(self.artifacts_dir)
         pipeline_state = StateResolver.resolve(artifact_state)
+        project_knowledge = ProjectKnowledgeBuilder.build(
+            artifact_state,
+            reports_dir=self.reports_dir,
+        )
         self.current_workflow = pipeline_state["current_workflow"]
         self.current_scope = pipeline_state["target_scope"]
         return {
@@ -580,6 +649,7 @@ class ForgeRunner:
               "runtime_dir": self.runtime_dir,
               "last_run": self.get_latest_run(),
               "artifact_state": artifact_state,
+              "project_knowledge": project_knowledge,
               "config_mode": self.config.mode,
               "adapter": self.adapter_name,
              }
@@ -597,20 +667,30 @@ class ForgeRunner:
         )
 
     @staticmethod
-    def _incremental_plan_error(artifact_state, resolution):
+    def _subsequent_plan_error(artifact_state, resolution):
         artifacts = artifact_state.get("artifacts", {})
         planning = artifacts.get("planning.md")
         if artifact_state.get("status") == "invalid":
-            return "incremental_intent_requires_valid_artifact_graph"
+            return "subsequent_plan_requires_valid_artifact_graph"
         if planning is None or planning.get("status") != "READY":
-            return "incremental_intent_requires_ready_planning"
+            return "subsequent_plan_requires_ready_planning"
         if resolution.get("resolution_rule") == "rule_3_persisted_blocker":
-            return "incremental_intent_cannot_bypass_persisted_blocker"
+            return "subsequent_plan_cannot_bypass_persisted_blocker"
         if StateResolver.has_current_failed_review(artifact_state):
-            return "incremental_intent_cannot_bypass_failed_review"
+            return "subsequent_plan_cannot_bypass_failed_review"
         if resolution.get("pipeline_status") == "HALTED":
-            return "incremental_intent_requires_valid_artifact_graph"
+            return "subsequent_plan_requires_valid_artifact_graph"
         return None
+
+    @staticmethod
+    def _subsequent_plan_resolution():
+        return {
+            "pipeline_status": "ACTIVE",
+            "current_workflow": "plan",
+            "target_scope": "Project",
+            "resolution_rule": "subsequent_plan_intent",
+            "entry_mode": "subsequent_plan",
+        }
 
     @classmethod
     def _handoff_graph_errors(

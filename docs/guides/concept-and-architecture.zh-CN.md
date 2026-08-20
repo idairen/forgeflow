@@ -89,8 +89,8 @@ Review 每次检查一个 Slice Attempt。Slice Plan 可以定义多个未来 Sl
 ```mermaid
 flowchart TB
     User[人类意图] --> Entry{获准的入口}
-    Entry -->|新项目| Plan
-    Entry -->|同项目增量| Plan
+    Entry -->|Bootstrap| Plan
+    Entry -->|后续需求| Plan
     Entry -->|已验证的转换| Resolver
 
     subgraph Core[Markdown 框架核心]
@@ -158,6 +158,12 @@ Solution 读取全部当前 Requirement，为项目定义工程策略，包括�
 Solution 为每个当前 Feature 记录 Feature Engineering Version。`ENGINEERING_READY` 要求当前 READY Solution Plan 引用了所有当前 Requirement 及其作用域化工程版本。
 
 随后 Slice 为每个 Feature 创建有序的 Slice Plan。Slice 是具有明确验证边界的可交付单元，而不只是任务列表中的一项。只有每个当前 Feature 都具备匹配其工程版本的当前 READY Slice Plan，才会达到 `DELIVERY_READY`。
+
+源码与测试组织必须在实现之前确定。Solution 记录项目的实现/测试结构与依赖方向；
+Slice 将每项责任映射到生产和测试路径或可解析 pattern；TDD 可以根据既有命名惯例
+确定具体文件名，但不能自行发明新的 package、module、layer 或测试拓扑。Review 将
+明确布局契约的违反视为阻塞，同时保持一般组织偏好为非阻塞。这样既能支持已选择的
+Java 分层 package，也不会把同一规则强加给 Python、Go、Rust 或按 Feature 组织的仓库。
 
 ### 5.3 实现与审查
 
@@ -233,6 +239,26 @@ Planning Feature Contract Version
 
 Review 插件的补充输出位于 `.forgeflow/reports/`。如果同一逻辑路径的插件输出被替换，之前的修订版会保存在 `.forgeflow/reports/history/`。两个 history 根目录下的文件都不参与当前状态或当前 Review 证据计算。
 
+### 6.5 统一项目知识视图
+
+规范 Artifacts 本身已经组成 ForgeFlow 的项目知识库。派生的 Project Knowledge View
+把当前 Planning Change Set、Feature 契约、Requirements、项目级 Solution、Slice
+Plans、实现 attempts 与 Review 结论连接起来，并索引保留的 Artifact/Report 历史，
+便于导航和理解演进。
+
+该视图刻意保持非权威性：它不新增 Artifact Type 或 Owner，不参与转换解析，也不会让
+历史证据重新成为当前证据。CLI 用户可以通过 `forge status` 查看该投影；Artifact
+Graph 无效时，当前知识视图会标记为 unavailable，而不会静默展示残缺的项目基线。
+
+可选的 `forge knowledge` 命令可以把视图缩小到一个当前 Feature 或 Slice；只有使用
+`--history` 才包含归档契约时间线，并可向标准输出渲染 JSON 或 Markdown。查询不会
+创建新的状态文件，也不会改变 Resolver 授权。
+
+新建或修订的 Solution Plan 还会提供结构化影响模型。ForgeFlow 可以通过
+`--impact F-XX` 或 `--component SC-XX` 查询直接/传递依赖、共享组件关系和工程决策
+引用，同时不会把共享组件的共同使用者静默当作依赖边。旧 Solution 继续可读，但在
+修订补齐字段前影响视图明确为 unavailable；任何派生结果都不能授权 Workflow 或 Scope。
+
 ## 7. 确定性转换、阻塞与恢复
 
 解析器按照固定顺序评估制品图。用面向使用者的语言描述，它会做出以下判断：
@@ -264,10 +290,10 @@ Review 插件的补充输出位于 `.forgeflow/reports/`。如果同一逻辑路
 大多数工作流入口都需要经过验证的转换。只有三种受控场景可以在没有传入 Handoff 时启动：
 
 - **Bootstrap Entry：** Plan 启动一个干净项目。
-- **Incremental Intent Entry：** Plan 合并一个已明确确认属于同项目的新增或变更需求。
+- **Subsequent Plan Entry：** Plan 将后续非空意图合并到当前 READY Planning，不要求 incremental 标记或再次确认项目归属。
 - **Recovery Entry：** 解析器重新授权某个有效持久化阻塞的精确所有者和作用域。
 
-除 Plan 外，其他工作流不能使用 Bootstrap 或 Incremental Intent Entry。
+除 Plan 外，其他工作流不能使用 Bootstrap 或 Subsequent Plan Entry。
 
 ### 7.3 无效制品图采用失败关闭
 
@@ -300,9 +326,9 @@ ForgeFlow 在 `.forgeflow/rules/reviews/_index.md` 提供 Markdown 插件注册�
 
 插件报告只是补充证据，不能替代规范 Review Report，也不是独立的转换权威。Review 工作流负责将适用 findings 聚合进规范制品。
 
-## 9. 同一项目的增量开发
+## 9. 后续需求与增量演进
 
-ForgeFlow 支持需求按模块逐步到达的项目。当用户明确确认后续请求属于同一个项目，并且当前制品图有效、Planning 为 READY、没有可执行阻塞或当前 FAIL Review 时，可以使用 Incremental Intent Entry。
+ForgeFlow 支持需求按模块逐步到达的软件项目。当前制品图有效、Planning 为 READY、没有可执行阻塞或当前 FAIL Review 时，后续非空意图会自动使用 Subsequent Plan Entry，不要求用户再次声明项目归属。
 
 随后 Plan 可以新增、修改、重排或明确退役 Feature，同时保留稳定的 Feature 标识符。已退役标识符不会被复用。
 
@@ -310,15 +336,15 @@ ForgeFlow 支持需求按模块逐步到达的项目。当用户明确确认后�
 
 - Planning 更新只推进受影响 Feature 的业务契约版本。
 - 未变化 Feature 的 Requirement 继续有效。
-- Solution 分析跨 Feature 影响，只在必要时推进工程版本。
+- Solution 读取全部当前 Requirement 和既有工程基线，记录共享组件或 utility 与跨 Feature 影响，只在必要时推进工程版本。
 - 兼容且已完成 Feature 的 Slice、TDD 和 Review 证据继续有效。
 - 被替换的制品和插件报告分别保存在各自 history 根目录中。
 
-这与启动新项目不同。同项目增量会保留当前 artifact root 和 reports root，不会轮换全部项目证据。
+后续变更会保留当前 artifact root 和 reports root。意图之间的语义差异不会触发项目证据轮换。
 
-### 9.1 新项目或显式重置
+### 9.1 显式重置或归档维护
 
-明确授权的新项目或 reset 会使用 Project Evidence Rotation。ForgeFlow 获取一个 UTC 时间戳，并将两个根目录作为同一个事务轮换：
+只有明确请求 reset 或 archive maintenance 时才使用 Project Evidence Rotation。ForgeFlow 获取一个 UTC 时间戳，并将两个根目录作为同一个事务轮换：
 
 ```text
 .forgeflow/artifacts.YYYYMMDDHHMMSS
@@ -344,9 +370,10 @@ Python 包提供 `forge` 命令。当前公开命令包括：
 | 命令 | 用途 |
 |---|---|
 | `forge init [-a copilot\|codex] [--force]` | 安装或刷新受管理的框架文件，并创建项目配置。 |
-| `forge plan [--intent TEXT] [--incremental]` | 执行 Plan，包括显式同项目增量。 |
+| `forge plan [--intent TEXT] [--incremental]` | 执行 Plan；后续意图自动成为后续变更（`--incremental` 为兼容别名）。 |
 | `forge run [--auto\|--manual] [--reset] [--intent TEXT]` | 使用配置模式或一次性指定模式执行编排。 |
 | `forge status` | 检查解析后的制品图和流程状态。 |
+| `forge knowledge [--feature F-XX] [--slice F-XX/S-XX] [--impact F-XX] [--component SC-XX] [--history] [--format json\|markdown]` | 查询非权威项目知识与结构化影响视图。 |
 | `forge reset [--force]` | 预览或执行成对的项目证据轮换。 |
 | `forge handoff` | 显示最近一次已验证 CLI Handoff 快照，用于调试。 |
 
@@ -366,7 +393,7 @@ Python 包提供 `forge` 命令。当前公开命令包括：
 
 在 auto 模式下，Runner 会重复解析制品、解析下一项获准的工作流和作用域、调用配置的 Agent CLI、校验执行后的制品图和 Handoff，并在完成、阻塞、停止、中断或达到迭代上限时退出。当前 Runner 最多执行 50 个总步骤；同一工作流连续出现三次执行或 Handoff 失败时会停止。
 
-manual 模式只在制品图授权 Plan 时执行一次 Plan，随后校验结果。`forge plan --incremental --intent "..."` 是显式的同项目入口；后续 `forge run` 从它生成的制品图继续。
+manual 模式在制品图授权 Plan，或非空意图选择 Subsequent Plan Entry 时执行一次 Plan，随后校验结果。`forge plan --intent "..."` 是普通后续需求入口；后续 `forge run` 从它生成的制品图继续。`--incremental` 仅作为兼容别名保留。
 
 Codex 适配器以临时会话和 `workspace-write` sandbox 调用 `codex exec`。Copilot 适配器以非交互方式调用 `gh copilot`，并授予工作区范围的 `write` 和 `shell` 工具权限。所选外部 CLI 必须已安装并完成认证。ForgeFlow 本身不提供模型服务，也不要求独立集成模型 API。
 
@@ -417,8 +444,8 @@ ForgeFlow 当前处于 **Technical Preview** 阶段。仓库适合评估、受�
 - 受控的前进、返回、完成和停止转换。
 - 持久化阻塞以及面向单次尝试的独立 Review 结论。
 - 有序、支持依赖的 Markdown Review 插件和报告历史。
-- 具有作用域化失效机制的同项目增量规划。
-- 新项目或 reset 时 artifact 与 report 的事务性轮换。
+- 具有作用域化失效机制的后续 Plan 变更。
+- 显式 reset 或 archive maintenance 时 artifact 与 report 的事务性轮换。
 - Codex 和 Copilot 专用启动器以及可选 CLI 编排。
 - Python CLI 中严格的解析器和 Handoff 校验。
 
@@ -492,11 +519,11 @@ forge status
 ### 13.3 向同一项目添加后续模块
 
 ```bash
-forge plan --incremental --intent "为当前项目增加报表模块"
+forge plan --intent "增加报表模块"
 forge run
 ```
 
-只有当请求确实属于同一项目时才使用 incremental 模式。如果关系不明确，必须先确认再修改证据。如果需求属于另一个项目，应使用 reset 或显式新项目流程。
+ForgeFlow 会把它视为当前软件项目的后续需求，即使措辞与早期模块在语义上差异很大。只有明确执行证据重置或归档维护时才使用 `forge reset --force`。
 
 ### 13.4 查看进度
 

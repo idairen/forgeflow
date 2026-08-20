@@ -1,6 +1,6 @@
 # TDD Workflow
 
-Version: 2.6
+Version: 2.8
 
 ## Contract
 
@@ -35,7 +35,12 @@ then:
    Feature's current Feature Engineering Version;
 3. locate the exact Slice in the targeted current Slice Plan;
 4. reject stale inputs, a mismatched target, or work outside the Slice boundary;
-5. inspect the existing implementation and applicable repository instructions.
+5. inspect the existing implementation and applicable repository instructions;
+6. resolve every planned production and test responsibility through the Slice Plan's
+   Planned File Placement and the Solution's Implementation/Test Structure before
+   creating, moving, or editing files. TDD may resolve concrete filenames from an
+   approved directory pattern and established naming conventions, but it MUST NOT
+   choose a new package, module, layer, or test-topology strategy.
 
 ## Command execution
 
@@ -66,18 +71,27 @@ This self-check is preparation evidence, not an independent Review decision.
 
 ## Required process
 
-1. Translate the Slice's acceptance evidence into observable test cases.
-2. Run the smallest relevant test and record the failing RED evidence.
-3. Implement the minimum behavior needed for GREEN.
-4. Run relevant tests and record exact commands and results.
-5. Refactor without changing approved behavior and rerun verification.
-6. Repeat until every Slice condition is evidenced.
-7. Record changed files, decisions, deviations, and residual risks.
-8. Perform and record the Review readiness self-check; do not proceed while a
+1. Build a file-placement checklist for the authorized Slice. Confirm that every
+   new or moved production class/module and every test maps to one approved
+   responsibility, source/test root, package/module pattern, and governing decision.
+   Distinct architectural responsibilities MUST NOT be collapsed into one package
+   or module when the Solution separates them. Tests MUST follow the approved Test
+   Structure, including production-package mirroring where specified.
+2. Translate the Slice's acceptance evidence into observable test cases.
+3. Run the smallest relevant test and record the failing RED evidence.
+4. Implement the minimum behavior needed for GREEN in the approved locations.
+5. Run relevant tests and record exact commands and results.
+6. Refactor without changing approved behavior and rerun verification.
+7. Repeat until every Slice condition is evidenced.
+8. Record changed files and the File Placement Conformance table. Record
+   implemented engineering decisions, shared components or utilities touched,
+   deviations, and residual risks. Each deviation MUST identify
+   whether it is locally resolvable or requires RETURN to its owning Workflow.
+9. Perform and record the Review readiness self-check; do not proceed while a
    blocking finding remains in TDD's authority or requires an upstream RETURN.
-9. Set Attempt to 1 for first review, or one greater than the latest FAIL attempt
+10. Set Attempt to 1 for first review, or one greater than the latest FAIL attempt
    after correction.
-10. Persist the TDD Record at its Canonical Artifact Path with Status
+11. Persist the TDD Record at its Canonical Artifact Path with Status
     READY_FOR_REVIEW and apply the Transition Resolution Procedure. If it requires
     a handoff, validate and render exactly one Canonical Handoff Block from the
     Handoff Protocol as the final content of the response, then stop without
@@ -90,6 +104,12 @@ does not edit the TDD Record.
 TDD MUST NOT invent business policy, redesign engineering contracts, change Slice
 boundaries, implement a future Slice, issue PASS or FAIL, create a Review Report,
 or declare Feature or Project completion.
+
+If the required Solution structure is absent or materially ambiguous, TDD returns
+`ENGINEERING_GAP` to Solution. If Solution defines the structure but Planned File
+Placement is absent, overlapping, or inconsistent, TDD returns `SLICE_VIOLATION` to
+Slice. A local wrong-path implementation is TDD-owned and MUST be corrected before
+READY_FOR_REVIEW; passing tests do not excuse it.
 
 ## Emit conditions after TDD completes a Slice
 

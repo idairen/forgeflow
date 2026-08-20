@@ -13,6 +13,7 @@
 ## Testing
 
 - [IDE 测试计划](./testing/ide-test-plan.zh-CN.md)
+- [CLI Project Knowledge test plan](./testing/cli-knowledge-test-plan.md)
 - [IDE acceptance assets](../tests/acceptance/ide/README.md)
 
 ## Presentations

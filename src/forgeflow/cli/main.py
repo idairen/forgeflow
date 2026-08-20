@@ -6,6 +6,7 @@ import os
 import sys
 
 from ..engine.runner import ForgeRunner
+from ..engine.project_knowledge import ProjectKnowledgeBuilder
 from ..scaffold import initialize_project
 from ..logging_config import get_logger
 
@@ -33,7 +34,7 @@ def cmd_plan(args):
     logger.info(
         "Executing plan%s%s",
         " with User Intent" if intent else "",
-        " in incremental mode" if incremental else "",
+        " (legacy --incremental alias)" if incremental else "",
     )
     runner = _make_runner()
     result = asyncio.run(
@@ -92,6 +93,24 @@ def cmd_status(args):
     state = runner.get_state()
     logger.info("Status: %s", json.dumps(state, indent=2))
     print(json.dumps(state, indent=2))
+    return EXIT_SUCCESS
+
+
+def cmd_knowledge(args):
+    """Query the derived, non-authoritative project knowledge view."""
+    state = _make_runner().get_state()
+    view = ProjectKnowledgeBuilder.select(
+        state["project_knowledge"],
+        feature_id=getattr(args, "feature", None),
+        slice_scope=getattr(args, "slice_scope", None),
+        include_history=getattr(args, "history", False),
+        impact_feature=getattr(args, "impact", None),
+        component_id=getattr(args, "component", None),
+    )
+    if getattr(args, "format", "json") == "markdown":
+        print(ProjectKnowledgeBuilder.render_markdown(view), end="")
+    else:
+        print(json.dumps(view, ensure_ascii=False, indent=2))
     return EXIT_SUCCESS
 
 
@@ -154,7 +173,7 @@ def _single_exit_code(runner):
 # --- CLI entry point ---
 
 def main_cli(argv=None):
-    """ForgeFlow CLI - plan, run, status, reset, init."""
+    """ForgeFlow CLI - execution, state, and knowledge commands."""
     parser = argparse.ArgumentParser(
         prog="forge",
         description="ForgeFlow CLI - repository-native AI delivery orchestrator"
@@ -168,7 +187,10 @@ def main_cli(argv=None):
         "--incremental",
         action="store_true",
         default=False,
-        help="Add or change same-project scope without rotating evidence",
+        help=(
+            "Deprecated compatibility flag; --intent already starts a subsequent "
+            "Plan change when Planning exists"
+        ),
     )
     p_plan.set_defaults(func=cmd_plan)
 
@@ -204,6 +226,42 @@ def main_cli(argv=None):
         "status", help="Show current pipeline state and artifacts"
      )
     p_status.set_defaults(func=cmd_status)
+
+    # knowledge
+    p_knowledge = subparsers.add_parser(
+        "knowledge",
+        help="Query the derived Project Knowledge View",
+    )
+    p_knowledge.add_argument(
+        "--feature",
+        help="Limit output to one active Feature using F-XX",
+    )
+    p_knowledge.add_argument(
+        "--slice",
+        dest="slice_scope",
+        help="Limit output to one active Slice using F-XX/S-XX",
+    )
+    p_knowledge.add_argument(
+        "--history",
+        action="store_true",
+        default=False,
+        help="Include historical indexes and contract timeline entries",
+    )
+    p_knowledge.add_argument(
+        "--impact",
+        help="Analyze dependents and shared-component relationships for F-XX",
+    )
+    p_knowledge.add_argument(
+        "--component",
+        help="List active Features mapped to one shared component using SC-XX",
+    )
+    p_knowledge.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="json",
+        help="Output format (default: json)",
+    )
+    p_knowledge.set_defaults(func=cmd_knowledge)
 
     # reset
     p_reset = subparsers.add_parser(

@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.6
+Version: 2.11
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.6 | `forgeflow.md` |
-| Artifact Protocol | 2.5 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.8 | `protocol/handoff.md` |
+| Framework | 2.11 | `forgeflow.md` |
+| Artifact Protocol | 2.10 | `protocol/artifact.md` |
+| Handoff and Transition Protocol | 2.9 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -45,10 +45,12 @@ choosing a lower-precedence instruction.
 - Engineering decisions are created only by Solution and Slice.
 - Execution work is confined to one resolver-authorized Slice.
 - Upstream contracts are frozen before execution and versioned when changed.
-- Same-project increments preserve unaffected Feature evidence through explicit
+- Subsequent Plan changes preserve unaffected Feature evidence through explicit
   Feature-scoped compatibility versions.
 - Existing system behavior is inspected before a solution is proposed.
 - Delivery advances only from immutable evidence, never an agent's claim.
+- The Project Knowledge View is derived from canonical Artifacts and immutable
+  history; it is never a second source of truth.
 
 ForgeFlow core consists entirely of Markdown files. No Python package, schema engine,
 plugin, model API, or platform-specific state store is part of the framework.
@@ -157,15 +159,38 @@ ForgeFlow defines exactly six canonical workflows, each owning one artifact type
 - **TDD** — implements and tests one Slice against its Requirement and Solution Plan (Slice scope).
 - **Review** — independently verifies one Slice's evidence against all contracts (Slice scope).
 
+Source and test placement are engineering contracts, not local TDD preferences.
+Solution owns the organization strategy and dependency direction; Slice maps its
+authorized work to concrete or pattern-resolved production and test paths; TDD
+creates or moves files only within those approved boundaries; Review verifies the
+result. ForgeFlow does not prescribe one universal package-by-layer,
+package-by-Feature, or language-specific directory convention.
+
 These workflows communicate through handoffs. The Transition Resolution Procedure
 determines which workflow runs next; the Handoff Protocol carries the decision.
+
+Together, the current canonical Artifacts form the active project knowledge
+baseline. Their version references create one traceability chain from approved
+intent through business contracts, engineering decisions, delivery decomposition,
+implementation evidence, and Review outcomes. Historical Artifacts and reports
+preserve superseded evidence without participating in current authorization. The
+Artifact Protocol defines the read-only Project Knowledge View over both layers.
+Implementations MAY provide filtered JSON or Markdown renderings of that view. A
+filter narrows navigation only; it never changes declared order, active state, or
+the Workflow/Scope authorization derived from the complete graph.
+
+A derived Project Impact View MAY resolve Feature dependencies, reverse
+dependencies, shared-component relationships, and current change classifications
+from structured Solution metadata. It is advisory evidence for navigation and
+planning only. It MUST NOT authorize a Workflow, select a Target Scope, advance a
+Gate, or make an invalid or historical Artifact current.
 
 ## Execution scope isolation
 
 A workflow execution is one authorized invocation of exactly one Workflow at exactly
 one Target Scope. A workflow execution MUST NOT consume a future execution scope
 unless that scope is explicitly provided by the incoming Canonical Handoff. A
-Bootstrap, Incremental Intent, or Recovery Entry authorizes only its exact entry
+Bootstrap, Subsequent Plan, or Recovery Entry authorizes only its exact entry
 scope and never authorizes future progression.
 
 A future execution scope is any Workflow or Target Scope other than the invocation's
@@ -292,10 +317,12 @@ authorized same-Workflow/same-Scope continuation or a wait for required user inp
 emits no handoff. A transition to the same Workflow at a different Target Scope is
 not a continuation and MUST emit a FORWARD handoff for the newly authorized scope.
 A fresh invocation may proceed without an incoming handoff only through Bootstrap
-Entry, Plan's Incremental Intent Entry, or the Handoff Protocol's persisted-blocker
-Recovery Entry. Incremental authority comes only from explicit same-project user
-intent and never rotates project evidence. Recovery authority comes from a fresh
-Rule 3 result and never permits a synthetic or same-authorization RETURN.
+Entry, Plan's Subsequent Plan Entry, or the Handoff Protocol's persisted-blocker
+Recovery Entry. A non-empty later Plan intent is a change to the current software
+project without requiring an incremental label or project-identity confirmation.
+Semantic similarity never identifies another project or rotates evidence. Recovery
+authority comes from a fresh Rule 3 result and never permits a synthetic or
+same-authorization RETURN.
 
 Runtime Slice state is derived as follows:
 
@@ -345,8 +372,10 @@ A conforming implementation MUST:
 7. reject execution whose Target Scope differs from a fresh procedure result and
    prevent an execution from consuming any subsequently selected future scope;
 8. construct the active artifact graph only from valid Canonical Artifact Paths;
-9. preserve unaffected Feature evidence across valid same-project increments; and
-10. exclude both Artifact History and Reports History from current progression.
+9. preserve unaffected Feature evidence across valid Subsequent Plan changes; and
+10. exclude both Artifact History and Reports History from current progression;
+11. derive any Project Knowledge View without creating new authority or replacing
+    canonical Artifact validation.
 
 The framework relies solely on Markdown files and a participant capable of reading,
 writing, and updating them in the order defined here. No executable parser, external

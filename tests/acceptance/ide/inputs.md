@@ -80,6 +80,35 @@
 5. 不提供 HTTP 层；技术接口保持为 Python API。
 ```
 
+## INPUT-SOLUTION-IMPACT-01 — 多 Feature 依赖与共享组件
+
+用于 `IDE-SOL-016`、`IDE-SOL-017` 和 `IDE-REV-026`：
+
+```text
+当前项目包含库存预留、库存查询和审计三个 Feature。
+
+库存查询依赖库存预留暴露的状态契约；审计由两者共同使用。请让 Solution
+明确记录 Feature 依赖方向、共享审计组件、相关工程决策和本次变更影响。
+不得因为共享组件就自动把无依赖关系的 Feature 判断为直接依赖，也不得
+让派生影响分析代替 ForgeFlow 的 Handoff、Return 或 Review 判定。
+```
+
+## INPUT-SOLUTION-STRUCTURE-01 — 多责任源码与测试布局
+
+用于 `IDE-SOL-018`、`IDE-SOL-019`、`IDE-SLICE-017`、`IDE-TDD-023`、
+`IDE-TDD-024`、`IDE-REV-027` 和 `IDE-REV-028`：
+
+```text
+当前 Feature 需要新增入口适配/controller、业务 service/use-case、
+repository/data-access、领域对象，以及少量 mapping/validation 支持代码，
+同时需要对应单元测试和一个集成测试。
+
+请根据当前仓库已有结构决定按 Feature、按层或混合组织方式，并明确每种责任的
+生产代码和测试代码路径、依赖方向及依据。不要把所有类默认放进同一个 package，
+也不要创建没有明确责任边界的通用 utility package。测试布局必须与生产结构和
+仓库惯例一致。
+```
+
 ## INPUT-SLICE-SCOPE-01 — 诱导 Slice 改业务/实现
 
 用于 `IDE-SLICE-009`：
@@ -136,7 +165,7 @@
 我明确授权退役查询能力对应的 Feature，并要求按照 ForgeFlow Feature retirement transaction 归档它的全部 Artifact 和 supplemental Report。不得复用其 Feature ID。
 ```
 
-## INPUT-INCREMENT-AMBIGUOUS-01 — 项目关系不明确
+## INPUT-SUBSEQUENT-DISTANT-01 — 语义差异明显的后续需求
 
 用于 `IDE-INC-002`：
 
@@ -144,16 +173,16 @@
 增加一个员工请假审批模块。
 ```
 
-期望 Plan 先询问它是否属于当前库存项目，不根据语义相似度自行决定增量或 reset。
+期望 Plan 默认将它作为当前软件项目的后续变更，不询问项目归属，也不根据语义差异执行 reset。
 
-## INPUT-NEW-PROJECT-01 — 明确新项目
+## INPUT-RESET-01 — 显式证据重置
 
 用于 `IDE-PLAN-010`：
 
 ```text
-这是一个与当前库存项目无关的新项目。我明确授权开始新项目，并按照 Project Evidence Rotation 成对备份当前 Artifacts 和 Reports。
+我明确请求执行 reset/archive maintenance，并按照 Project Evidence Rotation 成对备份当前 Artifacts 和 Reports。
 
-新项目目标是构建一个员工请假审批模块。
+重置完成后，规划员工请假审批模块。
 ```
 
 ## INPUT-REVIEW-PREFERENCE-01 — 仅偏好问题

@@ -1,6 +1,6 @@
 # ForgeFlow IDE Acceptance Test Assets
 
-本目录把 `docs/testing/ide-test-plan.zh-CN.md` 中的 220 个场景转化为可执行的 IDE 测试资产。
+本目录把 `docs/testing/ide-test-plan.zh-CN.md` 中的 236 个场景转化为可执行的 IDE 测试资产。
 
 ## 设计原则
 
@@ -32,7 +32,7 @@ python3 tests/acceptance/ide/manage.py verify
 期望输出：
 
 ```text
-Verified 220 IDE cases and 12 workflow Prompts (P0=199, P1=21, P2=0).
+Verified 236 IDE cases and 12 workflow Prompts (P0=204, P1=32, P2=0).
 ```
 
 ## 2. 查看用例

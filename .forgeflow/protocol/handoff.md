@@ -1,6 +1,6 @@
 # Handoff and Transition Protocol
 
-Version: 2.8
+Version: 2.9
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Ordering comes exclusively from declared positions in Planning and the current S
 
 ## Transition Resolution Procedure
 
-Evaluate these rules in order and stop at the first match. A transition between different Workflow/Scope authorizations produces the stated Canonical Handoff variant. Bootstrap Entry, Plan's Incremental Intent Entry, and Recovery Entry authorize a fresh invocation without synthesizing a handoff. The receiving workflow applies the rules fresh from the active artifact graph and never relies on remembered conversation state.
+Evaluate these rules in order and stop at the first match. A transition between different Workflow/Scope authorizations produces the stated Canonical Handoff variant. Bootstrap Entry, Plan's Subsequent Plan Entry, and Recovery Entry authorize a fresh invocation without synthesizing a handoff. The receiving workflow applies the rules fresh from the active artifact graph and never relies on remembered conversation state.
 
 ### Rule 1 — Bootstrap Without Planning
 
@@ -105,14 +105,14 @@ Every planned Slice has a current READY_FOR_REVIEW TDD Record and a valid matchi
 There are exactly four entry modes:
 
 - **Bootstrap Entry**: no incoming handoff exists. It is valid only for Plan at `Project` scope when Rule 1 matches.
-- **Incremental Intent Entry**: no incoming handoff exists, the user explicitly identifies new or changed intent as belonging to the same project, and the current graph has a READY Planning artifact, no graph contradiction, and no actionable persisted blocker or current FAIL Review. It temporarily authorizes only Plan at `Project` scope to merge that intent into a higher Planning version. It never rotates project evidence or synthesizes a handoff.
+- **Subsequent Plan Entry**: no incoming handoff exists, a non-empty new or changed User Intent is supplied after current READY Planning, and the current graph has no graph contradiction, actionable persisted blocker, or current FAIL Review. It temporarily authorizes only Plan at `Project` scope to merge that intent into a higher Planning version. The user does not need to label the intent incremental or confirm that it belongs to the current software project. It never rotates project evidence or synthesizes a handoff.
 - **Handoff Entry**: an incoming Canonical Handoff Block exists. Every workflow, including Plan rework, MUST execute this unified validation before accepting or acting on it.
 - **Recovery Entry**: no incoming handoff exists, and a fresh Rule 3 result selects the exact current Workflow and Target Scope from a valid persisted blocker. Recovery re-authorizes only that blocker owner and scope; it does not create a synthetic handoff or authorize unrelated work.
 
-No workflow other than Plan may use Bootstrap or Incremental Intent Entry. Plan,
+No workflow other than Plan may use Bootstrap or Subsequent Plan Entry. Plan,
 Grill, Solution, Slice, and TDD may use Recovery Entry only for a persisted blocker
 they own. Review owns no persisted BLOCKED artifact and cannot use Recovery Entry.
-Any direct invocation without a valid Bootstrap, Incremental Intent, Handoff, or
+Any direct invocation without a valid Bootstrap, Subsequent Plan, Handoff, or
 Recovery Entry performs no productive work.
 
 ### Invocation-scoped authorization
@@ -132,20 +132,23 @@ or modify artifacts, run commands, implement, or review on behalf of that future
 scope. Recovery Entry remains limited to its exact persisted-blocker scope and
 cannot be used to skip this boundary for normal forward progression.
 
-For Incremental Intent Entry, Plan MUST verify before productive work that:
+For Subsequent Plan Entry, Plan MUST verify before productive work that:
 
 1. no incoming Handoff Block is being accepted or inferred;
 2. the active Artifact Graph is structurally valid and contains one current READY Planning artifact;
 3. no valid current blocker or FAIL Review is awaiting its canonical owner;
-4. the user explicitly says the intent extends or changes the same project;
-5. an ambiguous relationship to current Planning is presented to the user and confirmed before any write;
-6. an explicit new-project or reset request uses Project Evidence Rotation instead; and
-7. only Plan is authorized until the new Planning version is persisted and the Transition Resolution Procedure is applied fresh.
+4. the User Intent is non-empty;
+5. semantic similarity is not used to infer another project, request project-identity confirmation, or authorize evidence rotation; and
+6. only Plan is authorized until the new Planning version is persisted and the Transition Resolution Procedure is applied fresh.
 
-An Incremental Intent Entry may add, modify, reorder, or explicitly retire Features.
+A Subsequent Plan Entry may add, modify, reorder, or explicitly retire Features.
 It preserves stable identifiers, archives replaced evidence through the Artifact
 Protocol, and records an exact Planning Change Set. User intent cannot authorize a
 different workflow directly or make stale downstream evidence current.
+
+Project Evidence Rotation is an explicit reset or archive maintenance operation,
+not an entry mode and not an outcome inferred by Plan. It MUST NOT be triggered by
+semantic distance between a later User Intent and current Planning.
 
 For Recovery Entry, the workflow MUST verify before productive work that:
 

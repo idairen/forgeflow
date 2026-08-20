@@ -1,7 +1,7 @@
 # ForgeFlow IDE 全场景验收测试计划
 
 > 文档类型：IDE 集成与框架行为验收计划
-> 适用基线：ForgeFlow Framework 2.5、Artifact Protocol 2.5、Handoff Protocol 2.7、Workflow 2.5
+> 适用基线：ForgeFlow Framework 2.11、Artifact Protocol 2.10、Handoff Protocol 2.9、Workflow 2.7–2.9
 > 目标适配器：GitHub Copilot、Codex
 > 测试方式：在 IDE 中直接调用 `.forgeflow/adapter/<adapter>/forge-*.prompt.md`，不使用 ForgeFlow CLI 编排
 
@@ -13,11 +13,11 @@
 
 - 六个 Prompt 的发现、元数据、参数传递和宿主模式隔离；
 - Plan、Grill、Solution、Slice、TDD、Review 六个工作流；
-- Bootstrap、Handoff、Incremental Intent、Recovery 和显式新项目/reset 入口；
+- Bootstrap、Handoff、Subsequent Plan、Recovery 和显式 reset/archive maintenance；
 - FORWARD、RETURN、TERMINAL/COMPLETE、TERMINAL/HALTED 四类 Handoff；
 - BUSINESS_READY、ENGINEERING_READY、DELIVERY_READY、PROJECT_COMPLETE 四个门禁；
 - Artifact 所有权、版本引用、历史归档和不可变 Review attempt；
-- 同项目增量、Feature 新增/修改/重排/退役以及跨 Feature 影响；
+- 后续需求、Feature 新增/修改/重排/退役以及跨 Feature 影响；
 - Artifact History、Reports History 和成对 Project Evidence Rotation；
 - Review PASS、FAIL、多所有者返回、插件 PASS/VIOLATION/UNKNOWN/N/A；
 - 无效图、过期证据、错误作用域、缺失 Handoff 和宿主默认能力接管；
@@ -25,7 +25,7 @@
 
 “全场景”在本文中指覆盖当前规范定义的全部行为类别、入口类型、转换类型、工作流所有权和错误类型，而不是穷举所有自然语言表达或所有文件系统故障组合。
 
-当前基线包含 220 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
+当前基线包含 236 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
 
 ## 2. 不在本轮范围内
 
@@ -232,13 +232,14 @@ pyproject.toml
 | IDE-PLAN-006 | 用户明确批准空项目 | Planning 使用 `Feature IDs = NONE` 和有效 Empty Feature Approval；没有下游制品；输出 COMPLETE | P0 |
 | IDE-PLAN-007 | 初始意图包含业务目标和技术偏好 | Planning 只定义当前批准范围、Feature、约束和成功度量，不写详细验收、架构、Slice、测试或实现 | P0 |
 | IDE-PLAN-008 | 用户要求 Plan 直接创建 Controller 和测试 | Plan 拒绝越权实现，只将合法业务范围写入 Planning 或报告范围冲突 | P0 |
-| IDE-PLAN-009 | 用户请求看起来与当前项目无关，但没有明确说新项目/reset | 解释 Artifact 与 Reports 将成对轮换，询问并等待；任何根目录均不变化 | P0 |
-| IDE-PLAN-010 | 用户确认这是新项目 | 使用同一个 UTC 后缀轮换所有非空 Artifact/Reports 根；创建新的空根后再规划 | P0 |
+| IDE-PLAN-009 | READY Planning 后提交语义上看似无关的新模块需求 | 默认作为当前软件项目的后续变更合并；不询问项目归属，不轮换 Artifact/Reports | P0 |
+| IDE-PLAN-010 | 用户显式请求 reset/archive maintenance 后重新规划 | 使用同一个 UTC 后缀轮换所有非空 Artifact/Reports 根；创建新的空根后再规划 | P0 |
 | IDE-PLAN-011 | 用户明确 reset，但两个根都为空 | 不创建空备份；保持/创建空根并开始 Plan | P1 |
 | IDE-PLAN-012 | Planning 当前为 DRAFT，并提供了指向 Plan 的有效 Handoff，或仍处于已授权的同作用域连续调用 | Plan 在已授权 Project scope 继续；不得把普通新会话误当成新的无 Handoff 入口 | P0 |
 | IDE-PLAN-013 | 当前 PLAN_GAP blocker，开启新聊天执行 `/forge-plan` | 通过 Recovery Entry 恢复同一 Project scope，不伪造 RETURN，不轮换当前项目 | P0 |
 | IDE-PLAN-014 | 当前图由其他 blocker 或 FAIL Review 优先控制，执行 `/forge-plan` | 不得绕过当前所有者；无生产性 Plan 改动 | P0 |
 | IDE-PLAN-015 | Planning 完成且存在缺失 Requirement | Handoff FORWARD 到 Planning 顺序中的第一个缺失 Feature 的 Grill | P0 |
+| IDE-PLAN-016 | 后续 Planning READY | 记录覆盖完整当前范围的 intent-evolution summary，明确 retained/added/modified/reordered/retired，不复制第二份当前契约 | P1 |
 
 ## 9. Grill 场景
 
@@ -257,6 +258,7 @@ pyproject.toml
 | IDE-GRILL-011 | 全部 Requirement 当前且 READY | FORWARD 到 Solution Project scope，满足 BUSINESS_READY | P0 |
 | IDE-GRILL-012 | Requirement 已存在且规范内容变化 | 先将旧版本精确归档，再写更高版本；其他工作流制品不被修改 | P0 |
 | IDE-GRILL-013 | Handoff 指向 F-02，F-03 仍缺 Requirement | 本轮只生成 F-02 Requirement；输出指向 F-03 的 FORWARD 并立即停止，不分析、提问或生成 F-03 Requirement | P0 |
+| IDE-GRILL-014 | 后续 Planning 改变当前 Feature | Requirement 将业务目标、规则和验收证据追踪到当前 Feature boundary 与 Change Set context，不把历史意图当当前约束 | P1 |
 
 ## 10. Solution 场景
 
@@ -272,10 +274,15 @@ pyproject.toml
 | IDE-SOL-008 | Requirement 没写 HTTP 状态码等技术表示 | 不错误 RETURN Grill；由 Solution 负责技术表示 | P0 |
 | IDE-SOL-009 | 用户要求在 Solution 中拆 Slice 或写代码 | 不越权；Solution Plan 只记录工程基线 | P0 |
 | IDE-SOL-010 | 初次 Solution | 为每个当前 Feature 记录 Based On Requirements 和 Feature Engineering Versions | P0 |
-| IDE-SOL-011 | 同项目增量只影响一个 Feature | 只推进受影响 Feature 的 engineering version；兼容 Feature 保留原版本 | P0 |
-| IDE-SOL-012 | 横切改动实际影响多个 Feature | 明确列出并推进所有受影响 Feature，不能把不确定性当兼容 | P0 |
+| IDE-SOL-011 | 后续需求只影响一个 Feature | Solution 仍读取全部当前 Requirement 和既有工程基线，只推进受影响 Feature 的 engineering version | P0 |
+| IDE-SOL-012 | 新需求可复用公共 utility，且横切改动实际影响多个 Feature | 记录 Shared Components and Utilities 与覆盖全部 Feature 的 Cross-Feature Impact；推进所有受影响 Feature，不能把不确定性当兼容 | P0 |
 | IDE-SOL-013 | Solution 规范内容变化 | 旧 Solution 精确归档，新版本递增 | P0 |
 | IDE-SOL-014 | Solution READY | FORWARD 到声明顺序中的第一个缺失/过期 Slice Plan 的 Feature | P0 |
+| IDE-SOL-015 | 既有工程决策被后续需求替换 | Engineering Decision Register 标明 affected Features、依据及 retains/replaces/supersedes 关系；历史决策不再作为当前决策 | P1 |
+| IDE-SOL-016 | 多 Feature 存在调用或数据依赖，并共享公共组件 | Solution 写入完整有序的 Feature Dependencies、Shared Component IDs、Feature Shared Components 和 Feature Decision References；所有引用可解析且依赖无环 | P1 |
+| IDE-SOL-017 | 旧 Solution 没有结构化影响元数据，后续需求触发 Solution 修订 | 旧 Solution 在迁移读取时仍可作为当前工程证据；新 Solution 版本补齐全部结构化影响字段，不产生部分字段集合 | P1 |
+| IDE-SOL-018 | 一个 Feature 需要 controller、service、repository/data-access、domain/support 等多种责任及对应测试 | Solution 根据现有仓库证据选择 package-by-Feature、package-by-layer 或混合策略，并写入完整 Implementation Structure 与 Test Structure；不得把所有责任默认为同一 package | P0 |
+| IDE-SOL-019 | 现有仓库已经存在一致且可推断的源码/测试目录惯例 | 直接沿用并记录证据，不因个人偏好强制改成 Java/Spring 分层或制造一类一包；通用 utility 必须改为明确责任或已批准共享组件 | P1 |
 
 ## 11. Slice 场景
 
@@ -296,6 +303,8 @@ pyproject.toml
 | IDE-SLICE-013 | 所有 Feature 的 Slice Plan 当前且 READY | 达到 DELIVERY_READY，FORWARD 到第一个声明顺序中的 Slice/TDD | P0 |
 | IDE-SLICE-014 | 修改一个 Feature 的拆分 | 只提高该 Slice Plan 版本；该 Feature 旧 TDD/Review 变过期，其他 Feature 不受影响 | P0 |
 | IDE-SLICE-015 | Handoff 指向 F-02，F-03 仍缺 Slice Plan | 本轮只生成 F-02 Slice Plan；输出指向 F-03 的 FORWARD 并立即停止，不生成 F-03 Slice Plan 或执行任何 Slice | P0 |
+| IDE-SLICE-016 | Slice 使用共享 utility 或工程决策 | 每个 Slice 引用当前 Solution 中可解析的 engineering decision 和 shared component；不得引用不存在或已 superseded 的决定 | P1 |
+| IDE-SLICE-017 | Slice 将创建多个生产责任和测试类型 | Planned File Placement 为每项责任记录 production/test path 或可解析 pattern，并与 Solution 布局一致；不能把 package 决策留给 TDD | P0 |
 
 ## 12. TDD 场景
 
@@ -322,6 +331,9 @@ pyproject.toml
 | IDE-TDD-019 | Slice 需要短时启动服务 | 记录必要并发原因，并在 Handoff 前终止所有启动进程 | P0 |
 | IDE-TDD-020 | 前一个 Feature 尚有未完成 Slice | 不得跳到后续 Feature，即使其编号更小或用户明确要求 | P0 |
 | IDE-TDD-021 | 当前 Slice 达到 READY_FOR_REVIEW | 只写当前 TDD Record 并 FORWARD Review；本轮不得执行 Review 或开始下一个 Slice | P0 |
+| IDE-TDD-022 | 实现触及共享 utility 或偏离 Solution | TDD Record 记录实际实现的工程决策、受影响共享组件及 deviation owner；上游偏差必须 RETURN | P1 |
+| IDE-TDD-023 | 当前 Slice 创建 controller、service、repository 和支持类及其单元测试 | 每个类和测试进入 Solution/Slice 批准的责任 package/module；测试遵循 Test Structure；TDD Record 的 File Placement Conformance 覆盖所有新增/移动路径 | P0 |
+| IDE-TDD-024 | 多角色实现需要 package/test 布局，但 Solution 未定义或 Slice 未映射 | 缺 Solution 决策时 RETURN Solution/ENGINEERING_GAP；缺 Slice 映射时 RETURN Slice/SLICE_VIOLATION；不得先把文件堆在同一 package 再继续 | P0 |
 
 ## 13. Review 与插件场景
 
@@ -351,6 +363,10 @@ pyproject.toml
 | IDE-REV-022 | 最后一个 Slice PASS | 输出 TERMINAL/COMPLETE，Completed Scope 为 Project | P0 |
 | IDE-REV-023 | FAIL 后修复并生成新 TDD attempt | 旧 FAIL 保留但不再控制新 attempt；新 Review 独立判断 | P0 |
 | IDE-REV-024 | 当前 Slice PASS 且 Resolver 选出下一 Slice | 只写当前 Review Report 并 FORWARD TDD；本轮不得实现下一 Slice | P0 |
+| IDE-REV-025 | Review 检查端到端知识链 | 当前 Feature/Solution/Slice/TDD 版本与决策引用必须可解析；历史证据只能解释演进，不能满足当前 Gate | P1 |
+| IDE-REV-026 | 当前 Solution 提供结构化影响模型 | Review 验证实现依赖、共享组件和决策引用符合目标 Feature 映射；派生影响查询不能替代 canonical Review 判定或授权下一 Scope | P1 |
+| IDE-REV-027 | TDD 将 Solution 明确分离的生产或测试责任放入同一错误 package/module | architecture ARC-003/ARC-009 产生 P1 blocking finding，Review FAIL 并 RETURN TDD；测试通过不能覆盖布局违约 | P0 |
+| IDE-REV-028 | 代码符合明确布局契约，但 Review 偏好另一种 package 组织方式 | 只能作为 ARC-008 P2 non-blocking 建议或不形成 finding；不得以个人偏好 FAIL | P1 |
 
 ## 14. Handoff 与转换场景
 
@@ -398,17 +414,17 @@ pyproject.toml
 | IDE-BLK-011 | Recovery 后 blocker 尚未解决 | 保持同 workflow/scope，无同授权 RETURN | P0 |
 | IDE-BLK-012 | Review 尝试无 Handoff 使用 Recovery | 必须拒绝，因为 Review 没有持久 BLOCKED Artifact 所有权 | P0 |
 
-## 16. 同项目增量场景
+## 16. 后续需求与增量演进场景
 
 以下用例均从 `S2-BUSINESS`、`S3-ENGINEERING` 或 `S7-COMPLETE` 的独立副本开始。
 
 | ID | 场景与输入 | 期望结果 | 优先级 |
 |---|---|---|---|
-| IDE-INC-001 | 明确说明“这是同一项目的新模块”并执行 `/forge-plan` | Incremental Intent Entry 授权 Plan；不需要合成 incoming Handoff | P0 |
-| IDE-INC-002 | 只说一个新需求，是否属于当前项目不明确 | 先询问关系，等待期间 Artifacts/Reports 均不变化 | P0 |
-| IDE-INC-003 | 当前图存在 contradiction | Incremental Entry 被拒绝，不得借增量修复无效图 | P0 |
-| IDE-INC-004 | 当前有 actionable blocker | Incremental Entry 被拒绝，先路由 blocker owner | P0 |
-| IDE-INC-005 | 当前有匹配 FAIL Review | Incremental Entry 被拒绝，先处理 Review RETURN | P0 |
+| IDE-INC-001 | 直接提交一个新模块需求并执行 `/forge-plan`，不使用“同项目”或“incremental”字样 | Subsequent Plan Entry 默认授权 Plan；不需要合成 incoming Handoff | P0 |
+| IDE-INC-002 | 新需求与现有 Planning 在语义上无明显关联 | 仍作为当前软件项目的后续变更处理；不询问项目归属，不执行 Project Evidence Rotation | P0 |
+| IDE-INC-003 | 当前图存在 contradiction | Subsequent Plan Entry 被拒绝，不得借后续需求修复无效图 | P0 |
+| IDE-INC-004 | 当前有 actionable blocker | Subsequent Plan Entry 被拒绝，先路由 blocker owner | P0 |
+| IDE-INC-005 | 当前有匹配 FAIL Review | Subsequent Plan Entry 被拒绝，先处理 Review RETURN | P0 |
 | IDE-INC-006 | 新增 Feature | 保留全部旧 Feature ID；新 Feature 使用从未使用过的 ID；Change Set 记录 added | P0 |
 | IDE-INC-007 | 修改一个 Feature 的业务行为 | 只推进该 Feature Contract Version；Change Set 记录 modified | P0 |
 | IDE-INC-008 | 纯重排且不改变依赖/契约 | Change Set 记录 reordered；Feature Contract Version 不无故变化 | P0 |
@@ -430,7 +446,7 @@ pyproject.toml
 | IDE-HIS-003 | 创建 Review attempt 2 | attempt 1 Review 仍直接位于 Artifact Root，不移动到 Artifact History | P0 |
 | IDE-HIS-004 | 重写同一插件/Feature/Slice/attempt/format 报告 | 原文件先进入 Reports History，revision 单调增加 | P0 |
 | IDE-HIS-005 | 当前 Reports 与 Reports History 同时存在 | 只有当前 Reports 参与本次 Review 证据 | P0 |
-| IDE-HIS-006 | 显式新项目，Artifacts 与 Reports 都非空 | 两个根使用完全相同的 UTC 后缀轮换 | P0 |
+| IDE-HIS-006 | 显式 reset/archive maintenance，Artifacts 与 Reports 都非空 | 两个根使用完全相同的 UTC 后缀轮换 | P0 |
 | IDE-HIS-007 | 只有 Artifact Root 非空 | 只备份非空根，但创建两个新的空当前根 | P0 |
 | IDE-HIS-008 | 只有 Reports Root 非空 | 只备份非空根，但创建两个新的空当前根 | P0 |
 | IDE-HIS-009 | 预期 backup path 已存在 | 在移动任何根之前停止，不覆盖、不合并、不删除 | P0 |
@@ -506,7 +522,7 @@ pyproject.toml
 | IDE-PAR-002 | 同一 Artifact Graph 的 workflow/scope 选择 | 完全一致 | P0 |
 | IDE-PAR-003 | Artifact 所有权和版本变化 | 完全一致 | P0 |
 | IDE-PAR-004 | Handoff variant、目标和 evidence | 完全一致 | P0 |
-| IDE-PAR-005 | 同项目增量失效范围 | 完全一致 | P0 |
+| IDE-PAR-005 | 后续 Plan 变更的失效范围 | 完全一致 | P0 |
 | IDE-PAR-006 | Review PASS/FAIL 和 Return owner | 完全一致 | P0 |
 | IDE-PAR-007 | 无效图的 primary error 与 HALTED 投影 | 完全一致 | P0 |
 | IDE-PAR-008 | 宿主专属元数据 | 仅 Copilot 需要 `agent: agent`；该差异不能改变框架语义 | P0 |
@@ -606,7 +622,7 @@ python3 tests/acceptance/ide/manage.py release-gate
 4. 六个工作流均验证了所有权边界；
 5. 四个 Handoff variant 均有真实 IDE 证据；
 6. 五种非 Review blocker 和 REVIEW_BLOCKER 均完成路由验证；
-7. Incremental Intent 的新增、修改、重排、退役和拒绝条件全部通过；
+7. Subsequent Plan Entry 的新增、修改、重排、退役和拒绝条件全部通过；
 8. Artifact History、Reports History 和 Project Evidence Rotation 全部通过；
 9. Review PASS、FAIL、N/A、UNKNOWN、blocking/non-blocking 均有证据；
 10. 至少六类 Graph Error Code/主要矛盾均验证失败关闭；

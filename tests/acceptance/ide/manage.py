@@ -54,7 +54,7 @@ AREA_NAMES = {
     "REV": "Review 与插件",
     "HO": "Handoff 与转换",
     "BLK": "Blocker 与 Recovery",
-    "INC": "同项目增量",
+    "INC": "后续需求与增量演进",
     "HIS": "历史、报告与轮换",
     "GRAPH": "无效 Artifact Graph",
     "VER": "版本新鲜度",
@@ -514,8 +514,8 @@ def command_prepare(args: argparse.Namespace, cases: dict[str, Case]) -> None:
 
 
 def command_verify(cases: dict[str, Case]) -> None:
-    if len(cases) != 220:
-        raise ValueError(f"Expected 220 cases, found {len(cases)}")
+    if len(cases) != 236:
+        raise ValueError(f"Expected 236 cases, found {len(cases)}")
 
     for adapter in ("codex", "copilot"):
         for workflow in WORKFLOWS:
@@ -540,7 +540,7 @@ def command_verify(cases: dict[str, Case]) -> None:
     for case in cases.values():
         priorities[case.priority] += 1
     print(
-        "Verified 220 IDE cases and 12 workflow Prompts "
+        "Verified 236 IDE cases and 12 workflow Prompts "
         f"(P0={priorities['P0']}, P1={priorities['P1']}, P2={priorities['P2']})."
     )
 
