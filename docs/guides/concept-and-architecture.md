@@ -508,7 +508,7 @@ Configuration lives in repository-root `forgeflow.json`. The supported keys are:
 | Key | Meaning |
 |---|---|
 | `adapter` | `codex` or `copilot` |
-| `mode` | `auto` or `manual` |
+| `mode` | Python CLI orchestration only: `auto` or `manual`; it never authorizes direct IDE workflow chaining |
 | `root_artifact_dir` | Fixed canonical value `.forgeflow/artifacts` |
 | `model` | Optional model name passed to the selected agent CLI |
 | `execution_timeout_seconds` | Positive execution timeout; default `900` |
@@ -522,6 +522,10 @@ workflow and scope, invokes the configured agent CLI, validates the resulting gr
 and Handoff, and stops on completion, a blocker, a halt, interruption, or the
 iteration limit. The current runner allows up to 50 total steps and stops after
 three consecutive execution or Handoff failures for a workflow.
+
+Direct IDE launchers do not use this orchestration mode. One IDE command executes
+one Workflow at one scope, emits a Handoff when progression is available, and ends.
+The user or host must start the next launcher as a distinct invocation.
 
 Manual mode executes Plan once when the graph authorizes Plan or a non-empty intent
 selects Subsequent Plan Entry, then validates the result. `forge plan --intent

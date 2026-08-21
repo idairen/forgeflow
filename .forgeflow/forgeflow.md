@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.11
+Version: 2.12
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.11 | `forgeflow.md` |
-| Artifact Protocol | 2.10 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.9 | `protocol/handoff.md` |
+| Framework | 2.12 | `forgeflow.md` |
+| Artifact Protocol | 2.11 | `protocol/artifact.md` |
+| Handoff and Transition Protocol | 2.10 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -213,6 +213,24 @@ Clarification turns may continue without a Handoff only while the Workflow and
 Target Scope remain identical. A same-Workflow transition to another Feature or
 Slice is a new execution, not an in-invocation loop.
 
+### Invocation termination barrier
+
+A direct IDE launcher invocation is manual and authorizes exactly one Workflow
+execution. When that execution emits a Canonical Handoff, the Handoff is an output
+for a future invocation, not an instruction the emitting agent may consume. The
+agent MUST end the response at the Handoff and MUST NOT invoke, simulate, delegate,
+or begin the Next Workflow or Target Scope in the same invocation.
+
+Only an external orchestrator may consume a completed Handoff and start a distinct
+workflow execution automatically. That orchestrator MUST validate the Handoff and
+fresh Artifact Graph before every new execution. A repository configuration value,
+IDE agent mode, model capability, tool delegation feature, or conversational request
+to "continue" does not turn one workflow execution into an orchestrator.
+
+The optional Python CLI Runner is such an external orchestrator only while executing
+its explicit auto pipeline. Its `forgeflow.json` mode is CLI configuration and has
+no authority over direct IDE launchers or the Markdown framework itself.
+
 ## Canonical flow
 
 ```text
@@ -310,6 +328,9 @@ the selected variant's exact heading, fields, row order, and value rendering, an
 MUST be the final content of the response. A workflow or adapter MUST NOT create a
 local handoff format, omit required rows, add explanatory rows, or place content
 after the block.
+
+Handoff emission completes the current workflow execution. Emission and consumption
+MUST be separate executions even when Next Workflow equals the current Workflow.
 
 The emitting workflow is responsible for format validity before output. The target
 workflow MUST reject a malformed handoff rather than infer or normalize it. An

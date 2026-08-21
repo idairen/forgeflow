@@ -207,6 +207,7 @@ ForgeFlow supplies dedicated launcher prompts for two AI coding environments:
 - **Manual vs Auto Mode**:  
   - `auto-mode`: The engine resolves each step from the active Artifact Graph and accepts a Handoff only when its transition, scope, and evidence versions match that graph.
   - `manual-mode`: The CLI executes Plan once only when the active Artifact Graph authorizes Plan, then validates any emitted Handoff against the updated graph. `--no-auto` remains an alias for `--manual`.
+  - Direct IDE launchers are always single-Workflow invocations. They ignore the CLI `mode` value, emit a Handoff, and stop; the user starts the next launcher. Only the external Python CLI Runner consumes Handoffs automatically.
   - `subsequent Plan`: Run `forge plan --intent "..."` for each later requirement or module. READY Planning makes this a Subsequent Plan Entry automatically; no incremental label or project-identity confirmation is required. It preserves active artifacts, reports, and both history roots, and cannot bypass an invalid graph, persisted blocker, or current failed Review. `--incremental` remains only as a compatibility alias.
 
 You can switch the active adapter by editing `forgeflow.json` or running `forge init -a <adapter> --force`. Forced refresh overwrites managed framework files while preserving artifacts, runtime state, custom plugins, and supported project configuration values.

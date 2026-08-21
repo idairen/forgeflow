@@ -56,6 +56,122 @@ class ArtifactParserTests(unittest.TestCase):
         self.assertEqual(state["status"], "active")
         self.assertEqual(state["artifacts"]["planning.md"]["version"], "1.0")
 
+    def test_validates_protocol_211_planning_structure(self):
+        body = (
+            "\n\n## Project Intent\n\nDeliver task management."
+            "\n\n## Project Goals\n\n- Manage tasks."
+            "\n\n## Success Measures\n\n- Tasks can be managed."
+            "\n\n## Project Constraints\n\nNONE — no project constraints supplied."
+            "\n\n## Assumptions\n\n- Users are authenticated."
+            "\n\n## Exclusions\n\n- Billing."
+            "\n\n## Features\n\n"
+            "| Feature ID | Title | Outcome | Dependencies |\n"
+            "| --- | --- | --- | --- |\n"
+            "| F-01 | Tasks | Users manage tasks. | NONE |"
+            "\n\n## Change Set\n\n"
+            "| Feature ID | Change | Previous Contract Version | "
+            "Current Contract Version | Rationale |\n"
+            "| --- | --- | --- | --- | --- |\n"
+            "| F-01 | BASELINE | NONE | 1.0 | Initial scope. |"
+            "\n\n## Intent Evolution\n\nInitial approved scope.\n"
+        )
+        self.write(
+            "planning.md",
+            artifact_document(
+                "Planning",
+                [
+                    ("Artifact Type", "Planning"),
+                    ("Version", "1.0"),
+                    ("Status", "READY"),
+                    ("Owner Workflow", "Plan"),
+                    ("Feature IDs", "F-01"),
+                    ("Feature Contract Versions", "F-01 = 1.0"),
+                    ("Change Set", "BASELINE"),
+                    ("Artifact Protocol Version", "2.11"),
+                ],
+                body,
+            ),
+        )
+
+        state = ArtifactParser.detect_artifact_state(self.root)
+
+        self.assertEqual(state["status"], "active")
+
+    def test_rejects_incomplete_protocol_211_planning_structure(self):
+        self.write(
+            "planning.md",
+            artifact_document(
+                "Planning",
+                [
+                    ("Artifact Type", "Planning"),
+                    ("Version", "1.0"),
+                    ("Status", "READY"),
+                    ("Owner Workflow", "Plan"),
+                    ("Feature IDs", "F-01"),
+                    ("Feature Contract Versions", "F-01 = 1.0"),
+                    ("Change Set", "BASELINE"),
+                    ("Artifact Protocol Version", "2.11"),
+                ],
+                "\n\n## Project Intent\n\nOnly one section.\n",
+            ),
+        )
+
+        state = ArtifactParser.detect_artifact_state(self.root)
+
+        self.assertEqual(state["status"], "invalid")
+        self.assertTrue(
+            any(
+                "exactly one ## Project Goals" in error
+                for error in state["errors"]
+            )
+        )
+
+    def test_rejects_out_of_order_protocol_211_planning_sections(self):
+        sections = list(ArtifactParser._PLANNING_SECTIONS)
+        sections[0], sections[1] = sections[1], sections[0]
+        body_parts = []
+        for section in sections:
+            if section == "Features":
+                content = (
+                    "| Feature ID | Title | Outcome | Dependencies |\n"
+                    "| --- | --- | --- | --- |\n"
+                    "| F-01 | Tasks | Users manage tasks. | NONE |"
+                )
+            elif section == "Change Set":
+                content = (
+                    "| Feature ID | Change | Previous Contract Version | "
+                    "Current Contract Version | Rationale |\n"
+                    "| --- | --- | --- | --- | --- |\n"
+                    "| F-01 | BASELINE | NONE | 1.0 | Initial scope. |"
+                )
+            else:
+                content = "Content."
+            body_parts.append(f"## {section}\n\n{content}")
+        self.write(
+            "planning.md",
+            artifact_document(
+                "Planning",
+                [
+                    ("Artifact Type", "Planning"),
+                    ("Version", "1.0"),
+                    ("Status", "READY"),
+                    ("Owner Workflow", "Plan"),
+                    ("Feature IDs", "F-01"),
+                    ("Feature Contract Versions", "F-01 = 1.0"),
+                    ("Change Set", "BASELINE"),
+                    ("Artifact Protocol Version", "2.11"),
+                ],
+                "\n\n" + "\n\n".join(body_parts) + "\n",
+            ),
+        )
+
+        state = ArtifactParser.detect_artifact_state(self.root)
+
+        self.assertEqual(state["status"], "invalid")
+        self.assertTrue(
+            any("canonical order" in error for error in state["errors"])
+        )
+
     def test_rejects_nonempty_root_without_valid_planning(self):
         self.write("notes.md", "not canonical")
 
@@ -287,6 +403,31 @@ class ArtifactParserTests(unittest.TestCase):
         )
 
         self.assertEqual(errors, ["invalid Planned File Placement table header"])
+
+    def test_rejects_empty_solution_summary_when_present(self):
+        errors = []
+
+        ArtifactParser._validate_solution_summary(
+            "## Solution Summary\n\n## Implementation Structure\n\n"
+            "## Test Structure\n",
+            {"Artifact Protocol Version": "2.11"},
+            "Solution Plan",
+            errors,
+        )
+
+        self.assertEqual(errors, ["Solution Summary section is empty"])
+
+    def test_forbids_standalone_solution_plan_summary_in_artifact_root(self):
+        self._write_single_feature_planning()
+        self.write("solution-plan-summary.md", "# Summary\n")
+
+        state = ArtifactParser.detect_artifact_state(self.root)
+
+        self.assertEqual(state["status"], "invalid")
+        self.assertIn(
+            "forbidden artifact filename: solution-plan-summary.md",
+            state["errors"],
+        )
 
     def _write_single_feature_planning(self):
         self.write(

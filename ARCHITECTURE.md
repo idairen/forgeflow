@@ -3,7 +3,7 @@
 **A stateful execution protocol for AI-assisted software engineering.**
 
 > **Project status:** Technical Preview
-> **Framework:** 2.5 · **Artifact Protocol:** 2.5 · **Handoff Protocol:** 2.7
+> **Framework:** 2.12 · **Artifact Protocol:** 2.11 · **Handoff Protocol:** 2.10
 > **Comparison reviewed:** 2026-08-18
 
 ForgeFlow is not an AI coding agent and does not provide a model. It is a
@@ -316,6 +316,17 @@ are P1 checks for explicit source/test layout violations and therefore block und
 the built-in architecture threshold. `ARC-008` remains a P2 cohesion recommendation
 and cannot fail Review merely because an evaluator prefers another organization.
 
+### 6.7 Canonical planning and solution summaries
+
+New or revised Planning artifacts use a versioned, ordered section structure for
+intent, goals, success measures, constraints, assumptions, exclusions, Features,
+the Change Set, and intent evolution. This prevents model-dependent abbreviated
+Planning output while legacy Planning remains readable until its next revision.
+
+Solution keeps its concise summary inside canonical `solution-plan.md`. ForgeFlow
+does not create a second `solution-plan-summary.md`, so summary and detailed
+engineering decisions share one owner, version, and history lifecycle.
+
 ## 7. Workflow and scope model
 
 ### 7.1 Ownership chain
@@ -414,6 +425,11 @@ terminal evidence, and reason codes.
 
 A workflow emits no Handoff when it remains authorized at the same Workflow and
 Scope while waiting for required input. This prevents meaningless self-RETURN loops.
+
+For direct IDE use, emitting a Handoff terminates the current launcher invocation.
+The next Workflow or Feature requires a new invocation that validates the Handoff
+against the fresh graph. Automatic consumption belongs only to the external Python
+CLI Runner; `forgeflow.json.mode` has no authority over IDE launchers.
 
 ### 8.3 Return semantics
 

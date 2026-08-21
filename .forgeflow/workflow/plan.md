@@ -1,6 +1,6 @@
 # Plan Workflow
 
-Version: 2.7
+Version: 2.8
 
 ## Contract
 
@@ -62,18 +62,25 @@ behavior or engineering design.
 9. Confirm that the Feature set covers the currently approved project intent without
    overlap. A later module may extend that approved scope through another Subsequent
    Plan Entry.
-10. Before replacement, archive the prior Planning exactly. For explicit Feature
+10. Render the complete Planning structure required by Artifact Protocol 2.11,
+    including every required section, the canonical Features and Change Set tables,
+    and `Artifact Protocol Version = 2.11`. A concise output is not permission to
+    omit an empty-but-applicable section; use the protocol's explicit `NONE`
+    representation instead.
+11. Before replacement, archive the prior Planning exactly. For explicit Feature
    removal, complete the Artifact Protocol's Feature retirement transaction. Persist
    the new Planning at its Canonical Artifact Path and mark it READY only when the
    current approved scope and Change Set are complete.
-11. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Subsequent Plan
+12. For Bootstrap Entry, validate that Rule 1 authorizes Plan. For Subsequent Plan
    Entry, retain its Plan-only authorization until the new Planning is persisted.
    For Handoff Entry, execute the Unified Entry Validation Procedure defined in the
    Handoff Protocol.
    For Recovery Entry, execute its persisted-blocker checks before changing Planning.
    Apply the Transition Resolution Procedure.
    If it requires a handoff, validate and render exactly one Canonical Handoff Block
-   from the Handoff Protocol as the final content of the response.
+   from the Handoff Protocol as the final content of the response. Handoff emission
+   ends this Plan invocation; do not start Grill, even if an IDE agent can continue
+   autonomously or repository CLI configuration uses auto mode.
 
 Plan MUST NOT specify detailed acceptance criteria, architecture, Slices, tests, or
 implementation. Missing stakeholder scope is a blocker and MUST NOT be guessed.

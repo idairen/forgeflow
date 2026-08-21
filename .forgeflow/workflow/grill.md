@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.7
+Version: 2.8
 
 ## Contract
 
@@ -94,6 +94,8 @@ that assumes an answer violates the Question boundary.
 
 1. Validate that Target Scope identifies exactly one Feature in the current
    Planning. Freeze that Feature as the only productive scope for this execution.
+   Before writing, record the canonical Requirement paths that already exist; the
+   only permitted Requirement mutation is the target Feature's canonical path.
 2. Inspect relevant existing behavior and dependencies.
 3. Analyze goal, actors, triggers, rules, observable behavior, edge cases,
    acceptance criteria, dependencies, and out-of-scope behavior to identify the
@@ -113,8 +115,11 @@ that assumes an answer violates the Question boundary.
    Feature ID and that Feature's current Feature Contract Version rendered as
    Planning Version. The enclosing Planning artifact may have a later version.
 9. Mark it READY only when no unresolved business decision remains.
-10. Confirm that no Requirement other than the targeted Feature's Requirement was
-   created or modified during this execution.
+10. Compare the Requirement mutation set with the pre-write set. Confirm that
+    exactly zero or one Requirement changed and that any changed path is the target
+    Feature's canonical Requirement. Creating, replacing, or editing another
+    Feature's Requirement makes the execution non-conforming; it MUST NOT emit a
+    FORWARD Handoff or continue to another Feature.
 11. Apply the Transition Resolution Procedure. If it requires a handoff, validate
    and render exactly one Canonical Handoff Block from the Handoff Protocol as the
    final content of the response, then stop without consuming its Target Scope.
@@ -143,6 +148,10 @@ execution. Even when the next result is Grill at another Feature, this execution
 MUST emit that FORWARD Handoff and MUST NOT create the next Requirement. A Grill
 execution that creates or modifies Requirements for more than one Feature is
 non-conforming.
+
+The user or IDE host must start the next Grill invocation with that Handoff. CLI
+auto mode may start a separate validated execution through its external Runner, but
+it never expands the current Grill execution's mutation set.
 
 ### Emit conditions after Grill completes a Feature
 

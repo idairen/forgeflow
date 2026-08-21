@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.9
+Version: 2.10
 
 ## Contract
 
@@ -105,7 +105,12 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
 5. Reconcile cross-Feature interactions and non-functional constraints. Identify
    existing or extractable shared components and utilities, and define whether each
    affected Feature reuses, extends, or introduces them.
-6. Define boundaries, interfaces, data and migration strategy, security and error
+6. Write a concise `## Solution Summary` inside the canonical `solution-plan.md`.
+   It summarizes the current engineering baseline, material cross-Feature effects,
+   and principal verification approach without replacing the detailed decisions.
+   Record `Artifact Protocol Version = 2.11` in Metadata. Do not create
+   `solution-plan-summary.md` or any other standalone summary file.
+7. Define boundaries, interfaces, data and migration strategy, security and error
    handling, operational constraints, risks, and verification strategy. Define the
    Implementation Structure and Test Structure required by the Artifact Protocol.
    Choose package-by-Feature, package-by-layer, or a justified hybrid from existing
@@ -114,8 +119,8 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
    repositories/data access, domain types, and support components, state their
    package or module boundaries and allowed dependency direction. Define the
    corresponding unit and integration test placement.
-7. Record a Based On Requirements version mapping for every planned Feature.
-8. Compare every active Feature with the prior Solution Plan when present. Record a Feature
+8. Record a Based On Requirements version mapping for every planned Feature.
+9. Compare every active Feature with the prior Solution Plan when present. Record a Feature
    Engineering Versions map for every active Feature: retain the prior value when
    the Feature's engineering contract is compatible, and use the new Solution Plan
    Version for each added or materially affected Feature. Cross-cutting changes MUST
@@ -123,7 +128,7 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
    that must be resolved rather than treated as compatibility. A shared-component
    change advances every Feature whose engineering contract is affected, while
    unaffected Features retain their prior engineering versions.
-9. Record `Shared Components and Utilities` and `Cross-Feature Impact` sections in
+10. Record `Shared Components and Utilities` and `Cross-Feature Impact` sections in
    the Solution Plan. The impact analysis MUST cover every active Feature and state
    its direct, indirect, or unaffected classification, supporting reason, and
    Feature Engineering Version action. Use `NONE` when no shared component applies.
@@ -131,16 +136,16 @@ Neither may be deferred implicitly to Slice, TDD, or Review.
    Protocol: Shared Component IDs, Feature Dependencies, Feature Shared Components,
    Feature Decision References, and Cross-Feature Impact. Preserve Planning order,
    reject dependency cycles, and resolve every component and decision reference.
-10. Maintain an `Engineering Decision Register` in the Solution Plan. Every current
+11. Maintain an `Engineering Decision Register` in the Solution Plan. Every current
    decision records its affected Features, supporting Requirement or codebase
    evidence, and whether it retains, replaces, or supersedes a prior decision.
    Superseded decisions remain in history and MUST NOT be presented as current.
-11. Perform the READY quality gate and record Requirement-to-engineering and
+12. Perform the READY quality gate and record Requirement-to-engineering and
    verification traceability in the Solution Plan.
-12. Persist the Solution Plan at its Canonical Artifact Path and mark it READY only
+13. Persist the Solution Plan at its Canonical Artifact Path and mark it READY only
    when all required engineering decisions are actionable and no business choice
    has been invented.
-13. Apply the Transition Resolution Procedure after the entry validation already
+14. Apply the Transition Resolution Procedure after the entry validation already
     required by the Entry barrier.
     If it requires a handoff, validate and render exactly one Canonical Handoff Block
     from the Handoff Protocol as the final content of the response.

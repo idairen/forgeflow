@@ -1,6 +1,6 @@
 # Handoff and Transition Protocol
 
-Version: 2.9
+Version: 2.10
 
 ## Purpose
 
@@ -232,6 +232,19 @@ A handoff-producing workflow must render exactly one Canonical Handoff Block usi
 7. Renders `Input Artifacts` as one or more `<canonical filename> = <version>` entries separated by the exact delimiter `; `, with no duplicate filename. HALTED instead renders `NONE` only for an empty terminal evidence projection. `INVALID_VERSION` is permitted only by HALTED and only when its projected artifact has no single readable valid Version.
 
 A concise human-readable result summary may precede the block. A workflow must not emit more than one `### Handoff` heading in a response. Empty, `None`, and placeholder handoffs are forbidden.
+
+### Emission-consumption boundary
+
+Rendering a Canonical Handoff terminates the emitting workflow execution. The same
+invocation MUST NOT consume its own Handoff, start the target workflow, perform work
+at the Target Scope, or create artifacts owned by the target. This remains true for
+a FORWARD from Grill to Grill at a different Feature scope.
+
+A direct IDE command requires the user or host to start a new invocation with the
+emitted Handoff. Automatic consumption is permitted only to an external orchestrator
+that creates a distinct execution and revalidates the current Artifact Graph. The
+CLI `mode` configuration is not an entry mode, is not Handoff evidence, and MUST NOT
+be interpreted by an IDE participant as permission to chain workflows.
 
 ### FORWARD Template
 

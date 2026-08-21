@@ -382,7 +382,7 @@ Python 包提供 `forge` 命令。当前公开命令包括：
 | 配置项 | 含义 |
 |---|---|
 | `adapter` | `codex` 或 `copilot` |
-| `mode` | `auto` 或 `manual` |
+| `mode` | 仅控制 Python CLI 编排：`auto` 或 `manual`；不能授权 IDE 直接串联工作流 |
 | `root_artifact_dir` | 固定规范值 `.forgeflow/artifacts` |
 | `model` | 可选模型名，传递给所选 Agent CLI |
 | `execution_timeout_seconds` | 正数执行超时；默认值为 `900` |
@@ -392,6 +392,9 @@ Python 包提供 `forge` 命令。当前公开命令包括：
 ### 10.3 CLI 执行模型
 
 在 auto 模式下，Runner 会重复解析制品、解析下一项获准的工作流和作用域、调用配置的 Agent CLI、校验执行后的制品图和 Handoff，并在完成、阻塞、停止、中断或达到迭代上限时退出。当前 Runner 最多执行 50 个总步骤；同一工作流连续出现三次执行或 Handoff 失败时会停止。
+
+IDE 启动器不使用这一编排模式。一次 IDE 命令只能执行一个 Workflow 和一个
+Scope；存在后续步骤时输出 Handoff 并结束，由用户或宿主启动下一次独立调用。
 
 manual 模式在制品图授权 Plan，或非空意图选择 Subsequent Plan Entry 时执行一次 Plan，随后校验结果。`forge plan --intent "..."` 是普通后续需求入口；后续 `forge run` 从它生成的制品图继续。`--incremental` 仅作为兼容别名保留。
 

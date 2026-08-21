@@ -28,6 +28,7 @@ class ArtifactParser:
             "Review",
         ),
     )
+    _FORBIDDEN_ARTIFACT_FILES = {"solution-plan-summary.md"}
     _ALLOWED_STATUS = {
         "Planning": {"DRAFT", "BLOCKED", "READY"},
         "Requirement": {"DRAFT", "BLOCKED", "READY"},
@@ -98,6 +99,28 @@ class ArtifactParser:
         "Violated Contract |"
     )
     _FINDINGS_SEPARATOR = "| --- | --- | --- | --- | --- | --- | --- |"
+    _PLANNING_SECTIONS = (
+        "Project Intent",
+        "Project Goals",
+        "Success Measures",
+        "Project Constraints",
+        "Assumptions",
+        "Exclusions",
+        "Features",
+        "Change Set",
+        "Intent Evolution",
+    )
+    _PLANNING_TABLES = {
+        "Features": (
+            "| Feature ID | Title | Outcome | Dependencies |",
+            "| --- | --- | --- | --- |",
+        ),
+        "Change Set": (
+            "| Feature ID | Change | Previous Contract Version | "
+            "Current Contract Version | Rationale |",
+            "| --- | --- | --- | --- | --- |",
+        ),
+    }
     _STRUCTURE_TABLES = {
         "Implementation Structure": (
             "| Component or Role | Source Root | Module or Package Pattern | "
@@ -165,6 +188,15 @@ class ArtifactParser:
 
             rule = cls._match_filename(path.name)
             if rule is None:
+                if path.name in cls._FORBIDDEN_ARTIFACT_FILES:
+                    errors.append(f"forbidden artifact filename: {path.name}")
+                    diagnostics.append(
+                        {
+                            "code": "forbidden_artifact_filename",
+                            "artifacts": [cls._artifact_evidence(path)],
+                        }
+                    )
+                    continue
                 ignored.append(path.name)
                 continue
             evidence = cls._artifact_evidence(path)
@@ -300,7 +332,9 @@ class ArtifactParser:
 
         cls._validate_identifiers(metadata, filename_match, expected_type, errors)
         cls._validate_type_metadata(metadata, expected_type, errors)
+        cls._validate_planning_sections(text, metadata, expected_type, errors)
         cls._validate_structure_sections(text, expected_type, errors)
+        cls._validate_solution_summary(text, metadata, expected_type, errors)
         findings = []
         if expected_type == "Review Report":
             findings, finding_errors = cls._parse_review_findings(text)
@@ -481,6 +515,97 @@ class ArtifactParser:
                 or lines[index + 1] != separator
             ):
                 errors.append(f"invalid {name} table header")
+
+    @classmethod
+    def _validate_planning_sections(cls, text, metadata, artifact_type, errors):
+        if artifact_type != "Planning":
+            return
+        protocol_version = metadata.get("Artifact Protocol Version")
+        if protocol_version is None:
+            return
+        if protocol_version != "2.11":
+            errors.append("unsupported Planning Artifact Protocol Version")
+            return
+
+        lines = text.splitlines()
+        positions = []
+        for section in cls._PLANNING_SECTIONS:
+            indexes = [
+                index for index, line in enumerate(lines) if line == f"## {section}"
+            ]
+            if len(indexes) != 1:
+                errors.append(
+                    f"Planning must contain exactly one ## {section} section"
+                )
+                continue
+            positions.append(indexes[0])
+
+            content_index = indexes[0] + 1
+            while content_index < len(lines) and not lines[content_index].strip():
+                content_index += 1
+            if (
+                content_index >= len(lines)
+                or lines[content_index].startswith("## ")
+            ):
+                errors.append(f"Planning section is empty: {section}")
+                continue
+            table = cls._PLANNING_TABLES.get(section)
+            if table is not None:
+                header, separator = table
+                if (
+                    content_index + 1 >= len(lines)
+                    or lines[content_index] != header
+                    or lines[content_index + 1] != separator
+                ):
+                    errors.append(f"invalid Planning {section} table header")
+
+        if len(positions) == len(cls._PLANNING_SECTIONS) and positions != sorted(
+            positions
+        ):
+            errors.append("Planning sections are out of canonical order")
+
+    @staticmethod
+    def _validate_solution_summary(text, metadata, artifact_type, errors):
+        if artifact_type != "Solution Plan":
+            return
+        protocol_version = metadata.get("Artifact Protocol Version")
+        if protocol_version is not None and protocol_version != "2.11":
+            errors.append("unsupported Solution Artifact Protocol Version")
+            return
+        lines = text.splitlines()
+        if protocol_version == "2.11":
+            for required_section in (
+                "Implementation Structure",
+                "Test Structure",
+            ):
+                if f"## {required_section}" not in lines:
+                    errors.append(
+                        "Solution structure sections must include both "
+                        "Implementation Structure and Test Structure"
+                    )
+                    break
+        indexes = [
+            index for index, line in enumerate(lines) if line == "## Solution Summary"
+        ]
+        if not indexes:
+            if protocol_version == "2.11":
+                errors.append(
+                    "Solution Plan must contain exactly one ## Solution Summary section"
+                )
+            return
+        if len(indexes) != 1:
+            errors.append(
+                "Solution Plan must contain exactly one ## Solution Summary section"
+            )
+            return
+        content_index = indexes[0] + 1
+        while content_index < len(lines) and not lines[content_index].strip():
+            content_index += 1
+        if (
+            content_index >= len(lines)
+            or lines[content_index].startswith("## ")
+        ):
+            errors.append("Solution Summary section is empty")
 
     @classmethod
     def _validate_review_findings(cls, metadata, findings, errors):

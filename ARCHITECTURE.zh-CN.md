@@ -3,7 +3,7 @@
 **面向 AI 辅助软件工程的有状态执行协议。**
 
 > **项目状态：** Technical Preview（技术预览）
-> **框架版本：** 2.5 · **Artifact Protocol：** 2.5 · **Handoff Protocol：** 2.7
+> **框架版本：** 2.12 · **Artifact Protocol：** 2.11 · **Handoff Protocol：** 2.10
 > **横向比较核对日期：** 2026-08-18
 
 [English](./ARCHITECTURE.md)
@@ -274,6 +274,15 @@ Placement`；TDD 记录 `File Placement Conformance`；Review 沿着这条链验
 检查，因此会被内置阈值阻塞；`ARC-008` 是 P2 内聚性建议，不能仅因审查者偏好另一种
 组织方式就让 Review FAIL。
 
+### 6.7 规范 Planning 与 Solution 摘要
+
+新建或修订的 Planning 使用版本化固定章节，依次记录意图、目标、成功度量、
+约束、假设、排除项、Features、Change Set 和意图演进，避免模型自行缩减内容。
+旧 Planning 在下一次规范修订前仍可读取。
+
+Solution 摘要直接写入规范 `solution-plan.md`。ForgeFlow 不创建第二份
+`solution-plan-summary.md`，从而让摘要与详细工程决策共享同一 Owner、版本和历史。
+
 ## 7. Workflow 与 Scope 模型
 
 ### 7.1 所有权链
@@ -344,6 +353,10 @@ Handoff Protocol 定义了十一条有序规则，第一条匹配规则获胜：
 Canonical Handoff 的字段集合和顺序固定。Python Handoff Parser 会验证 Transition Type、Scope、Blocker Category、Artifact Filename、Version、Terminal Evidence 和 Reason Code。
 
 当流程仍停留在同一 Workflow 和 Scope 等待输入时，不输出 Handoff，从而避免没有意义的自 RETURN 循环。
+
+IDE 直接调用在输出 Handoff 后必须结束。下一 Workflow 或 Feature 必须由新的调用
+重新校验并消费该 Handoff。只有外部 Python CLI Runner 可以自动消费；
+`forgeflow.json.mode` 对 IDE launcher 没有授权作用。
 
 ### 8.3 Return 语义
 

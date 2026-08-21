@@ -1,7 +1,7 @@
 # ForgeFlow IDE 全场景验收测试计划
 
 > 文档类型：IDE 集成与框架行为验收计划
-> 适用基线：ForgeFlow Framework 2.11、Artifact Protocol 2.10、Handoff Protocol 2.9、Workflow 2.7–2.9
+> 适用基线：ForgeFlow Framework 2.12、Artifact Protocol 2.11、Handoff Protocol 2.10、Workflow 2.7–2.10
 > 目标适配器：GitHub Copilot、Codex
 > 测试方式：在 IDE 中直接调用 `.forgeflow/adapter/<adapter>/forge-*.prompt.md`，不使用 ForgeFlow CLI 编排
 
@@ -25,7 +25,7 @@
 
 “全场景”在本文中指覆盖当前规范定义的全部行为类别、入口类型、转换类型、工作流所有权和错误类型，而不是穷举所有自然语言表达或所有文件系统故障组合。
 
-当前基线包含 236 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
+当前基线包含 242 个编号测试场景，其中重复出现在执行批次或最小回归集中的编号只计一次。
 
 ## 2. 不在本轮范围内
 
@@ -219,6 +219,7 @@ pyproject.toml
 | IDE-INV-010 | 恢复正确搜索路径并开启新 IDE 窗口 | 六个 Prompt 可重新发现，无需依赖旧聊天缓存 | P0 |
 | IDE-INV-011 | 查看 Agent/Chat Debug Log | 请求中包含目标 Prompt 正文及四个权威文件读取要求 | P1 |
 | IDE-INV-012 | 检查命令描述 | `forge-plan` 明确声明不得调用或委托 Copilot native planning mode | P0 |
+| IDE-INV-013 | 根目录 `forgeflow.json` 的 CLI mode 为 `auto`，从 IDE 菜单执行任一 `forge-*` Prompt | IDE 忽略 CLI mode；本次仍只执行一个 Workflow，输出 Handoff 后停止 | P0 |
 
 ## 8. Plan 与项目入口场景
 
@@ -240,6 +241,8 @@ pyproject.toml
 | IDE-PLAN-014 | 当前图由其他 blocker 或 FAIL Review 优先控制，执行 `/forge-plan` | 不得绕过当前所有者；无生产性 Plan 改动 | P0 |
 | IDE-PLAN-015 | Planning 完成且存在缺失 Requirement | Handoff FORWARD 到 Planning 顺序中的第一个缺失 Feature 的 Grill | P0 |
 | IDE-PLAN-016 | 后续 Planning READY | 记录覆盖完整当前范围的 intent-evolution summary，明确 retained/added/modified/reordered/retired，不复制第二份当前契约 | P1 |
+| IDE-PLAN-017 | Bootstrap 或后续 Plan 写入 READY Planning | Metadata 包含 `Artifact Protocol Version = 2.11`；九个规范章节完整且顺序固定；Features 与 Change Set 表头精确 | P0 |
+| IDE-PLAN-018 | Planning READY 且 Rule 5 选择 Grill | 最终输出指向第一个缺失 Feature 的 Canonical Handoff 并立即结束；不得分析该 Feature、创建 Requirement 或自动执行 Grill | P0 |
 
 ## 9. Grill 场景
 
@@ -259,6 +262,7 @@ pyproject.toml
 | IDE-GRILL-012 | Requirement 已存在且规范内容变化 | 先将旧版本精确归档，再写更高版本；其他工作流制品不被修改 | P0 |
 | IDE-GRILL-013 | Handoff 指向 F-02，F-03 仍缺 Requirement | 本轮只生成 F-02 Requirement；输出指向 F-03 的 FORWARD 并立即停止，不分析、提问或生成 F-03 Requirement | P0 |
 | IDE-GRILL-014 | 后续 Planning 改变当前 Feature | Requirement 将业务目标、规则和验收证据追踪到当前 Feature boundary 与 Change Set context，不把历史意图当当前约束 | P1 |
+| IDE-GRILL-015 | Handoff 只授权 F-02，但 Agent 尝试同时创建或修改 F-03 Requirement | Requirement mutation set 校验失败；不得 READY/FORWARD 或继续 F-03；只有 F-02 路径允许变化 | P0 |
 
 ## 10. Solution 场景
 
@@ -283,6 +287,7 @@ pyproject.toml
 | IDE-SOL-017 | 旧 Solution 没有结构化影响元数据，后续需求触发 Solution 修订 | 旧 Solution 在迁移读取时仍可作为当前工程证据；新 Solution 版本补齐全部结构化影响字段，不产生部分字段集合 | P1 |
 | IDE-SOL-018 | 一个 Feature 需要 controller、service、repository/data-access、domain/support 等多种责任及对应测试 | Solution 根据现有仓库证据选择 package-by-Feature、package-by-layer 或混合策略，并写入完整 Implementation Structure 与 Test Structure；不得把所有责任默认为同一 package | P0 |
 | IDE-SOL-019 | 现有仓库已经存在一致且可推断的源码/测试目录惯例 | 直接沿用并记录证据，不因个人偏好强制改成 Java/Spring 分层或制造一类一包；通用 utility 必须改为明确责任或已批准共享组件 | P1 |
+| IDE-SOL-020 | Solution 形成工程基线并准备写摘要 | 摘要写入 `.forgeflow/artifacts/solution-plan.md` 的唯一 `## Solution Summary`；不得创建 `solution-plan-summary.md` 或项目根目录副本 | P0 |
 
 ## 11. Slice 场景
 
@@ -389,6 +394,7 @@ pyproject.toml
 | IDE-HO-015 | 在新聊天中提供旧版本 Handoff | 因证据过期拒绝执行 | P0 |
 | IDE-HO-016 | 复制 Handoff 但遗漏前导标题或表结构 | 视为无效 Handoff，不执行生产性工作 | P1 |
 | IDE-HO-017 | 当前执行解析出不同 Workflow 或 Target Scope | 仅输出对应 Canonical Handoff 并停止；不得在同一执行中预先消费目标 Scope | P0 |
+| IDE-HO-018 | IDE Workflow 已输出有效 Handoff，Agent/宿主具备继续执行或委派能力 | 当前 invocation 仍立即结束；只有用户或宿主发起的新 invocation 才能验证并消费该 Handoff | P0 |
 
 ## 15. Blocker 与 Recovery 场景
 

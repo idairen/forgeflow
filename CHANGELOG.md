@@ -9,6 +9,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added a versioned Planning Artifact structure with nine ordered sections,
+  canonical Features and Change Set tables, migration-compatible parser validation,
+  and explicit `Artifact Protocol Version = 2.11` metadata for new revisions.
+- Added an invocation termination barrier: direct IDE launchers execute exactly one
+  Workflow and stop at the emitted Handoff. Only the external Python CLI Runner may
+  consume a Handoff automatically as a separately validated execution.
+- Added a canonical `## Solution Summary` section inside `solution-plan.md`; the
+  non-canonical standalone `solution-plan-summary.md` is now explicitly forbidden.
 - Added source and test placement contracts across Solution, Slice, TDD, and Review.
   New or revised Solutions define Implementation/Test Structure, Slices define
   Planned File Placement, and TDD Records prove actual-path conformance without
@@ -116,10 +124,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
-- Expanded the IDE acceptance baseline from 226 to 236 cases with structured impact,
-  migration, source/test placement, missing upstream structure, Review conformance,
-  and non-blocking preference scenarios. Solution, Slice, and Review specifications
-  are now version 2.9; TDD is 2.8; unchanged Workflow contracts remain at 2.7.
+- Expanded the IDE acceptance baseline from 226 to 242 cases with structured impact,
+  migration, source/test placement, Planning structure, IDE termination, Grill
+  mutation isolation, canonical Solution Summary, Review conformance, and
+  non-blocking preference scenarios. Plan and Grill are now 2.8, Solution is 2.10,
+  Slice and Review are 2.9, and TDD is 2.8.
+- Clarified that `forgeflow.json.mode` controls Python CLI orchestration only and
+  never authorizes a direct IDE participant to chain Workflow executions.
+- Strengthened Grill's one-Feature boundary with a pre/post Requirement mutation-set
+  check; changing any non-target Requirement prevents a FORWARD Handoff.
 - Upgraded the architecture Review plugin to 1.1. Explicit source/test layout
   violations are P1 blocking checks (`ARC-003`, `ARC-009`), while general package
   cohesion remains a P2 non-blocking recommendation (`ARC-008`).

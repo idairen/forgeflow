@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.10
+Version: 2.11
 
 ## Purpose
 
@@ -207,9 +207,9 @@ graph contradiction rather than an actionable or stale route.
 
 | Artifact Type | Additional required fields |
 | --- | --- |
-| Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Empty Feature Approval only for `NONE` |
+| Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Artifact Protocol Version for Planning created or revised under 2.11; Empty Feature Approval only for `NONE` |
 | Requirement | Feature ID; Planning Version |
-| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version`; structured impact metadata defined below for Solutions created under this protocol version |
+| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version`; Artifact Protocol Version for Solutions created or revised under 2.11; structured impact metadata defined below |
 | Slice Plan | Feature ID; Based On Solution; Slice IDs in declared order |
 | TDD Record | Feature ID; Slice ID; Attempt; Solution Version; Slice Plan Version |
 | Review Report | Feature ID; Slice ID; Attempt; Decision; Solution Version; Slice Plan Version; Blocking Findings; Non-blocking Findings; Return Workflow and Return Scope when Decision is FAIL |
@@ -352,6 +352,51 @@ the complete ordered Feature list for the currently approved scope. READY means 
 list covers all intent approved so far; it does not assert that the user will never
 add another module through a Subsequent Plan Entry.
 
+A Planning artifact created or normatively revised under Artifact Protocol 2.11
+MUST record `Artifact Protocol Version` as `2.11` in Metadata and contain exactly
+one of each section below in this order:
+
+1. `## Project Intent`
+2. `## Project Goals`
+3. `## Success Measures`
+4. `## Project Constraints`
+5. `## Assumptions`
+6. `## Exclusions`
+7. `## Features`
+8. `## Change Set`
+9. `## Intent Evolution`
+
+Every section MUST contain a non-placeholder value. When no item applies to Project
+Constraints, Assumptions, or Exclusions, the section records `NONE` and the reason;
+it MUST NOT be omitted. `Features` MUST use this exact table header:
+
+```markdown
+| Feature ID | Title | Outcome | Dependencies |
+| --- | --- | --- | --- |
+```
+
+Dependencies use `NONE` or comma-separated active Feature IDs. An explicitly
+approved empty project retains the section and records one row whose Feature ID is
+`NONE`, whose Outcome references the approval evidence, and whose Dependencies are
+`NONE`.
+
+`Change Set` MUST use this exact table header:
+
+```markdown
+| Feature ID | Change | Previous Contract Version | Current Contract Version | Rationale |
+| --- | --- | --- | --- | --- |
+```
+
+`Change` is `BASELINE`, `RETAINED`, `ADDED`, `MODIFIED`, `REORDERED`, or `RETIRED`.
+Use `NONE` for a version that does not exist. Baseline Planning includes one row per
+Feature using `BASELINE`; later Planning includes every active Feature plus every
+Feature retired by the current change. `Intent Evolution` explains the complete
+approved-scope effect of those rows without becoming a second Feature contract.
+
+A pre-2.11 Planning artifact that omits `Artifact Protocol Version` remains readable
+for migration. Its next normative Plan revision MUST add the field and the complete
+section structure. A partial 2.11 structure is invalid.
+
 ### Requirement
 
 A Requirement is Feature-level. It contains business behavior, rules, acceptance
@@ -372,6 +417,15 @@ contain exactly one `## Implementation Structure` section and exactly one
 `## Test Structure` section. A pre-2.10 Solution that omits both remains readable
 during migration. A revised Solution MUST add both; one without the other is an
 incomplete engineering contract.
+
+A Solution Plan created or normatively revised under Artifact Protocol 2.11 MUST
+also record `Artifact Protocol Version` as `2.11` in Metadata and contain exactly
+one non-empty `## Solution Summary` section in the same
+canonical `solution-plan.md`. The summary is part of the owned artifact and follows
+its version and history lifecycle. `solution-plan-summary.md` is not a Canonical
+Artifact Path and MUST NOT be created as a second current contract or derived copy.
+A pre-2.11 Solution that omits the section remains readable until its next normative
+Solution revision.
 
 `Implementation Structure` defines repository-relative source roots, the chosen
 organization strategy, responsibility boundaries, module or package patterns,

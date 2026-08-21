@@ -8,7 +8,8 @@
   "properties": {
     "mode": {
       "type": "string",
-      "enum": ["auto", "manual"]
+      "enum": ["auto", "manual"],
+      "description": "Controls Python CLI orchestration only. Direct IDE launcher invocations are always single-workflow and stop after emitting a Handoff."
     },
     "adapter": {
       "type": "string",

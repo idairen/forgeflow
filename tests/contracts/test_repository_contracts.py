@@ -313,6 +313,39 @@ class RepositoryContractTests(unittest.TestCase):
             architecture_rules,
         )
 
+    def test_ide_invocations_stop_at_handoffs_and_artifacts_are_not_split(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+        grill = (ROOT / ".forgeflow/workflow/grill.md").read_text(
+            encoding="utf-8"
+        )
+        solution = (ROOT / ".forgeflow/workflow/solution.md").read_text(
+            encoding="utf-8"
+        )
+        schema = json.loads(
+            (ROOT / ".forgeflow/forgeflow.schema.json").read_text(encoding="utf-8")
+        )
+
+        self.assertIn("Invocation termination barrier", framework)
+        self.assertIn("direct IDE launcher invocation is manual", framework)
+        self.assertIn("Emission-consumption boundary", handoff)
+        self.assertIn("MUST NOT consume its own Handoff", handoff)
+        self.assertIn("do not start Grill", plan)
+        self.assertIn("Requirement mutation set", grill)
+        self.assertIn("Artifact Protocol Version", artifact)
+        for section in ArtifactParser._PLANNING_SECTIONS:
+            self.assertIn(f"`## {section}`", artifact)
+        self.assertIn("## Solution Summary", solution)
+        self.assertIn("`solution-plan-summary.md`", solution)
+        self.assertIn("standalone summary file", solution)
+        self.assertIn("CLI orchestration only", schema["properties"]["mode"]["description"])
+
     def test_removed_protocol_files_do_not_return(self):
         protocol = ROOT / ".forgeflow" / "protocol"
         self.assertFalse((protocol / "compatibility.md").exists())
