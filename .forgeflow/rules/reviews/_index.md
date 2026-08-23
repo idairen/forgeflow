@@ -63,6 +63,76 @@ is evaluated:
 Comma-separated output formats. Supported values are `md`, `csv`, and `html`. Review
 generates every configured format; the first is primary.
 
+### Canonical Report Serialization
+
+Every configured report represents the same ordered rule-result set. Include one
+result for every rule in Rules File checklist order, including `N/A` results. Copy
+Rule ID, Description, and Severity from the Rules File without reinterpretation.
+`Verdict` is exactly `PASS`, `VIOLATION`, `UNKNOWN`, or `N/A`. `Disposition` is
+`BLOCKING` or `NON_BLOCKING` only for `VIOLATION`; every other verdict uses `NONE`.
+Evidence is non-empty and observable for every result.
+
+Derive `Overall Verdict` in this order: `VIOLATION` when any result is
+`VIOLATION`; otherwise `UNKNOWN` when any result is `UNKNOWN`; otherwise `PASS`
+when any result is `PASS`; otherwise `N/A`. This supplemental verdict does not
+replace the Review decision: only `BLOCKING` results contribute canonical Findings
+and cause Review FAIL.
+
+Angle-bracketed values in the templates below are metavariables and MUST be replaced.
+
+#### Markdown Template
+
+An `md` report MUST use exactly this structure and field order:
+
+```markdown
+# <registry Name> Review Report
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| Plugin | <registry Name> |
+| Rules Version | <Rules File Version> |
+| Feature ID | <F-XX> |
+| Slice ID | <S-XX> |
+| Attempt | <positive integer> |
+| Overall Verdict | <PASS, VIOLATION, UNKNOWN, or N/A> |
+| PASS Count | <non-negative integer> |
+| VIOLATION Count | <non-negative integer> |
+| UNKNOWN Count | <non-negative integer> |
+| N/A Count | <non-negative integer> |
+| BLOCKING Count | <non-negative integer> |
+| NON_BLOCKING Count | <non-negative integer> |
+
+## Results
+
+| Rule ID | Description | Severity | Verdict | Disposition | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| <Rule ID> | <exact description> | <P0, P1, P2, or P3> | <PASS, VIOLATION, UNKNOWN, or N/A> | <BLOCKING, NON_BLOCKING, or NONE> | <observable evidence> |
+```
+
+Metadata counts MUST equal the Results rows. Escape a literal `|` inside a table
+cell as `\|` and render an embedded line break as `<br>`. Do not add another
+heading, summary table, findings section, or explanatory text.
+
+#### CSV Template
+
+A `csv` report MUST be UTF-8 RFC 4180 data with exactly this header:
+
+```csv
+Plugin,Rules Version,Feature ID,Slice ID,Attempt,Overall Verdict,PASS Count,VIOLATION Count,UNKNOWN Count,N/A Count,BLOCKING Count,NON_BLOCKING Count,Rule ID,Description,Severity,Verdict,Disposition,Evidence
+```
+
+Write exactly one record per rule in Rules File checklist order and no comment,
+summary, or blank records. Repeat identical metadata and count values on every
+record. Quote a field containing a comma, quote, CR, or LF and double embedded
+quotes. Normalize an Evidence line break to the two literal characters `\n` before
+CSV escaping. The CSV rows MUST contain the same rules, verdicts, dispositions,
+evidence, and counts as the Markdown report for the same plugin attempt.
+
+An `html` report MUST contain the same metadata and ordered results, but its markup
+is not a canonical serialization format.
+
 ### Blocking Threshold
 
 Severity range converted to BLOCKING when an applicable rule has verdict VIOLATION:

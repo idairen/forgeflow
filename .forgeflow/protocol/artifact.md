@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.11
+Version: 2.17
 
 ## Purpose
 
@@ -207,9 +207,9 @@ graph contradiction rather than an actionable or stale route.
 
 | Artifact Type | Additional required fields |
 | --- | --- |
-| Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Artifact Protocol Version for Planning created or revised under 2.11; Empty Feature Approval only for `NONE` |
+| Planning | Feature IDs in declared order; Feature Contract Versions for every Feature; Change Set; Empty Feature Approval only for `NONE` |
 | Requirement | Feature ID; Planning Version |
-| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version`; Artifact Protocol Version for Solutions created or revised under 2.11; structured impact metadata defined below |
+| Solution Plan | Based On Requirements and Feature Engineering Versions: every `F-XX = version`; structured impact metadata defined below |
 | Slice Plan | Feature ID; Based On Solution; Slice IDs in declared order |
 | TDD Record | Feature ID; Slice ID; Attempt; Solution Version; Slice Plan Version |
 | Review Report | Feature ID; Slice ID; Attempt; Decision; Solution Version; Slice Plan Version; Blocking Findings; Non-blocking Findings; Return Workflow and Return Scope when Decision is FAIL |
@@ -245,36 +245,49 @@ current Solution Plan artifact's own Version.
 
 ### Structured Solution impact metadata
 
-A Solution Plan created or normatively revised under Artifact Protocol 2.9 MUST
-include all of the following metadata fields. A pre-2.9 Solution that omits the
-entire set remains readable during migration; the derived Project Impact View is
-then `unavailable`. A partial set is invalid.
+A current Solution Plan MUST include all of the following metadata fields. A legacy
+Solution that omits the entire set, or contains the former complete set but lacks
+only `Feature Shared Component Access`, remains readable during migration. Lane
+parallelism is unavailable for either legacy form; Transition Resolution applies a
+conservative Planning-order dependency chain until a normative Solution revision
+adds the complete current set. Any other partial set is invalid.
 
 | Field | Canonical value |
 | --- | --- |
 | Shared Component IDs | `NONE` or ordered unique `SC-XX` identifiers separated by `; ` |
 | Feature Dependencies | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = F-YY, F-ZZ` |
 | Feature Shared Components | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = SC-YY, SC-ZZ` |
+| Feature Shared Component Access | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = SC-YY:READ, SC-ZZ:WRITE` |
 | Feature Decision References | one ordered entry per active Feature: `F-XX = NONE` or `F-XX = ED-YY, ED-ZZ` |
 | Cross-Feature Impact | one ordered entry per active Feature: `F-XX = DIRECT`, `INDIRECT`, or `UNAFFECTED` |
 
 Every map MUST contain exactly the active Feature IDs in Planning order. A Feature
 dependency target MUST be another active Feature and MUST NOT be the source Feature.
 Dependencies MUST be acyclic. Component references MUST resolve through `Shared
-Component IDs`. Decision references MUST resolve to current entries in the
-Solution Plan's `Engineering Decision Register`. `NONE` cannot be combined with an
-identifier in the same value.
+Component IDs`. Every Feature/component membership MUST have exactly one matching
+access entry: `READ` when the Feature only consumes the current component contract,
+or `WRITE` when it creates, changes, extends, migrates, or deletes that component.
+An access entry without membership is invalid. Decision references MUST resolve to
+current entries in the Solution Plan's `Engineering Decision Register`. `NONE`
+cannot be combined with an identifier in the same value.
 
 `Feature Dependencies` means that the Feature on the left consumes an engineering
-contract owned or exposed by the Features on the right. Therefore a change to a
-dependency can directly or transitively affect its dependents. Shared-component
-membership means co-usage, not dependency direction. `Cross-Feature Impact`
-classifies the current Solution revision rather than predicting every possible
-future change.
+contract owned or exposed by the Features on the right. The effective Feature Lane
+dependency graph is the union of Planning `Dependencies` and Solution `Feature
+Dependencies`; the union MUST be acyclic. A change to a dependency can directly or
+transitively affect its dependents.
+
+Shared-component membership alone means co-usage, not dependency direction.
+`READ`/`READ` co-usage permits parallel lanes. If two Features reference the same
+component and either access is `WRITE`, Solution MUST order those Features through
+the effective dependency graph. If evidence does not determine the safe direction,
+Solution must resolve that engineering decision before READY. `Cross-Feature Impact`
+classifies the current Solution revision rather than predicting future change.
 
 The derived Project Impact View may calculate reverse and transitive relationships
-from these fields. Such calculations are non-authoritative and MUST NOT replace the
-Solution-owned impact decision or alter transition resolution.
+from these fields. The view is non-authoritative and MUST NOT replace a canonical
+Solution decision. Transition resolution reads the canonical dependency and access
+maps directly; a cached or rendered Project Impact View never authorizes a lane.
 
 Planning represents an explicitly approved empty Feature list with the exact value
 `NONE`; a blank metadata value is never an empty list. When `Feature IDs` is `NONE`,
@@ -352,9 +365,8 @@ the complete ordered Feature list for the currently approved scope. READY means 
 list covers all intent approved so far; it does not assert that the user will never
 add another module through a Subsequent Plan Entry.
 
-A Planning artifact created or normatively revised under Artifact Protocol 2.11
-MUST record `Artifact Protocol Version` as `2.11` in Metadata and contain exactly
-one of each section below in this order:
+A current Planning artifact MUST contain exactly one of each section below in this
+order. Any normative Plan revision MUST produce this complete structure:
 
 1. `## Project Intent`
 2. `## Project Goals`
@@ -393,9 +405,175 @@ Feature using `BASELINE`; later Planning includes every active Feature plus ever
 Feature retired by the current change. `Intent Evolution` explains the complete
 approved-scope effect of those rows without becoming a second Feature contract.
 
-A pre-2.11 Planning artifact that omits `Artifact Protocol Version` remains readable
-for migration. Its next normative Plan revision MUST add the field and the complete
-section structure. A partial 2.11 structure is invalid.
+#### Canonical Planning rendering envelope
+
+A new or revised Planning artifact MUST use the following envelope. Angle-bracketed
+descriptions below are protocol metavariables and MUST be replaced with approved,
+non-empty values; they MUST NOT appear in the persisted artifact.
+
+```markdown
+# Planning
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| Artifact Type | Planning |
+| Version | <major.minor> |
+| Status | <DRAFT, BLOCKED, or READY> |
+| Owner Workflow | Plan |
+| Feature IDs | <ordered F-XX entries separated by semicolon-space, or NONE> |
+| Feature Contract Versions | <ordered F-XX = major.minor entries, or NONE> |
+| Change Set | <BASELINE or current change classification summary> |
+
+## Project Intent
+
+<approved intent>
+
+## Project Goals
+
+<approved goals>
+
+## Success Measures
+
+<approved observable success measures>
+
+## Project Constraints
+
+<approved or repository-evidenced project constraints, or NONE with reason>
+
+## Assumptions
+
+<evidence-backed assumptions, or NONE with reason>
+
+## Exclusions
+
+<explicitly approved exclusions, or NONE with reason>
+
+## Features
+
+| Feature ID | Title | Outcome | Dependencies |
+| --- | --- | --- | --- |
+| <F-XX> | <business capability title> | <independently valuable user outcome> | <NONE or active Feature IDs> |
+
+## Change Set
+
+| Feature ID | Change | Previous Contract Version | Current Contract Version | Rationale |
+| --- | --- | --- | --- | --- |
+| <F-XX> | <allowed Change value> | <NONE or major.minor> | <major.minor> | <evidence-based rationale> |
+
+## Intent Evolution
+
+<complete approved-scope evolution summary>
+```
+
+The first line MUST be the sole level-one heading. `## Metadata` and the nine
+ordered Planning sections MUST each occur exactly once, and no other level-two
+section is permitted. A horizontal rule, repeated `# Planning`, standalone Feature
+ID section, Feature status table, or per-Feature contract-summary subsection MUST
+NOT be added. Feature IDs occupy only the Feature ID column; titles MUST NOT be
+appended to an identifier. Feature status is represented by the Planning artifact's
+own Status and downstream evidence, not by a per-Feature `READY` column.
+
+#### Planning serialization validation
+
+After writing `planning.md`, Plan MUST reopen it from its Canonical Artifact Path and
+validate the persisted text rather than its intended draft. Validation MUST confirm:
+
+1. the exact envelope, heading count, section names, section order, and table headers;
+2. every required Metadata field and the exact canonical value syntax;
+3. exact equality between ordered Metadata Feature IDs, Feature Contract Versions,
+   Features rows, and applicable Change Set rows;
+4. allowed Change values and valid previous/current version relationships;
+5. absence of protocol metavariables, duplicate headings, extra level-two sections,
+   composite identifier/title cells, and per-Feature status fields;
+6. conformance with Plan ownership and the approved intent, including the decision,
+   assumption, exclusion, dependency, and traceability rules below;
+7. semantic consistency across Project Intent, Goals, Success Measures, Constraints,
+   Assumptions, Exclusions, Feature Outcomes, dependencies, and Intent Evolution;
+   and
+8. unambiguous actor, cardinality, permission, lifecycle, and data-semantics wording.
+
+Failure leaves Planning unusable. Plan MUST correct a serialization defect before
+marking it READY. If correction requires an unresolved user decision, Plan MUST wait
+without READY status or Handoff. A participant MUST NOT apply a forward transition
+to a Planning artifact merely because its Metadata claims `Status = READY`.
+
+A legacy Planning artifact that predates the complete nine-section structure remains
+readable for migration. Its next normative Plan revision MUST produce the complete
+current structure. A partially upgraded structure is invalid.
+
+Planning content is approved business evidence, not a scratchpad for unresolved
+choices. `Assumptions` may contain only conditions directly supported by user intent
+or observable current-project evidence. It MUST NOT assert an answer to an open
+business question, create a role or identity relationship, choose shared data
+semantics, or remove functionality from scope. `Exclusions` require explicit user
+intent or an already approved current Planning contract; silence is not exclusion
+evidence. `Success Measures` and Feature Outcomes MUST NOT introduce mandatory
+observable behavior that the user has not approved.
+
+An explicitly approved business decision is a contract, not an Assumption. Plan
+MUST record it in the applicable Feature Outcome or, when it governs multiple
+Features or the whole project, in Project Constraints, with supporting Goals or
+Success Measures only when appropriate. It MUST NOT duplicate the same normative
+decision under Assumptions. Assumptions are reserved for evidence-backed contextual
+conditions that remain assumptions rather than approved product behavior.
+
+No Planning section may contradict another. The same actor cannot be both read-only
+and editable for the same data and scope; role cardinality, lifecycle destinations,
+counting rules, time boundaries, and ownership semantics must remain identical
+where repeated. A concise statement MUST be qualified rather than silently
+overriding a more specific approved rule.
+
+#### Decomposition readiness evidence
+
+A READY Planning artifact MUST demonstrate that every material decomposition
+dimension is either explicitly resolved by User Intent or an approved Plan answer,
+or is irrelevant to the proposed Feature set. The universal dimensions are:
+
+1. project inclusion and exclusion boundaries;
+2. actors, identity sources, role relationships, and ownership used across Features;
+3. shared business entities, identifiers, and reference relationships;
+4. lifecycle transfers, returns, or resumptions that cross Feature boundaries; and
+5. shared data meanings, measurements, aggregations, or reporting semantics produced
+   by one Feature and consumed by another.
+
+This semantic readiness test is an execution gate, not a new persisted checklist,
+section, decision store, or database table. Its approved results appear only through
+the existing canonical Planning sections they govern. An Assumption, common
+practice, technical convention, model inference, or the mere presence of a noun in
+User Intent cannot resolve a material dimension.
+If an unresolved answer could add or remove a Feature, change a Feature boundary or
+dependency, or change a contract between Features, Planning is not READY. If it
+changes only detailed behavior inside one stable Feature, Planning omits the answer
+and leaves clarification to Grill.
+
+Planning MUST NOT claim complete approved scope, exhaustive dependencies, complete
+coverage, or non-overlapping boundaries until this readiness test passes. Conversely,
+zero Plan questions is valid when the User Intent already resolves every material
+dimension needed for decomposition; Plan MUST NOT manufacture questions merely to
+populate a clarification step.
+
+Every approved project-wide or cross-Feature behavior MUST be traceable to at least
+one Feature Outcome or explicit Project Constraint. Dependencies in the Features
+table MUST include every active Feature whose business output is required for the
+dependent Feature's declared Outcome. Intent Evolution MUST NOT claim complete
+coverage or non-overlap when either mapping is absent or contradictory.
+
+Dependency validation is exhaustive, not merely reachability-based. A transitive
+path through another Feature does not permit omission when a Feature directly uses
+an earlier Feature's actor identity, ownership relation, business entity, reference
+data, lifecycle state, or reporting dimension. Plan MUST derive dependencies from
+each Outcome's required business inputs and reject a READY claim until every such
+active Feature is listed. Feature Outcomes MUST also distinguish singular owners,
+primary assignees, assistants, and other role cardinalities without ambiguous terms.
+
+A Feature represents independently valuable, actor-observable business capability.
+Project scaffolding, framework configuration, database setup, authentication wiring,
+common components, base entities, repository conventions, and similar engineering
+enablement MUST NOT be introduced as a Feature merely because later Features need
+them. Such concerns belong to Solution unless the user's approved intent explicitly
+defines the platform foundation itself as a separately observable product outcome.
 
 ### Requirement
 
@@ -412,20 +590,22 @@ smallest compatibility boundary for downstream reuse. Adding or changing one Fea
 does not invalidate another Feature unless Solution records a material cross-Feature
 engineering impact by advancing that Feature's engineering version.
 
-A Solution Plan created or normatively revised under Artifact Protocol 2.10 MUST
-contain exactly one `## Implementation Structure` section and exactly one
-`## Test Structure` section. A pre-2.10 Solution that omits both remains readable
-during migration. A revised Solution MUST add both; one without the other is an
-incomplete engineering contract.
+Its structured dependency and shared-component access maps are the engineering
+contract for Feature Lane scheduling. They MUST cover every active Feature, make the
+combined Planning/Solution dependency graph acyclic, and serialize every shared
+component relationship that is not safe for parallel execution.
 
-A Solution Plan created or normatively revised under Artifact Protocol 2.11 MUST
-also record `Artifact Protocol Version` as `2.11` in Metadata and contain exactly
-one non-empty `## Solution Summary` section in the same
-canonical `solution-plan.md`. The summary is part of the owned artifact and follows
-its version and history lifecycle. `solution-plan-summary.md` is not a Canonical
-Artifact Path and MUST NOT be created as a second current contract or derived copy.
-A pre-2.11 Solution that omits the section remains readable until its next normative
-Solution revision.
+A current Solution Plan MUST contain exactly one `## Implementation Structure`
+section and exactly one `## Test Structure` section. A legacy Solution that omits
+both remains readable during migration. A revised Solution MUST add both; one
+without the other is an incomplete engineering contract.
+
+A current Solution Plan MUST contain exactly one non-empty `## Solution Summary`
+section in the same canonical `solution-plan.md`. The summary is part of the owned
+artifact and follows its version and history lifecycle. `solution-plan-summary.md`
+is not a Canonical Artifact Path and MUST NOT be created as a second current contract
+or derived copy. A legacy Solution that omits the section remains readable until its
+next normative Solution revision.
 
 `Implementation Structure` defines repository-relative source roots, the chosen
 organization strategy, responsibility boundaries, module or package patterns,
@@ -574,3 +754,5 @@ merged. Both moves and the new Planning write form one transaction; failure rest
 all moved evidence and stops Plan. Retirement is archival coordination, not a
 transfer of artifact ownership. The next Solution version removes the retired
 Feature from Based On Requirements and Feature Engineering Versions.
+
+<!-- forgeflow-eof: .forgeflow/protocol/artifact.md -->

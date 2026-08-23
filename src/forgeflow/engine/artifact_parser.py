@@ -563,7 +563,6 @@ class ArtifactParser:
             positions
         ):
             errors.append("Planning sections are out of canonical order")
-
     @staticmethod
     def _validate_solution_summary(text, metadata, artifact_type, errors):
         if artifact_type != "Solution Plan":

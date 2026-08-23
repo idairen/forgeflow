@@ -187,6 +187,53 @@ class RepositoryContractTests(unittest.TestCase):
                     for reference in expected:
                         self.assertIn(reference, content)
 
+    def test_bootstrap_entry_uses_handoff_root_contract(self):
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+
+        for rule in (
+            "the Artifact Root is absent or empty, and the\n"
+            "supplemental Reports Root is absent or empty",
+            "An empty Artifact\nRoot with a non-empty Reports Root is residual project evidence",
+            "Rule 1 does not\nmatch, Bootstrap Entry is not authorized",
+        ):
+            self.assertIn(rule, handoff)
+        self.assertIn(
+            "Bootstrap Entry conditions are defined only by the Handoff Protocol",
+            plan,
+        )
+        self.assertNotIn(
+            "Bootstrap Entry** requires both Artifact Root and Reports Root",
+            plan,
+        )
+
+    def test_plugin_registry_owns_canonical_md_and_csv_reports(self):
+        registry = (ROOT / ".forgeflow/rules/reviews/_index.md").read_text(
+            encoding="utf-8"
+        )
+        review = (ROOT / ".forgeflow/workflow/review.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("### Canonical Report Serialization", registry)
+        self.assertIn("#### Markdown Template", registry)
+        self.assertIn(
+            "| Rule ID | Description | Severity | Verdict | Disposition | Evidence |",
+            registry,
+        )
+        self.assertIn("#### CSV Template", registry)
+        self.assertIn(
+            "Plugin,Rules Version,Feature ID,Slice ID,Attempt,Overall Verdict,"
+            "PASS Count,VIOLATION Count,UNKNOWN Count,N/A Count,BLOCKING Count,"
+            "NON_BLOCKING Count,Rule ID,Description,Severity,Verdict,Disposition,Evidence",
+            registry,
+        )
+        self.assertIn("same rules, verdicts, dispositions", registry)
+        self.assertIn("sole registry and execution contract", review)
+        self.assertIn("MUST NOT duplicate, infer, reorder, or locally redefine", review)
+
     def test_scoped_workflows_cannot_preconsume_future_scope(self):
         framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
         handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
@@ -194,14 +241,15 @@ class RepositoryContractTests(unittest.TestCase):
         )
         principle = (
             "A workflow execution MUST NOT consume a future execution scope\n"
-            "unless that scope is explicitly provided by the incoming Canonical Handoff."
+            "unless that scope is explicitly provided by the incoming Canonical Handoff "
+            "or a\nvalidated Feature Lane Entry."
         )
         self.assertIn(principle, framework)
         self.assertIn(principle, handoff)
 
         workflow_rules = {
             "grill": "more than one Feature is\nnon-conforming",
-            "slice": "does not continue the Slice loop inside this\nexecution",
+            "slice": "does not continue work inside this execution",
             "tdd": "does not authorize Review or the next Slice",
             "review": "MUST only emit that Handoff and stop",
         }
@@ -267,11 +315,56 @@ class RepositoryContractTests(unittest.TestCase):
             "Shared Component IDs",
             "Feature Dependencies",
             "Feature Shared Components",
+            "Feature Shared Component Access",
             "Feature Decision References",
             "Cross-Feature Impact",
         ):
             self.assertIn(field, artifact)
             self.assertIn(field, solution)
+
+    def test_feature_lanes_are_dependency_and_access_aware(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        solution = (ROOT / ".forgeflow/workflow/solution.md").read_text(
+            encoding="utf-8"
+        )
+        scoped_workflows = {
+            name: (ROOT / f".forgeflow/workflow/{name}.md").read_text(
+                encoding="utf-8"
+            )
+            for name in ("slice", "tdd", "review")
+        }
+
+        self.assertIn("LANE_READY(F)", framework)
+        self.assertIn("LANE_DELIVERY_READY(F)", framework)
+        self.assertIn("Planning order is\nnot an execution dependency", framework)
+        self.assertIn("### Feature Lane State and Selection", handoff)
+        self.assertIn("Feature Lane Ready Set", handoff)
+        self.assertIn("There are exactly five entry modes", handoff)
+        self.assertIn("Feature Lane Entry", handoff)
+        self.assertIn("Feature Shared Component Access", artifact)
+        self.assertIn("Feature Shared Component Access", solution)
+        self.assertIn("`READ`/`READ`", artifact)
+        self.assertIn("WRITE", artifact)
+        self.assertIn("union", artifact)
+        for workflow in scoped_workflows.values():
+            self.assertIn("Feature Lane Entry", workflow)
+            self.assertIn("re-read", workflow.lower())
+
+        all_contracts = "\n".join(
+            [framework, artifact, handoff, solution, *scoped_workflows.values()]
+        )
+        self.assertNotIn(
+            "TDD is forbidden until every planned Feature has a usable current Slice Plan",
+            all_contracts,
+        )
+        self.assertNotIn("TDD MUST NOT start before `DELIVERY_READY`", all_contracts)
+        self.assertNotIn("A later Feature's Slice MUST NOT start", all_contracts)
 
     def test_source_and_test_placement_are_upstream_engineering_contracts(self):
         framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
@@ -338,13 +431,164 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("MUST NOT consume its own Handoff", handoff)
         self.assertIn("do not start Grill", plan)
         self.assertIn("Requirement mutation set", grill)
-        self.assertIn("Artifact Protocol Version", artifact)
+        self.assertNotIn("Artifact Protocol Version", artifact)
         for section in ArtifactParser._PLANNING_SECTIONS:
             self.assertIn(f"`## {section}`", artifact)
         self.assertIn("## Solution Summary", solution)
         self.assertIn("`solution-plan-summary.md`", solution)
         self.assertIn("standalone summary file", solution)
         self.assertIn("CLI orchestration only", schema["properties"]["mode"]["description"])
+
+    def test_plan_clarifies_business_scope_without_preloading_future_workflows(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+
+        self.assertIn("Authoritative loading and workspace boundary", framework)
+        self.assertIn("Framework, Artifact Protocol, Handoff Protocol", framework)
+        self.assertIn("MUST NOT load another Workflow specification", framework)
+        self.assertIn("MUST NOT inspect user-level agent configuration", framework)
+        self.assertIn("## Planning clarification", plan)
+        for concept in (
+            "approved project scope",
+            "Feature set",
+            "cross-Feature actor",
+            "contract between two or more Features",
+            "ask the user during this invocation",
+            "Every other business question",
+            "Grill-owned",
+        ):
+            self.assertIn(concept, plan)
+        self.assertIn("Assumptions", artifact)
+        self.assertIn("silence is not exclusion", artifact)
+        self.assertIn("Dependencies in the Features", artifact)
+
+    def test_authoritative_files_require_complete_read_through_eof(self):
+        framework_path = ROOT / ".forgeflow/forgeflow.md"
+        framework = framework_path.read_text(encoding="utf-8")
+        authoritative_paths = (
+            ".forgeflow/forgeflow.md",
+            ".forgeflow/protocol/artifact.md",
+            ".forgeflow/protocol/handoff.md",
+            *(f".forgeflow/workflow/{workflow}.md" for workflow in sorted(WORKFLOWS)),
+        )
+
+        for requirement in (
+            "Authoritative Read Completion Procedure",
+            "current physical end",
+            "contiguous ranges",
+            "path-specific marker",
+            "internal read receipt",
+            "MUST continue from the next unread line",
+        ):
+            self.assertIn(requirement, framework)
+
+        for relative_path in authoritative_paths:
+            content = (ROOT / relative_path).read_text(encoding="utf-8")
+            self.assertEqual(
+                content.rstrip().splitlines()[-1],
+                f"<!-- forgeflow-eof: {relative_path} -->",
+            )
+
+    def test_plan_uses_canonical_persisted_planning_and_handoff_rendering(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+
+        self.assertIn("Canonical Planning rendering envelope", artifact)
+        self.assertIn("Planning serialization validation", artifact)
+        for section in ArtifactParser._PLANNING_SECTIONS:
+            self.assertIn(f"## {section}", artifact)
+        for prohibition in (
+            "repeated `# Planning`",
+            "Feature status table",
+            "per-Feature contract-summary subsection",
+            "Project scaffolding",
+            "database setup",
+        ):
+            self.assertIn(prohibition, artifact)
+
+        self.assertIn("## Planning conformance gate", plan)
+        self.assertIn("reparsed persisted artifact", plan)
+        self.assertIn("Source Scope` is always `Project", plan)
+        self.assertIn("`<transition>` wrapper", plan)
+        self.assertIn("Markdown structures are protocol data", framework)
+        self.assertIn("presentational\nsuggestions", framework)
+        self.assertIn("XML or HTML elements such as `<transition>`", handoff)
+        self.assertIn("compare the candidate block", handoff)
+        self.assertIn("Metadata `READY` value alone", handoff)
+        self.assertIn("is insufficient", handoff)
+
+    def test_plan_has_no_shadow_state_and_handoff_is_the_final_action(self):
+        framework = (ROOT / ".forgeflow/forgeflow.md").read_text(encoding="utf-8")
+        artifact = (ROOT / ".forgeflow/protocol/artifact.md").read_text(
+            encoding="utf-8"
+        )
+        handoff = (ROOT / ".forgeflow/protocol/handoff.md").read_text(
+            encoding="utf-8"
+        )
+        plan = (ROOT / ".forgeflow/workflow/plan.md").read_text(encoding="utf-8")
+
+        self.assertIn("### Workflow persistence boundary", framework)
+        for phrase in (
+            "database table",
+            "shadow state",
+            "Tool availability does not grant mutation authority",
+            "does not forbid application persistence implemented by",
+            "database schemas, migrations, tables, indexes",
+        ):
+            self.assertIn(phrase, framework)
+        for phrase in (
+            "only permitted persistent mutations",
+            "MUST NOT execute SQL DDL or DML",
+            "## Execution boundary",
+            "MUST NOT invoke an SQL or database tool",
+            "task, memory, planning, agent-management",
+            "Plan has no such",
+            "exception",
+            "separate decision",
+            "minimum question",
+        ):
+            self.assertIn(phrase, plan)
+        self.assertIn("assignment and", plan)
+        self.assertIn("collaboration rules", plan)
+        self.assertIn("decomposition is its only product-definition responsibility", plan)
+        self.assertIn("Every other business question is", plan)
+        self.assertIn("forbidden in Plan", plan)
+        self.assertIn("## Decomposition readiness gate", plan)
+        self.assertIn("domain-independent procedure", plan)
+        self.assertIn("five universal dimensions", plan)
+        self.assertIn("applies identically to every domain and User Intent", plan)
+        for phrase in (
+            "approved business decision is a contract",
+            "No Planning section may contradict another",
+            "Dependency validation is exhaustive",
+            "role cardinalities",
+            "#### Decomposition readiness evidence",
+            "project inclusion and exclusion boundaries",
+            "lifecycle transfers, returns, or resumptions",
+            "shared data meanings, measurements, aggregations",
+            "zero Plan questions is valid",
+        ):
+            self.assertIn(phrase, artifact)
+        self.assertIn("A transitive", artifact)
+        self.assertIn("path through another Feature", artifact)
+        self.assertIn("final action, not only its final visible paragraph", handoff)
+        self.assertIn("MUST NOT invoke any tool", handoff)
+        self.assertIn("execute SQL", handoff)
+
+        tdd = (ROOT / ".forgeflow/workflow/tdd.md").read_text(encoding="utf-8")
+        self.assertIn("application database schemas, migrations, tables", tdd)
+        self.assertIn("SQL records required by the targeted Slice", tdd)
+        self.assertIn("MUST NOT use an", tdd)
+        self.assertIn("application database or SQL tool to persist ForgeFlow", tdd)
 
     def test_removed_protocol_files_do_not_return(self):
         protocol = ROOT / ".forgeflow" / "protocol"

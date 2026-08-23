@@ -149,6 +149,10 @@ flowchart TB
 
 Plan 确立已批准的 Feature 集合及其声明顺序，并为每个当前 Feature 记录一个 Feature 级业务契约版本。随后 Grill 将每个 Feature 转化为 Requirement，描述行为、边界和验收证据。
 
+当未决业务答案可能改变项目范围、Feature 拓扑、跨 Feature 行为、共享数据语义、
+角色可见性或产品体验时，Plan 必须询问并等待，不能把选择隐藏在 Assumption 或
+Exclusion 中。只影响单个稳定 Feature 的详细规则仍归 Grill，从而保证澄清完整但不重复。
+
 第一个全局门禁是 `BUSINESS_READY`：每个规划中的 Feature 都具备一个当前 READY Requirement，并且匹配该 Feature 的业务契约版本。
 
 ### 5.2 工程定义
@@ -157,7 +161,9 @@ Solution 读取全部当前 Requirement，为项目定义工程策略，包括�
 
 Solution 为每个当前 Feature 记录 Feature Engineering Version。`ENGINEERING_READY` 要求当前 READY Solution Plan 引用了所有当前 Requirement 及其作用域化工程版本。
 
-随后 Slice 为每个 Feature 创建有序的 Slice Plan。Slice 是具有明确验证边界的可交付单元，而不只是任务列表中的一项。只有每个当前 Feature 都具备匹配其工程版本的当前 READY Slice Plan，才会达到 `DELIVERY_READY`。
+达到 `ENGINEERING_READY` 后，ForgeFlow 为每个当前 Feature 推导 Feature Lane。有效依赖图由 Planning 的业务依赖与 Solution 的工程依赖合并而成；Solution 还记录各 Feature 对共享组件的 READ/WRITE 访问。只有 READ/READ 的共享关系可独立推进；任一方 WRITE 时必须由显式依赖确定顺序，不能静默推断。
+
+每个依赖就绪的 Feature 可以创建自己的有序 Slice Plan。Slice 是具有明确验证边界的可交付单元，而不只是任务列表中的一项。`LANE_READY(F)` 表示 Feature F 尚未完成且其全部有效依赖已完成；`LANE_DELIVERY_READY(F)` 还要求 F 具有当前 READY Slice Plan。
 
 源码与测试组织必须在实现之前确定。Solution 记录项目的实现/测试结构与依赖方向；
 Slice 将每项责任映射到生产和测试路径或可解析 pattern；TDD 可以根据既有命名惯例
@@ -167,14 +173,14 @@ Java 分层 package，也不会把同一规则强加给 Python、Go、Rust 或�
 
 ### 5.3 实现与审查
 
-达到 `DELIVERY_READY` 后，ForgeFlow 按 Planning 中声明的 Feature 顺序，以及各 Slice Plan 中声明的 Slice 顺序推进。对于每个 Slice：
+达到 `LANE_DELIVERY_READY(F)` 后，ForgeFlow 按 Feature F 的 Slice Plan 声明顺序推进。对于每个 Slice：
 
 1. TDD 只实现当前获准的 Slice，并记录本次尝试。
 2. TDD 完成就绪自检，进入 `READY_FOR_REVIEW`。
 3. Review 独立评估实现，为该次尝试创建不可变 Review Report。
 4. PASS 完成当前 Slice；FAIL 将阻塞发现路由到其所有者工作流和作用域。
 
-当前一个 Feature 仍存在未完成 Slice 时，后续 Feature 不能开始实现。只有每个规划 Slice 都具备有效的最新 PASS Review Report，才能达到 `PROJECT_COMPLETE`。
+Planning 顺序只是确定默认选择的稳定裁决规则，不是执行依赖。互不依赖的 Ready Lane 可通过独立且有效的调用并行执行 Slice、TDD 和 Review；存在依赖的 Lane 必须等待全部有效依赖完成。只有每个规划 Slice 都具备有效的最新 PASS Review Report，才能达到 `PROJECT_COMPLETE`。
 
 ### 5.4 就绪门禁
 
@@ -182,7 +188,8 @@ Java 分层 package，也不会把同一规则强加给 Python、Go、Rust 或�
 |---|---|
 | `BUSINESS_READY` | 每个当前 Feature 都具备当前 READY Requirement。 |
 | `ENGINEERING_READY` | 当前 READY Solution 覆盖所有当前 Requirement 和 Feature 工程边界。 |
-| `DELIVERY_READY` | 每个当前 Feature 都具备当前 READY Slice Plan。 |
+| `LANE_READY(F)` | Feature F 尚未完成，且其全部有效依赖已完成。 |
+| `LANE_DELIVERY_READY(F)` | Feature F 已达到 Lane Ready，并具有当前 READY Slice Plan。 |
 | `PROJECT_COMPLETE` | 每个规划 Slice 都有当前 TDD 尝试及其匹配的有效 PASS Review Report。 |
 
 这些门禁是从制品图推导出的条件，而不是可变的清单标记。
@@ -360,6 +367,10 @@ ForgeFlow 支持需求按模块逐步到达的软件项目。当前制品图有�
 框架核心完全由 Markdown 构成。兼容的参与者可以读取 `.forgeflow/forgeflow.md`、相关协议和工作流文件，以及当前制品图，然后只执行已授权的工作流和作用域。
 
 ForgeFlow 在 `.forgeflow/adapter/codex/` 和 `.forgeflow/adapter/copilot/` 下提供专用 Markdown 启动器。Claude 和 Gemini 可以通用方式读取 Markdown 框架，但当前没有提供专用启动器。
+
+正常调用必须依次读取 Framework、Artifact Protocol、Handoff Protocol 和唯一当前
+Workflow。Launcher 已知后，不得预读未来 Workflow，也不得扫描用户级 Prompt Store
+或全局 Command Registry。
 
 启动器文件本身不会在 IDE 中自动注册斜杠命令。准确的调用方式取决于宿主产品的集成机制和命令发现机制。
 

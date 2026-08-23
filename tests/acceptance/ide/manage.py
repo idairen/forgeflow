@@ -514,8 +514,8 @@ def command_prepare(args: argparse.Namespace, cases: dict[str, Case]) -> None:
 
 
 def command_verify(cases: dict[str, Case]) -> None:
-    if len(cases) != 242:
-        raise ValueError(f"Expected 242 cases, found {len(cases)}")
+    if len(cases) != 247:
+        raise ValueError(f"Expected 247 cases, found {len(cases)}")
 
     for adapter in ("codex", "copilot"):
         for workflow in WORKFLOWS:
@@ -540,7 +540,7 @@ def command_verify(cases: dict[str, Case]) -> None:
     for case in cases.values():
         priorities[case.priority] += 1
     print(
-        "Verified 242 IDE cases and 12 workflow Prompts "
+        "Verified 247 IDE cases and 12 workflow Prompts "
         f"(P0={priorities['P0']}, P1={priorities['P1']}, P2={priorities['P2']})."
     )
 

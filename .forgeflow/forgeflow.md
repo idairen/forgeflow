@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 2.12
+Version: 2.20
 
 ForgeFlow is an artifact-driven delivery framework for humans and AI agents. The
 versioned artifact graph is the sole persistent source of truth. Conversations,
@@ -10,9 +10,9 @@ adapter prompts, and derived dashboards are never authoritative state.
 
 | Contract | Version | Path |
 |---|---|---|
-| Framework | 2.12 | `forgeflow.md` |
-| Artifact Protocol | 2.11 | `protocol/artifact.md` |
-| Handoff and Transition Protocol | 2.10 | `protocol/handoff.md` |
+| Framework | 2.20 | `forgeflow.md` |
+| Artifact Protocol | 2.17 | `protocol/artifact.md` |
+| Handoff and Transition Protocol | 2.14 | `protocol/handoff.md` |
 
 | Workflow | Artifact Type | Scope | Spec Path |
 |---|---|---|---|
@@ -49,6 +49,8 @@ choosing a lower-precedence instruction.
   Feature-scoped compatibility versions.
 - Existing system behavior is inspected before a solution is proposed.
 - Delivery advances only from immutable evidence, never an agent's claim.
+- Independent Feature Lanes may advance concurrently only when canonical dependency
+  and shared-component contracts prove them parallel-safe.
 - The Project Knowledge View is derived from canonical Artifacts and immutable
   history; it is never a second source of truth.
 
@@ -72,6 +74,50 @@ Every launcher path is workspace-root-relative and begins with `.forgeflow/`.
 A new platform becomes compatible by supplying launchers that reference the canonical
 Framework, Artifact Protocol, Handoff Protocol, and one Workflow specification in
 that order. A launcher MUST NOT copy, redefine, or override their rules.
+
+### Authoritative loading and workspace boundary
+
+Before productive work, a participant MUST read the four authoritative files
+completely and in this exact order: Framework, Artifact Protocol, Handoff Protocol,
+then the single Workflow specification selected for the current invocation. Reading
+the selected Workflow before either protocol is non-conforming even if all four are
+eventually read.
+
+#### Authoritative Read Completion Procedure
+
+For each authoritative file, the participant MUST complete this procedure before
+opening the next file:
+
+1. Establish the file's current physical end using a line count, an explicit EOF
+   indication, or an equivalent host capability.
+2. Read from the first line through that physical end in contiguous ranges. A host
+   preview, a successful partial read, or a model-generated summary is not evidence
+   that the file was read completely.
+3. Verify that the final non-blank line is the path-specific marker
+   `<!-- forgeflow-eof: <canonical-path> -->`, where `<canonical-path>` is the
+   repository-relative path of the file being read.
+4. Retain an internal read receipt containing the canonical path, observed physical
+   end, and verified EOF marker. Productive work may begin only after receipts exist
+   for all four files in the required order.
+
+If a read is truncated, the participant MUST continue from the next unread line. If
+a range is skipped, the EOF marker is absent or mismatched, the file changes while
+being read, or physical EOF cannot be established, the participant MUST restart that
+file's read or stop without inspecting project implementation, changing artifacts,
+or emitting a Handoff. It MUST NOT infer unread rules from prior conversations,
+adapter text, summaries, or model memory.
+
+The participant MUST NOT load another Workflow specification, adapter, or launcher
+as preparation for a future transition. The Handoff Protocol contains the complete
+transition procedure needed by the current Workflow. A future Workflow may be read
+only by the distinct invocation authorized to execute it.
+
+Once an IDE launcher has been invoked and its four authoritative paths are readable,
+the participant MUST NOT inspect user-level agent configuration, global command
+registries, home-directory prompt stores, or unrelated host-discovery paths. Project
+inspection remains limited to repository evidence relevant to the authorized
+Workflow. Host troubleshooting is a separate user-requested diagnostic operation,
+not part of normal workflow execution.
 
 ## Command execution policy
 
@@ -102,6 +148,39 @@ MUST maintain at most one active command-execution session.
 Review independence means a fresh evaluation and rerun of relevant checks. It does
 not require a separate terminal tab, a separate command-execution session, or
 concurrent execution.
+
+Feature Lane concurrency consists of distinct Workflow executions. Each execution
+still obeys the one-session command policy. Parallel lanes MUST have dependency-safe,
+non-conflicting write responsibilities established by Solution; concurrency never
+authorizes two executions for the same lane action or a shared write that Solution
+has not ordered.
+
+### Workflow persistence boundary
+
+The canonical Artifacts and supplemental Reports explicitly defined by this
+framework are the only persistent stores for workflow decisions, progress, and
+evidence. A participant MUST NOT create a database table, SQL record, sidecar file,
+host memory entry, task-tracking store, or other shadow state to retain ForgeFlow
+questions, answers, decisions, cursors, summaries, or execution progress. Temporary
+reasoning may remain in the current conversation, but it grants no future authority.
+
+Each Workflow may mutate only the project surfaces authorized by its ownership and
+required process. Tool availability does not grant mutation authority. In
+particular, reading a repository database for relevant evidence does not authorize
+writing to it, and a host-provided planning, memory, SQL, or agent-management tool
+does not become part of ForgeFlow merely because it is available.
+
+This exception applies only when the selected Workflow is TDD; it never authorizes
+Plan, Grill, Solution, Slice, or Review to create application persistence. The
+shadow-state prohibition does not forbid application persistence implemented by TDD.
+When the current TDD Slice and its valid Solution/Slice contracts authorize it,
+TDD MAY create or change application database schemas, migrations, tables, indexes,
+seed or fixture data, and SQL records required by that Slice. Those mutations are
+implementation work, must remain inside the authorized project/test/development
+surface, and must be tested and recorded in the TDD Record. They MUST NOT target an
+undeclared external or production datastore. Review MAY execute approved verification
+that creates disposable test data, but it does not author new application persistence
+outside the implementation already produced by TDD.
 
 ## Review readiness and decision policy
 
@@ -182,16 +261,17 @@ the Workflow/Scope authorization derived from the complete graph.
 A derived Project Impact View MAY resolve Feature dependencies, reverse
 dependencies, shared-component relationships, and current change classifications
 from structured Solution metadata. It is advisory evidence for navigation and
-planning only. It MUST NOT authorize a Workflow, select a Target Scope, advance a
-Gate, or make an invalid or historical Artifact current.
+planning only. Transition Resolution reads canonical Solution dependency and access
+metadata, never the derived view. The view MUST NOT authorize a Workflow, select a
+Target Scope, advance a Gate, or make invalid or historical evidence current.
 
 ## Execution scope isolation
 
 A workflow execution is one authorized invocation of exactly one Workflow at exactly
 one Target Scope. A workflow execution MUST NOT consume a future execution scope
-unless that scope is explicitly provided by the incoming Canonical Handoff. A
-Bootstrap, Subsequent Plan, or Recovery Entry authorizes only its exact entry
-scope and never authorizes future progression.
+unless that scope is explicitly provided by the incoming Canonical Handoff or a
+validated Feature Lane Entry. Bootstrap Entry, Subsequent Plan Entry, Feature Lane
+Entry, and Recovery Entry authorize only their exact scope and never future progression.
 
 A future execution scope is any Workflow or Target Scope other than the invocation's
 validated authorization, including a different Feature owned by the same Workflow
@@ -237,10 +317,10 @@ no authority over direct IDE launchers or the Markdown framework itself.
 Plan all currently approved Features
    -> Grill every Feature
    -> Solution analyzes every READY Requirement
-   -> Slice every Feature
-   -> for each Feature in Planning order
-       for each Slice in Slice Plan order
-         TDD -> Review -> PASS
+   -> derive dependency-ready Feature Lanes
+      -> each ready Feature: Slice -> TDD -> Review -> next Slice
+      -> independent ready Features may run as parallel invocations
+      -> dependent Features wait for all dependency lanes to PASS
    -> Project Complete
 ```
 
@@ -249,9 +329,12 @@ The barriers are strict:
 - `BUSINESS_READY`: every planned Feature has a READY Requirement matching its
   current Feature Contract Version.
 - `ENGINEERING_READY`: a current READY Solution Plan references all Requirement
-  versions and declares one Feature Engineering Version per active Feature.
-- `DELIVERY_READY`: every planned Feature has a current READY Slice Plan that
-  references that Feature's current Feature Engineering Version.
+  versions, declares one Feature Engineering Version per active Feature, and has a
+  valid combined dependency/shared-access contract.
+- `LANE_READY(F)`: Feature F is incomplete, every effective dependency is complete,
+  and no Project or F-scoped blocker prevents its next derived action.
+- `LANE_DELIVERY_READY(F)`: F is `LANE_READY` and has a current READY Slice Plan
+  referencing its Feature Engineering Version.
 - `PROJECT_COMPLETE`: every planned Slice has a latest valid PASS Review Report.
 
 An explicitly approved project with no delivery objective uses `Feature IDs = NONE`
@@ -261,8 +344,9 @@ barrier: Feature- and Slice-dependent barriers have no subject, so Rule 11 deriv
 `PROJECT_COMPLETE` after graph validity, blocker, and Planning readiness checks.
 Blank Feature metadata or an empty graph with downstream artifacts is invalid.
 
-TDD MUST NOT start before `DELIVERY_READY`. A later Feature's Slice MUST NOT start
-until every Slice of all earlier Features is complete.
+TDD for Feature F MUST NOT start before `LANE_DELIVERY_READY(F)`. Planning order is
+not an execution dependency. A Feature waits only for its effective dependencies;
+independent Features may progress through separate validated invocations.
 
 ## Artifact graph
 
@@ -300,8 +384,8 @@ The Transition Resolution Procedure is a normative Markdown decision procedure
 performed by the active workflow before every handoff. It:
 
 - validates barrier and version conditions;
-- derives project phase and runtime Slice states;
-- selects the first incomplete Feature and Slice in declared order;
+- derives project phase, Feature Lane readiness, and runtime Slice states;
+- preserves the current lane or selects a dependency-ready lane and its next action;
 - selects the next workflow;
 - emits one typed handoff.
 
@@ -312,13 +396,15 @@ as terminal evidence: they use a single readable valid Version when available an
 `INVALID_VERSION` only when no such Version exists. A root-level contradiction with
 no canonical artifact uses the HALTED-only value `NONE`.
 
-Every use of "first Feature" or "first Slice", including persisted Blocker
-selection, means its position in Planning or the applicable current Slice Plan. It
-never means the numerically smallest identifier or filename.
+Every use of "first Feature" or "first Slice" is a deterministic tie-breaker among
+otherwise eligible candidates using Planning or Slice Plan position. It never makes
+an unrelated Feature a dependency and never means the numerically smallest identifier
+or filename.
 
 It owns no artifact, requires no executable runtime, and makes no business or
-engineering decision. Given the same valid graph, every conforming participant
-MUST derive the same result by following the ordered rules in the Handoff Protocol.
+engineering decision. Given the same valid graph and the same validated entry or
+current-scope context, every conforming participant MUST derive the same result by
+following the ordered rules in the Handoff Protocol.
 
 ### Handoff emission rule
 
@@ -329,17 +415,25 @@ MUST be the final content of the response. A workflow or adapter MUST NOT create
 local handoff format, omit required rows, add explanatory rows, or place content
 after the block.
 
+Artifact and Handoff Markdown structures are protocol data, not presentational
+suggestions. A participant or host MUST NOT translate them into XML, HTML, YAML,
+plain key-value text, a native planning format, or another visually similar
+representation. Workflow names and scopes are distinct values: a Workflow name such
+as `Plan` MUST NOT be rendered where the canonical scope is `Project`.
+
 Handoff emission completes the current workflow execution. Emission and consumption
 MUST be separate executions even when Next Workflow equals the current Workflow.
+The Handoff is also the final action of the emitting execution: no tool call,
+command, state update, progress event, or additional response content may follow it.
 
 The emitting workflow is responsible for format validity before output. The target
 workflow MUST reject a malformed handoff rather than infer or normalize it. An
 authorized same-Workflow/same-Scope continuation or a wait for required user input
 emits no handoff. A transition to the same Workflow at a different Target Scope is
 not a continuation and MUST emit a FORWARD handoff for the newly authorized scope.
-A fresh invocation may proceed without an incoming handoff only through Bootstrap
-Entry, Plan's Subsequent Plan Entry, or the Handoff Protocol's persisted-blocker
-Recovery Entry. A non-empty later Plan intent is a change to the current software
+A fresh invocation may proceed without an incoming handoff only through Bootstrap,
+Plan's Subsequent Plan, Feature Lane, or persisted-blocker Recovery Entry. A
+non-empty later Plan intent is a change to the current software
 project without requiring an incremental label or project-identity confirmation.
 Semantic similarity never identifies another project or rotates evidence. Recovery
 authority comes from a fresh Rule 3 result and never permits a synthetic or
@@ -378,7 +472,7 @@ After an upstream change, the procedure recomputes the whole graph. A Requiremen
 change requires Solution validation. Solution then advances Feature Engineering
 Versions only for Features with demonstrated engineering impact; Slice, TDD, and
 Review evidence remains usable for every unaffected Feature. Recovery resumes at
-the first incomplete valid Slice, not at a cursor saved in conversation history.
+the selected lane's next valid action, not at a cursor saved in conversation history.
 
 ## Conformance
 
@@ -387,7 +481,7 @@ A conforming implementation MUST:
 1. recognize exactly the six canonical workflows;
 2. enforce the scope and ownership table above;
 3. validate artifact metadata and version references;
-4. enforce all four barriers;
+4. enforce the project and Feature Lane barriers;
 5. use typed handoffs and the deterministic Transition Resolution Procedure;
 6. preserve immutable review attempts;
 7. reject execution whose Target Scope differs from a fresh procedure result and
@@ -401,3 +495,5 @@ A conforming implementation MUST:
 The framework relies solely on Markdown files and a participant capable of reading,
 writing, and updating them in the order defined here. No executable parser, external
 schema engine, or platform service is required to operate the core.
+
+<!-- forgeflow-eof: .forgeflow/forgeflow.md -->

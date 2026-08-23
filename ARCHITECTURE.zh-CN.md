@@ -3,7 +3,7 @@
 **面向 AI 辅助软件工程的有状态执行协议。**
 
 > **项目状态：** Technical Preview（技术预览）
-> **框架版本：** 2.12 · **Artifact Protocol：** 2.11 · **Handoff Protocol：** 2.10
+> **框架版本：** 2.20 · **Artifact Protocol：** 2.17 · **Handoff Protocol：** 2.14
 > **横向比较核对日期：** 2026-08-18
 
 [English](./ARCHITECTURE.md)
@@ -310,17 +310,22 @@ flowchart LR
 
 任何 Workflow 都不能修改其他 Workflow 的 Artifact。Review 不修复代码，TDD 不批准自己，Solution 不发明业务结果。
 
+Plan 与 Grill 按 Scope 划分业务澄清责任。可能改变 Feature 拓扑、跨 Feature 行为、
+共享数据语义、项目级访问边界、排除项或产品体验的问题，由 Plan 询问并等待；只在
+单个稳定 Feature 内细化规则和验收行为的问题由 Grill 负责。Planning Assumption
+不能替代任一 Owner 尚未获得的用户决定。
+
 ### 7.2 二维迭代
 
-ForgeFlow 不会把项目压平成无序任务列表。交付顺序由两个维度共同组成：
+ForgeFlow 不会把项目压平成无序任务列表。它根据业务依赖、工程依赖以及共享组件的 READ/WRITE 访问，为每个当前 Feature 推导一个 Feature Lane：
 
 ```text
-Feature order
+依赖就绪的 Feature Lane
   ×
-Slice order within each Feature
+每个 Lane 内的 Slice 顺序
 ```
 
-所有 Requirement 可用后才进入 Solution；所有 Slice Plan 可用后才进入 TDD。随后按照 Planning 的 Feature 顺序和每个 Slice Plan 的 Slice 顺序推进 TDD 与 Review。
+所有 Requirement 可用后才进入项目级 Solution。此后，每个依赖就绪的 Lane 可创建自己的 Slice Plan，并按 Lane 内 Slice 顺序推进。互不依赖的 Lane 可通过独立且有效的调用并行执行；共享写入或显式依赖会建立执行顺序。Planning 顺序只用于在多个候选 Lane 之间确定默认选择。
 
 ## 8. Transition 与 Handoff 模型
 
@@ -336,10 +341,10 @@ Handoff Protocol 定义了十一条有序规则，第一条匹配规则获胜：
 | 4 | Planning 不可用 | Plan，Project Scope。 |
 | 5 | 第一个缺失或过期 Requirement | Grill，对应 Feature。 |
 | 6 | Solution Plan 缺失或过期 | Solution，Project Scope。 |
-| 7 | 第一个缺失或过期 Slice Plan | Slice，对应 Feature。 |
+| 7 | 选中的 Ready Lane 缺少可用 Slice Plan | Slice，对应 Feature。 |
 | 8 | 当前 Review 为 FAIL | RETURN 到记录的 Owner 与 Scope。 |
 | 9 | 当前 TDD 等待 Review | Review，对应 Slice。 |
-| 10 | 第一个未完成 Slice 需要实现 | TDD，对应 Slice。 |
+| 10 | 选中 Ready Lane 的当前 Slice 需要实现 | TDD，对应 Slice。 |
 | 11 | 所有声明 Slice 都有当前 PASS 证据 | `TERMINAL / COMPLETE`。 |
 
 该顺序确保矛盾和 Blocker 的优先级高于表面上的向前进度。
@@ -417,6 +422,9 @@ ForgeFlow 将 Agent-agnostic Core 与宿主专属集成明确分层：
 | GitHub Copilot | `.forgeflow/adapter/copilot/` | 提供专用 Launcher Files。 |
 
 Launcher 按规定顺序读取 Framework、Artifact Protocol、Handoff Protocol 和一个 Workflow。Launcher 文件本身不会注册命令，命令发现和调用语法由宿主决定。
+
+每次调用只允许读取这一个当前 Workflow；正常执行不得预读未来 Workflow，也不得
+扫描用户级 Prompt Store、全局 Command Registry 或无关宿主配置。
 
 其他能够读取 Markdown 的 Agent 可以手动读取规范文件，但 ForgeFlow 当前不提供、也不宣称已经验证它们的专用集成。
 

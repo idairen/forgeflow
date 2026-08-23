@@ -3,7 +3,7 @@
 **A stateful execution protocol for AI-assisted software engineering.**
 
 > **Project status:** Technical Preview
-> **Framework:** 2.12 · **Artifact Protocol:** 2.11 · **Handoff Protocol:** 2.10
+> **Framework:** 2.20 · **Artifact Protocol:** 2.17 · **Handoff Protocol:** 2.14
 > **Comparison reviewed:** 2026-08-18
 
 ForgeFlow is not an AI coding agent and does not provide a model. It is a
@@ -355,15 +355,22 @@ flowchart LR
 No workflow may modify another workflow's Artifact. Review does not repair code;
 TDD does not approve itself; Solution does not invent business outcomes.
 
+Plan and Grill split business clarification by scope. Plan asks and waits for
+decisions that can change Feature topology, cross-Feature behavior, shared data
+meaning, project-wide access, exclusions, or product experience. Grill owns detailed
+rules and acceptance behavior confined to one stable Feature. Planning assumptions
+cannot substitute for either owner's unanswered business decision.
+
 ### 7.2 Two-dimensional iteration
 
-ForgeFlow does not flatten a project into one unordered task list. Delivery order is
-the Cartesian structure of declared Features and their declared Slices:
+ForgeFlow does not flatten a project into one unordered task list. It derives one
+Feature Lane per active Feature from business dependencies, engineering dependencies,
+and shared-component READ/WRITE access:
 
 ```text
-Feature order
+Dependency-ready Feature Lanes
   ×
-Slice order within each Feature
+Slice order within each Lane
 ```
 
 ```mermaid
@@ -381,12 +388,16 @@ flowchart TD
     T21[TDD F-02/S-01]
     V21[Review F-02/S-01]
 
-    P --> R1 --> R2 --> Sol --> SP1 --> SP2 --> T11 --> V11 --> T12 --> V12 --> T21 --> V21
+    P --> R1 --> R2 --> Sol
+    Sol --> SP1 --> T11 --> V11 --> T12 --> V12
+    Sol --> SP2 --> T21 --> V21
 ```
 
-All Requirements become usable before Solution. All Slice Plans become usable
-before TDD begins. TDD and Review then advance in Planning Feature order and Slice
-Plan order.
+All Requirements become usable before the project-wide Solution. Afterward, each
+dependency-ready Lane may create its Slice Plan and advance in its own Slice order.
+Independent lanes may proceed concurrently through separate validated invocations;
+shared writes or explicit dependencies impose ordering. Planning order is only the
+default tie-breaker among otherwise eligible lanes.
 
 ## 8. Transition and Handoff model
 
@@ -402,10 +413,10 @@ The Handoff Protocol defines eleven ordered rules. The first matching rule wins:
 | 4 | Planning not usable | Plan at Project scope. |
 | 5 | First missing/stale Requirement | Grill for that Feature. |
 | 6 | Solution Plan missing/stale | Solution at Project scope. |
-| 7 | First missing/stale Slice Plan | Slice for that Feature. |
+| 7 | Selected ready Lane lacks a usable Slice Plan | Slice for that Feature. |
 | 8 | Current FAIL Review | RETURN to recorded owner and scope. |
 | 9 | Current TDD awaits Review | Review for that Slice. |
-| 10 | First incomplete Slice needs implementation | TDD for that Slice. |
+| 10 | Selected ready Lane's current Slice needs implementation | TDD for that Slice. |
 | 11 | Every declared Slice has current PASS evidence | `TERMINAL / COMPLETE`. |
 
 This ordering gives contradictions and blockers precedence over apparent forward
@@ -507,6 +518,10 @@ Dedicated launchers currently exist for:
 | --- | --- | --- |
 | Codex | `.forgeflow/adapter/codex/` | Dedicated launcher files supplied. |
 | GitHub Copilot | `.forgeflow/adapter/copilot/` | Dedicated launcher files supplied. |
+
+Each invocation reads Framework, Artifact Protocol, Handoff Protocol, and exactly
+one selected Workflow in that order. It does not preload a future Workflow or scan
+user-level prompt stores and global command registries during normal execution.
 
 Launchers read the Framework, Artifact Protocol, Handoff Protocol, and one Workflow
 in the required precedence order. They do not register commands by themselves.

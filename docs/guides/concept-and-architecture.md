@@ -197,6 +197,12 @@ Plan establishes the approved Feature set and its declared order. It records a
 Feature-scoped business contract version for every active Feature. Grill then turns
 each Feature into a Requirement with behavior, boundaries, and acceptance evidence.
 
+Plan asks and waits when an unresolved business answer can change project scope,
+Feature topology, cross-Feature behavior, shared data meaning, role visibility, or
+product experience. It cannot hide such a choice in assumptions or exclusions.
+Detailed rules confined to one stable Feature remain Grill-owned, so clarification
+is thorough without being duplicated across both workflows.
+
 The first global barrier is `BUSINESS_READY`: every planned Feature has a current
 READY Requirement matching that Feature's business contract version.
 
@@ -211,10 +217,16 @@ Solution records a Feature Engineering Version for every active Feature. The
 `ENGINEERING_READY` barrier requires a current READY Solution Plan that references
 all current Requirements and those scoped engineering versions.
 
-Slice then creates an ordered Slice Plan for every Feature. A Slice is a deliverable
-unit with an explicit verification boundary, not merely a task-list item.
-`DELIVERY_READY` is reached only when every active Feature has a current READY Slice
-Plan matching its engineering version.
+After `ENGINEERING_READY`, ForgeFlow derives a Feature Lane for each active Feature.
+The effective dependency graph is the union of Planning business dependencies and
+Solution engineering dependencies. Solution also records whether each Feature reads
+or writes every shared component. READ/READ lanes may advance independently; any
+shared WRITE must be ordered by an explicit dependency rather than inferred.
+
+Each dependency-ready Feature may create its own ordered Slice Plan. A Slice is a
+deliverable unit with an explicit verification boundary, not merely a task-list item.
+`LANE_READY(F)` means Feature F is incomplete and all its effective dependencies are
+complete. `LANE_DELIVERY_READY(F)` additionally requires F's current READY Slice Plan.
 
 Source and test organization are decided before implementation. Solution records
 the project's implementation/test structure and dependency direction. Slice maps
@@ -227,8 +239,8 @@ them on Python, Go, Rust, or feature-oriented repositories.
 
 ### 5.3 Implementation and review
 
-After `DELIVERY_READY`, ForgeFlow walks Features in Planning order and Slices in
-their Slice Plan order. For each Slice:
+After `LANE_DELIVERY_READY(F)`, ForgeFlow advances Feature F through its Slice Plan
+order. For each Slice:
 
 1. TDD implements only the currently authorized Slice and records its attempt.
 2. TDD performs a readiness self-check and reaches `READY_FOR_REVIEW`.
@@ -237,8 +249,10 @@ their Slice Plan order. For each Slice:
 4. PASS completes the Slice; FAIL routes blocking findings to their owning workflow
    and scope.
 
-A later Feature cannot begin implementation while an earlier Feature still has an
-incomplete Slice. `PROJECT_COMPLETE` requires a valid latest PASS Review Report for
+Planning order is a deterministic default tie-breaker, not an execution dependency.
+Independent ready lanes may run Slice, TDD, and Review concurrently through separate
+validated invocations. A dependent lane waits until every effective dependency is
+complete. `PROJECT_COMPLETE` still requires a valid latest PASS Review Report for
 every planned Slice.
 
 ### 5.4 Readiness barriers
@@ -247,7 +261,8 @@ every planned Slice.
 |---|---|
 | `BUSINESS_READY` | Every active Feature has a current READY Requirement. |
 | `ENGINEERING_READY` | A current READY Solution covers every current Requirement and Feature engineering boundary. |
-| `DELIVERY_READY` | Every active Feature has a current READY Slice Plan. |
+| `LANE_READY(F)` | Feature F is incomplete and every effective dependency is complete. |
+| `LANE_DELIVERY_READY(F)` | Feature F is lane-ready and has a current READY Slice Plan. |
 | `PROJECT_COMPLETE` | Every planned Slice has a current TDD attempt with a matching valid PASS Review Report. |
 
 These are graph-derived conditions, not mutable checklist flags.
@@ -484,6 +499,10 @@ Artifact Graph, then perform only the authorized workflow and scope.
 ForgeFlow ships dedicated Markdown launcher files for Codex and GitHub Copilot under
 `.forgeflow/adapter/codex/` and `.forgeflow/adapter/copilot/`. Claude and Gemini can
 use the generic Markdown framework, but no dedicated launcher is supplied.
+
+Each normal invocation reads Framework, Artifact Protocol, Handoff Protocol, and the
+single selected Workflow in that order. It does not preload future Workflows or scan
+user-level prompt stores and global command registries after the launcher is known.
 
 Launcher files do not by themselves register slash commands in an IDE. The exact
 invocation surface depends on the host product's integration and command discovery

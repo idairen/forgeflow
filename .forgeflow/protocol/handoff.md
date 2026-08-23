@@ -1,6 +1,6 @@
 # Handoff and Transition Protocol
 
-Version: 2.10
+Version: 2.14
 
 ## Purpose
 
@@ -23,13 +23,61 @@ If any of these conditions fails, the artifact cannot satisfy a barrier, authori
 
 Ordering comes exclusively from declared positions in Planning and the current Slice Plans. Identifier numbers, canonical filenames, filesystem enumeration order, artifact creation time, and conversation order never define Feature or Slice priority. If the graph is contradictory — duplicate active contracts, duplicate Review attempts, invalid Feature or Slice identifiers, missing required metadata, invalid FAIL disposition, or Review Report counts that differ from its finding body — resolution stops at INVALID GRAPH and does not guess a next workflow.
 
+For a legacy Solution without current shared-component access metadata, parallel
+selection is unavailable and effective dependencies include a conservative edge
+from each Feature to the immediately preceding Feature in Planning order.
+
+### Feature Lane State and Selection
+
+A Feature Lane is the derived delivery chain for one active Feature: its Requirement,
+applicable Solution engineering version, Slice Plan, TDD Records, and Review Reports.
+It is a view of canonical evidence, not an Artifact Type, cursor, claim, or mutable
+state file.
+
+The effective dependencies of a Feature are the union of its Planning `Dependencies`
+and Solution `Feature Dependencies`. The combined graph MUST be acyclic. A Feature
+is lane-complete only when every Slice in its current Slice Plan has a current TDD
+attempt with a matching PASS Review. A Feature is dependency-ready when every
+effective dependency is lane-complete.
+
+After Rules 1–6 establish a current project-wide engineering baseline, derive each
+incomplete Feature's next lane action:
+
+1. Slice at `Feature: F-XX` when its Slice Plan is absent or stale;
+2. the Rule 8 RETURN when its current attempt has a matching FAIL Review;
+3. Review at `Slice: F-XX/S-XX` when its first incomplete Slice has a current
+   `READY_FOR_REVIEW` attempt without a matching Review; or
+4. TDD at that Slice otherwise.
+
+The Feature Lane Ready Set contains every incomplete, dependency-ready Feature whose
+next action is not blocked by a current Project blocker or a blocker in that Feature.
+Independent Features may be members simultaneously. Planning order is only the
+deterministic tie-breaker for choosing one default lane; it is not a dependency and
+does not prevent another ready lane from using Feature Lane Entry.
+
+Resolution preserves lane continuity: an active Feature- or Slice-scoped invocation
+selects its own Feature while it remains incomplete and dependency-ready. When the
+current lane completes, or resolution begins at Project scope, select the first
+Feature in Planning order from the Ready Set. A Feature Lane Entry selects its
+explicit requested ready Feature instead. Within a selected lane, Slice order remains
+authoritative.
+
 ## Transition Resolution Procedure
 
-Evaluate these rules in order and stop at the first match. A transition between different Workflow/Scope authorizations produces the stated Canonical Handoff variant. Bootstrap Entry, Plan's Subsequent Plan Entry, and Recovery Entry authorize a fresh invocation without synthesizing a handoff. The receiving workflow applies the rules fresh from the active artifact graph and never relies on remembered conversation state.
+Evaluate these rules in order and stop at the first match. A transition between different Workflow/Scope authorizations produces the stated Canonical Handoff variant. Bootstrap Entry, Plan's Subsequent Plan Entry, Feature Lane Entry, and Recovery Entry authorize a fresh invocation without synthesizing a handoff. The receiving workflow applies the rules fresh from the active artifact graph and never relies on remembered conversation state.
 
 ### Rule 1 — Bootstrap Without Planning
 
-No Planning artifact exists and the Artifact Root is absent or empty. **Action**: authorize Plan at `Project` scope through Bootstrap Entry. No incoming handoff exists and no synthetic handoff is created. A non-empty Artifact Root without Planning is evaluated by Rule 2 rather than treated as a safe bootstrap.
+No Planning artifact exists, the Artifact Root is absent or empty, and the
+supplemental Reports Root is absent or empty. Treat an absent root as empty.
+**Action**: authorize Plan at `Project` scope through Bootstrap Entry. No incoming
+handoff exists and no synthetic handoff is created.
+
+A non-empty Artifact Root without Planning is evaluated by Rule 2. An empty Artifact
+Root with a non-empty Reports Root is residual project evidence: Rule 1 does not
+match, Bootstrap Entry is not authorized, and Plan may only explain that explicit
+reset or archive-maintenance authorization is required and wait. It MUST NOT create
+Planning, rotate either root, or emit a Handoff before that authorization.
 
 ### Rule 2 — Graph Contradiction
 
@@ -66,7 +114,16 @@ non-empty human-readable explanation. The graph error codes are:
 
 ### Rule 3 — Persisted Blocker Exists
 
-After Rule 2 has validated every blocker scope reference, one or more canonical artifacts have Status `BLOCKED` with valid blocker metadata and a complete transitive chain of usable current upstream artifacts. Filter out stale downstream blockers before selection. Select deterministically by this tuple: Blocker Owner position in `Plan > Grill > Solution > Slice > TDD`; Affected Scope Feature position in Planning when applicable; and Affected Scope Slice position in that Feature's current Slice Plan when applicable. Compare declared positions, never identifier numbers. Blockers with the same owner and exact scope authorize the same transition; a canonical-path tie-breaker may be used only to keep internal evidence selection stable. **Action**: when another Workflow or Scope is currently authorized, RETURN to the selected Blocker Owner and Affected Scope using its Blocker Category. A blocker owned by the currently active workflow at the same scope remains in that workflow without a handoff while it waits for required user input. A fresh invocation with no incoming handoff uses Recovery Entry only when this rule selects that exact owner and scope; it never creates or emits a same-authorization RETURN.
+After Rule 2 validates blocker scopes, filter out stale downstream blockers. A
+Project-scoped Plan or Solution blocker applies to every lane and is always selected.
+A Feature- or Slice-scoped blocker applies only to its Feature Lane; its incomplete
+state keeps transitive dependents out of the Ready Set but does not stop an independent
+ready lane. For a selected lane, choose its applicable blocker by owner precedence
+`Plan > Grill > Solution > Slice > TDD`, then declared Feature/Slice position and
+canonical path. Without an explicit or continuing lane, use the same tuple to choose
+the default blocker. **Action**: RETURN to its owner and scope when authorization
+differs. The same owner/scope waits without Handoff. A fresh invocation uses Recovery
+Entry only for that exact selected blocker.
 
 ### Rule 4 — Planning Not Ready
 
@@ -82,19 +139,31 @@ At least one Feature is declared and every planned Feature has a usable current 
 
 ### Rule 7 — Missing or Stale Slice Plan
 
-At least one Feature is declared, and the first Feature in Planning order lacks a usable current Slice Plan, or its Slice Plan does not reference that Feature's current Feature Engineering Version from the current Solution Plan. **Action**: FORWARD to Slice at `Feature: F-XX` for that Feature. TDD is forbidden until every planned Feature has a usable current Slice Plan.
+The selected ready Feature Lane lacks a usable current Slice Plan, or its Slice Plan
+does not reference that Feature's current Feature Engineering Version. **Action**:
+FORWARD to Slice at `Feature: F-XX` for that lane. Other ready lanes do not need to
+finish Slice before this lane can advance.
 
 ### Rule 8 — Current Review Failure
 
-At least one Feature is declared, and the current TDD Record attempt for a Slice has a valid matching FAIL Review Report. Its canonical Findings table has at least one blocking row, the recorded Return Workflow is the highest-precedence blocking finding owner, and Return Scope equals one blocking finding scope for that owner after Rule 2 identifier resolution. **Action**: RETURN to that recorded Return Workflow and Return Scope. A FAIL for an older TDD attempt remains history and does not match this rule after TDD advances the attempt.
+The selected lane's current TDD attempt has a valid matching FAIL Review Report. Its
+Findings contain a blocking row, its Return Workflow is the highest-precedence owner,
+and Return Scope is one blocking scope for that owner. **Action**: RETURN as recorded.
+An older FAIL remains history after TDD advances the attempt. A FAIL in another
+independent lane does not prevent this lane's next action.
 
 ### Rule 9 — Review Required
 
-At least one Feature is declared, and the first incomplete Slice in Planning Feature order and Slice Plan order has a current READY_FOR_REVIEW TDD Record, and no valid Review Report exists for that same attempt and current upstream versions. **Action**: FORWARD to Review at `Slice: F-XX/S-XX`.
+The selected lane's first incomplete Slice has a current `READY_FOR_REVIEW` TDD
+Record and no valid Review for the same attempt and upstream versions. **Action**:
+FORWARD to Review at `Slice: F-XX/S-XX`.
 
 ### Rule 10 — TDD Required
 
-At least one Feature is declared, all delivery barriers are satisfied, and the first incomplete Slice in Planning Feature order and Slice Plan order has no current READY_FOR_REVIEW TDD Record awaiting Review. This includes a Slice with no TDD Record, stale TDD evidence, or a corrected attempt required after Rule 8 returned to TDD. **Action**: FORWARD to TDD at `Slice: F-XX/S-XX`.
+The selected Feature is dependency-ready, has a usable current Slice Plan, and its
+first incomplete Slice has no current `READY_FOR_REVIEW` attempt awaiting Review.
+This includes absent or stale TDD evidence and correction after Rule 8. **Action**:
+FORWARD to TDD at `Slice: F-XX/S-XX`.
 
 ### Rule 11 — Project Complete
 
@@ -102,26 +171,28 @@ Every planned Slice has a current READY_FOR_REVIEW TDD Record and a valid matchi
 
 ## Entry Modes and Unified Entry Validation Procedure
 
-There are exactly four entry modes:
+There are exactly five entry modes:
 
-- **Bootstrap Entry**: no incoming handoff exists. It is valid only for Plan at `Project` scope when Rule 1 matches.
+- **Bootstrap Entry**: no incoming handoff exists. It is valid only for Plan at `Project` scope when Rule 1 confirms that both the Artifact Root and supplemental Reports Root are absent or empty.
 - **Subsequent Plan Entry**: no incoming handoff exists, a non-empty new or changed User Intent is supplied after current READY Planning, and the current graph has no graph contradiction, actionable persisted blocker, or current FAIL Review. It temporarily authorizes only Plan at `Project` scope to merge that intent into a higher Planning version. The user does not need to label the intent incremental or confirm that it belongs to the current software project. It never rotates project evidence or synthesizes a handoff.
 - **Handoff Entry**: an incoming Canonical Handoff Block exists. Every workflow, including Plan rework, MUST execute this unified validation before accepting or acting on it.
+- **Feature Lane Entry**: no incoming handoff exists; the user or an external host explicitly requests one Slice, TDD, or Review Workflow and exact Target Scope whose Feature is in the current Feature Lane Ready Set, and that Workflow/Scope equals the lane's freshly derived next action. It authorizes one independent delivery-lane execution without synthesizing a handoff.
 - **Recovery Entry**: no incoming handoff exists, and a fresh Rule 3 result selects the exact current Workflow and Target Scope from a valid persisted blocker. Recovery re-authorizes only that blocker owner and scope; it does not create a synthetic handoff or authorize unrelated work.
 
-No workflow other than Plan may use Bootstrap or Subsequent Plan Entry. Plan,
-Grill, Solution, Slice, and TDD may use Recovery Entry only for a persisted blocker
-they own. Review owns no persisted BLOCKED artifact and cannot use Recovery Entry.
-Any direct invocation without a valid Bootstrap, Subsequent Plan, Handoff, or
-Recovery Entry performs no productive work.
+No workflow other than Plan may use Bootstrap or Subsequent Plan Entry. Only Slice,
+TDD, and Review may use Feature Lane Entry. Plan, Grill, Solution, Slice, and TDD may
+use Recovery Entry only for a persisted blocker they own. Review owns no persisted
+BLOCKED artifact and cannot use Recovery Entry. Any direct invocation without a
+valid Bootstrap, Subsequent Plan, Handoff, Feature Lane, or Recovery Entry performs
+no productive work.
 
 ### Invocation-scoped authorization
 
 Entry validation authorizes exactly one Workflow and one Target Scope for the
 current execution. A workflow execution MUST NOT consume a future execution scope
-unless that scope is explicitly provided by the incoming Canonical Handoff. The
-current execution cannot treat a fresh Transition Resolution Procedure result as
-permission to begin the selected future scope.
+unless that scope is explicitly provided by the incoming Canonical Handoff or a
+validated Feature Lane Entry. The current execution cannot treat another ready lane
+or a fresh resolution result as permission to begin that future scope.
 
 When resolution selects a different Workflow or a different Target Scope owned by
 the same Workflow, the current execution MUST render the applicable Canonical
@@ -131,6 +202,20 @@ current execution to ask questions, inspect scope-specific implementation, creat
 or modify artifacts, run commands, implement, or review on behalf of that future
 scope. Recovery Entry remains limited to its exact persisted-blocker scope and
 cannot be used to skip this boundary for normal forward progression.
+
+For Feature Lane Entry, the receiving Workflow MUST verify before productive work:
+
+1. no Handoff is accepted or inferred and one exact Workflow/Target Scope is explicit;
+2. Rules 1–6 do not require project-wide work and the Solution's complete dependency
+   and shared-component access metadata is current and valid;
+3. the target Feature is dependency-ready and belongs to the current Ready Set;
+4. the requested Workflow and Scope equal that lane's freshly derived next action;
+5. no current blocker or FAIL in that lane requires another action; and
+6. the invocation performs only that one scope and emits a Handoff before any later
+   action, even when another lane is also ready.
+
+Failure performs no productive work. Feature Lane Entry is authorization, not a
+persisted claim; two invocations MUST NOT intentionally target the same lane action.
 
 For Subsequent Plan Entry, Plan MUST verify before productive work that:
 
@@ -230,8 +315,26 @@ A handoff-producing workflow must render exactly one Canonical Handoff Block usi
 5. Is not enclosed in a code fence;
 6. Is the final non-whitespace content of the workflow response — no prose, list, note, or second handoff after it;
 7. Renders `Input Artifacts` as one or more `<canonical filename> = <version>` entries separated by the exact delimiter `; `, with no duplicate filename. HALTED instead renders `NONE` only for an empty terminal evidence projection. `INVALID_VERSION` is permitted only by HALTED and only when its projected artifact has no single readable valid Version.
+8. Uses Markdown exactly as shown. XML or HTML elements such as `<transition>`, a
+   fenced block, YAML, JSON, plain `Field: Value` lines, or a host-native transition
+   object are not Canonical Handoff rendering and MUST NOT be emitted instead.
+9. Renders a canonical scope value in every scope field. `Source Scope` is the
+   emitting Workflow's authorization scope (`Project`, `Feature: F-XX`, or
+   `Slice: F-XX/S-XX`), never the emitting Workflow name.
 
 A concise human-readable result summary may precede the block. A workflow must not emit more than one `### Handoff` heading in a response. Empty, `None`, and placeholder handoffs are forbidden.
+
+Before rendering FORWARD, the emitting workflow MUST reopen and validate every
+listed Input Artifact from the active Artifact Root. A Metadata `READY` value alone
+is insufficient. If the persisted artifact violates its required structure,
+metadata, ownership, identifier, version, or content contract, the Artifact Graph
+is invalid and Rule 2 applies; the workflow MUST NOT describe that artifact as READY
+or use it to justify Rule 5 or any later forward rule.
+
+Immediately before final output, the workflow MUST compare the candidate block with
+the selected variant template line by line and validate all nine conformance checks.
+It MUST correct an invalid candidate before responding and MUST NOT expose a partial,
+fallback, wrapped, or approximately equivalent Handoff.
 
 ### Emission-consumption boundary
 
@@ -239,6 +342,15 @@ Rendering a Canonical Handoff terminates the emitting workflow execution. The sa
 invocation MUST NOT consume its own Handoff, start the target workflow, perform work
 at the Target Scope, or create artifacts owned by the target. This remains true for
 a FORWARD from Grill to Grill at a different Feature scope.
+
+The Handoff is the execution's final action, not only its final visible paragraph.
+Before rendering it, the workflow MUST finish every required read, validation,
+artifact write, history operation, command, process cleanup, and tool call. After
+rendering begins, the workflow MUST NOT invoke any tool, execute SQL or another
+command, read or modify a file, update a task or memory store, emit progress text,
+or append a completion summary. A participant MUST construct the validated block
+only in the final assistant response; it MUST NOT expose an intermediate Handoff and
+then continue working.
 
 A direct IDE command requires the user or host to start a new invocation with the
 emitted Handoff. Automatic consumption is permitted only to an external orchestrator
@@ -374,7 +486,7 @@ Before accepting a handoff, the target workflow must confirm:
 3. Workflow names, identifiers, and scope rendering are canonical;
 4. Every Input Artifacts entry follows the variant-specific version rule and contains no unreplaced metavariables or blank values;
 5. Target Scope matches the target workflow's canonical scope; TDD and Review identify exactly one Feature and Slice;
-6. The Target Scope equals a fresh run of the Transition Resolution Procedure (not inferred from conversation context);
+6. The Target Scope equals a fresh run of the Transition Resolution Procedure under the validated Handoff or Feature Lane selection context (not inferred from unrelated conversation context);
 7. The block exactly matches its variant template and value-rendering rules;
 8. Exactly one handoff block is present and it is the response's final content.
 9. The execution performed productive work only for the Workflow and Target Scope
@@ -382,3 +494,5 @@ Before accepting a handoff, the target workflow must confirm:
    resolved scope.
 
 Failure of any check makes the handoff invalid. The target workflow performs no work until the source workflow corrects and re-emits the complete Canonical Handoff Block. The target must not infer missing fields or normalize a malformed block.
+
+<!-- forgeflow-eof: .forgeflow/protocol/handoff.md -->

@@ -9,9 +9,110 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Added dependency-aware Feature Lanes after the project-wide Solution stage.
+  Planning business dependencies and Solution engineering dependencies now form the
+  effective lane graph; shared-component READ/WRITE access prevents unsafe parallel
+  writes. Independent ready Features may advance through Slice, TDD, and Review in
+  separate validated IDE invocations, while dependent Features wait and Slice order
+  remains authoritative within each lane. Incremental Solution revisions continue to
+  cover all current Requirements and advance only affected Feature engineering
+  contracts without introducing a new persistent lane artifact or runtime cursor.
+- Made the Handoff Protocol the single source for Bootstrap Entry root conditions:
+  Bootstrap now requires both Artifact and supplemental Reports roots to be absent
+  or empty, while residual reports require explicit reset or archive maintenance.
+  Added canonical Markdown and CSV plugin-report serialization templates to the
+  Review Plugin Registry, including fixed metadata, result columns, ordering,
+  counts, verdict derivation, escaping, and cross-format consistency rules.
+- Simplified the Plan Workflow while preserving entry classification, same-project
+  incremental evolution, the five-dimension readiness gate, canonical Planning
+  rendering, persistence boundaries, and final Handoff termination. Clarification
+  ownership now follows the effect of plausible answers rather than topic names, so
+  Plan asks only decisions that can change project scope, Feature topology, or a
+  cross-Feature contract and defers stable Feature-local behavior to Grill.
+- Simplified the Review Workflow by removing duplicated plugin tutorials and report
+  examples while preserving read-only attempt scope, independent checks, canonical
+  Findings derivation, owner-precedence returns, plugin applicability and thresholds,
+  supplemental report archival, PASS/FAIL routing, and final Handoff termination.
+- Simplified the Solution Workflow while preserving Project-wide entry readiness,
+  engineering-question ownership, clarification and waiting, complete Requirement
+  traceability, structure/test placement, shared-component impact metadata,
+  engineering decision history, scoped compatibility, and transition behavior.
+- Simplified the Grill Workflow while preserving Requirement-owned question scope,
+  clarification and waiting behavior, option neutrality, one-Feature mutation
+  isolation, Requirement version linkage, blocker handling, loop termination, and
+  transition routes.
+- Simplified the TDD Workflow while preserving exact Slice entry authorization,
+  version-chain validation, placement constraints, command lifecycle, authorized
+  application persistence, RED/GREEN/refactor evidence, review-readiness self-check,
+  attempt handling, blocker routing, and single-execution termination.
+- Simplified the Slice Workflow into a compact fixed structure while preserving its
+  entry authorization, single-Feature scope, READY coverage gate, Planned File
+  Placement contract, upstream return routes, mutation boundary, exit behavior, and
+  stale-evidence semantics.
+- Removed `Artifact Protocol Version` from Planning and Solution Plan metadata.
+  Current artifacts are validated by their canonical structure, while legacy
+  compatibility is determined by the structure actually present rather than by a
+  protocol-file version embedded in project artifacts.
+- Added a domain-independent Decomposition Readiness Gate for Plan. Every User Intent
+  is evaluated through the same five semantic dimensions: project boundaries,
+  cross-Feature actors and identity, shared entities and ownership, lifecycle
+  transfers, and shared data or measurement semantics. Plan asks only unresolved
+  questions that can change Feature topology or contracts, permits zero questions
+  only when all material dimensions are explicit or irrelevant, and never treats
+  examples, defaults, conventions, repository technology, or Assumptions as answers.
+- Added a prominent Plan execution boundary before clarification begins. Plan may
+  read evidence, ask Plan-owned questions, and write canonical Planning files, but
+  must never invoke SQL/database, task, memory, planning, agent-management, or
+  session-state tools for bookkeeping; Markdown tables never authorize database
+  tables or records.
+- Clarified that the workflow shadow-state prohibition does not restrict authorized
+  TDD application persistence. TDD may implement and test Slice-approved schemas,
+  migrations, tables, indexes, seed/fixture data, and SQL records inside approved
+  project, test, or development surfaces, while databases remain forbidden as
+  storage for ForgeFlow decisions or workflow progress.
+- Narrowed Plan to one product-definition responsibility: decomposing approved User
+  Intent into an ordered Feature set. Plan may ask only questions required to
+  stabilize project scope, Feature topology, or a contract between Features; every
+  other business-detail question, inference, and encoded answer is forbidden and
+  remains for Grill.
+- Added a workflow persistence boundary and Plan-specific mutation allowlist. Plan
+  may persist only canonical Planning/history/rotation changes and must not execute
+  SQL writes, mutate application databases or implementation files, or create
+  shadow decision, question, cursor, session-plan, or progress stores.
+- Strengthened Handoff termination from a final-text rule to a final-action rule:
+  every tool call, command, cleanup, validation, and state update must finish before
+  rendering begins, and no SQL, tool invocation, progress event, or summary may
+  follow a Canonical Handoff.
+- Refined Plan/Grill clarification ownership and Planning semantic validation. Plan
+  asks only the minimum project or cross-Feature question, leaves Feature-local
+  state, reopen, assignment, field, deadline, and validation details to Grill,
+  records approved rules outside Assumptions, rejects cross-section contradictions,
+  and requires exhaustive direct business dependencies and unambiguous role
+  cardinality.
+- Added a canonical Planning rendering envelope and a fail-closed write/reopen/
+  reparse gate. READY Planning now requires one title, complete Metadata, exactly
+  the nine ordered sections, aligned Feature/version/change rows, and no substitute
+  summaries or per-Feature status structures. Plan now keeps technical scaffolding,
+  database, authentication, deployment, and similar Solution-owned choices out of
+  business Features and unsupported assumptions.
+- Added strict Markdown-only Handoff serialization. XML/HTML `<transition>` wrappers,
+  native transition objects, plain key-value fallbacks, and Workflow names rendered
+  as scopes are explicitly invalid. FORWARD now requires persisted Input Artifacts
+  to pass their complete structural contract before transition resolution.
+- Added a fail-closed Authoritative Read Completion Procedure. Every invocation must
+  establish each authoritative file's physical end, consume contiguous ranges through
+  that end, verify its path-specific EOF marker, and retain an ordered read receipt
+  before productive work. All core Protocol and Workflow specifications now carry
+  repository-relative EOF markers, with contract coverage preventing omissions.
+- Added Plan-owned business clarification for unresolved choices that can change
+  observable project behavior, Feature topology, cross-Feature data semantics,
+  role visibility, scope, exclusions, success measures, or product experience.
+- Added an authoritative-loading and workspace boundary: every invocation reads
+  Framework, Artifact Protocol, Handoff Protocol, and only the selected Workflow in
+  order, without preloading future Workflows or scanning user-level agent stores.
 - Added a versioned Planning Artifact structure with nine ordered sections,
-  canonical Features and Change Set tables, migration-compatible parser validation,
-  and explicit `Artifact Protocol Version = 2.11` metadata for new revisions.
+  canonical Features and Change Set tables, and migration-compatible structural
+  validation for new revisions.
 - Added an invocation termination barrier: direct IDE launchers execute exactly one
   Workflow and stop at the emitted Handoff. Only the external Python CLI Runner may
   consume a Handoff automatically as a separately validated execution.
@@ -124,11 +225,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
-- Expanded the IDE acceptance baseline from 226 to 242 cases with structured impact,
+- Expanded the IDE acceptance baseline from 226 to 247 cases with structured impact,
   migration, source/test placement, Planning structure, IDE termination, Grill
-  mutation isolation, canonical Solution Summary, Review conformance, and
-  non-blocking preference scenarios. Plan and Grill are now 2.8, Solution is 2.10,
-  Slice and Review are 2.9, and TDD is 2.8.
+  mutation isolation, Plan clarification, authoritative loading, canonical Solution
+  Summary, Review conformance, and non-blocking preference scenarios. Plan is now
+  2.9, Grill and TDD are 2.8, Solution is 2.10, and Slice and Review are 2.9.
+- Prohibited Planning Assumptions, Exclusions, Success Measures, or Feature Outcomes
+  from silently resolving unapproved business questions. Cross-Feature behavior and
+  dependencies must now be explicitly traceable and internally consistent.
 - Clarified that `forgeflow.json.mode` controls Python CLI orchestration only and
   never authorizes a direct IDE participant to chain Workflow executions.
 - Strengthened Grill's one-Feature boundary with a pre/post Requirement mutation-set

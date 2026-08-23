@@ -27,7 +27,7 @@
 - Apply the registry Blocking Threshold to each VIOLATION. Review only files and
   documents needed for the authorized Slice and its declared architectural context.
 - ARC-003 and ARC-009 are applicable when the current Solution/Slice establishes a
-  structure contract. A pre-2.10 legacy Solution with no such contract is not by
+  structure contract. A legacy Solution with no such contract is not by
   itself a violation; use observable repository conventions and report missing
   evidence as UNKNOWN or N/A unless another current contract requires RETURN.
 - Do not prescribe Java/Spring package names, package-by-layer, or package-by-Feature
