@@ -2,7 +2,6 @@
 
 **Plugin:** performance  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -19,9 +18,6 @@
 
 ## Execution Notes
 
-- Evaluate applicability before compliance. Database, cache, API, external-service,
-  payload, and media-processing rules are N/A when that surface is absent.
-- Record PASS, VIOLATION, UNKNOWN, or N/A with observable evidence. Missing profiling
-  data is UNKNOWN, not a violation, unless required evidence is contractually absent.
-- Apply the registry Blocking Threshold to each VIOLATION and keep evaluation within
-  the authorized Slice and its demonstrated runtime paths.
+Apply Registry verdict, evidence, and threshold rules within the authorized Slice and
+demonstrated runtime paths. Absent technology is N/A; missing profiling is UNKNOWN
+unless a current contract requires that evidence.

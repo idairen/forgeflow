@@ -7,131 +7,97 @@ Version: 2.13
 | Field | Value |
 | --- | --- |
 | Scope | Project |
-| Owned artifact | Solution Plan |
-| Output | Owned artifact at its Canonical Artifact Path defined by the Artifact Protocol |
-| Required inputs | READY Planning; current READY Requirement for every Feature |
+| Owns | Solution Plan; project engineering baseline |
+| Inputs | READY Planning and every current READY Requirement |
 
-Solution creates one coherent engineering baseline by analyzing every current
-active business contract together with the prior engineering baseline. Historical
-or retired Requirements remain history. Solution owns engineering decisions shared
-across Features.
+Accept only a valid Handoff or Recovery selected from current `ENGINEERING_GAP`.
+Validate Transition and Handoff and require `BUSINESS_READY`; a partial Requirement
+set never authorizes Solution. Historical and retired Requirements are not active.
 
-## Entry barrier
+## Ownership and clarification
 
-On Handoff Entry, run the Unified Entry Validation Procedure. Without a handoff,
-proceed only through Recovery Entry when fresh Rule 3 selects Solution at Project
-scope from a current `ENGINEERING_GAP`. Reject entry unless `BUSINESS_READY` is
-derived from current READY Requirements for every Feature; a partial set never
-authorizes Solution.
+Solution owns architecture, components, implementation strategy, APIs/interfaces,
+data/migration, security mechanisms, technical error handling, operations, and
+verification. Requirements own business success/failure; Implement owns code inside an
+approved Slice. Solution therefore defines endpoints, protocols, methods, schemas,
+DTOs, serialization, status/error payloads, exception mapping, transactions, retries,
+timeouts, and logging without treating their absence from Requirement as a business
+gap.
 
-## Engineering question ownership
+Solution also owns the properties verification must establish, required checks and
+test levels, passing criteria, evidence sources, and any permitted alternative
+strategies. Slice maps these decisions to its delivery units. Implement chooses and
+refines execution details within those constraints; it cannot replace them by a
+rationale. Routine test cases or commands do not require a new engineering decision.
 
-| Solution owns | Solution does not own |
-| --- | --- |
-| implementation strategy, architecture, components, APIs and interfaces | stakeholder business success or failure semantics |
-| data and migration design, security mechanisms, technical error handling | Feature decomposition into Slices |
-| operational constraints, verification strategy, cross-Feature engineering | detailed implementation and test execution |
+Enumerate decisions supported by Requirements, prior Solution, and system evidence.
+Under the Framework clarification policy, ask and wait when an owned decision lacks
+usable evidence, has a material trade-off, or depends on user-supplied external
+constraints such as runtime, deployment, dependency, or migration scope. Proceed
+without unnecessary questions when evidence determines the answer. Pending answers
+remain at Project and emit no Handoff; continue only when resolved or explicitly
+deferred by the user.
 
-Solution technically represents approved business outcomes through endpoints,
-protocols, methods, schemas, DTOs, serialization, status/error codes and payloads,
-exceptions, transactions, retries, timeouts, and logging. Their absence from a
-Requirement is not missing business policy and MUST NOT trigger RETURN to Grill.
+## Ready gate
 
-## Engineering clarification
+Every current Requirement behavior, acceptance criterion, dependency, and constraint
+must trace to actionable engineering decisions and verification across applicable
+boundaries, interfaces, data/migration, security, errors, operations, risks, and
+cross-Feature effects. An unresolved engineering decision blocks READY; an unresolved
+business outcome returns to Grill. Neither is deferred implicitly downstream.
 
-Before writing, enumerate engineering decisions supported by all Requirements,
-existing system evidence, and the prior Solution. Ask the user during this
-invocation and wait only when a decision cannot be inferred, has a material
-trade-off, or depends on an external constraint. Emit no Handoff while an answer is
-pending. Proceed without questions when every decision is supported; an explicit
-user deferral must remain visible and cannot silently satisfy READY.
+## Process
 
-While any answer is pending, Solution remains at Project scope, writes no READY
-Solution Plan, emits no Handoff, and does not begin Slice.
+1. Validate every current Requirement against Planning and read the complete prior
+   Solution. A valid-but-stale Solution may be used for comparison and update only
+   after Artifact Protocol baseline validation; it never substitutes for current
+   Requirements or satisfies an engineering/delivery barrier. Limit lineage reads
+   to the Planning changes and referenced Requirement versions involved.
+2. Inspect relevant code, interfaces, data, tests, and conventions; classify questions
+   by Framework ownership and resolve required engineering clarification.
+3. Reconcile cross-Feature and non-functional constraints. Identify shared components
+   and whether each Feature reuses, extends, or introduces them.
+4. In canonical `solution-plan.md`, write `Artifact Protocol Version = 2.11` and
+   one Solution Summary covering baseline, material cross-Feature effects, and
+   verification; never create a separate summary.
+5. Define boundaries, interfaces, data/migration, security, technical errors,
+   operations, risks, and verification.
+   Record the Artifact Protocol Verification Requirements table. Trace applicable
+   obligations to Features, required checks/strategies, passing criteria, and
+   evidence. Allow alternatives only with explicit conditions and equivalent
+   required coverage. TDD may be the default candidate for behavioral changes;
+   it is not required for every Slice. Keep correctness/regression requirements
+   even when a benchmark, scan, or static check is also required.
+6. Define the Artifact Protocol Implementation and Test Structures using
+   repository-relative paths and coherent observable conventions. Choose
+   package-by-Feature, package-by-layer, or a justified hybrid from evidence.
+7. Separate responsibilities and allowed dependencies. Avoid both unrelated
+   co-location/catch-all utilities and artificial one-class packages. Shared placement
+   requires cohesion and a recorded reason. Define corresponding unit, component,
+   integration, contract, and end-to-end test placement.
+8. Record Based On Requirements for exactly every current Feature. Remove retired
+   Features from all Solution maps; include added Features and use current Planning
+   order. Before READY, revalidate all references, map completeness, and impact
+   classifications against the current baseline.
+9. Compare every Feature with prior Solution: retain compatible Feature Engineering
+   Versions and advance every added or materially affected Feature. Resolve
+   uncertainty rather than assume compatibility.
+10. Record Shared Components and Utilities, Cross-Feature Impact, and all structured
+    Artifact Protocol mappings in Planning order; reject cycles and unresolved
+    component/decision references.
+11. Maintain the Engineering Decision Register with affected Features, Requirement
+    or code evidence, and retain/replace/supersede status.
+12. Pass the Ready gate and persist canonical READY Solution. Resolve Transition
+    from the saved Feature Engineering Versions under its upstream-persistence
+    rule; old downstream evidence establishes completion only when its applicable
+    version chain is current. Do not retain the pre-revision execution target.
+    Emit any exact Handoff as final content, and stop.
 
-### Clarification presentation
-
-- Offer only concrete options supported by current artifacts, existing patterns,
-  similar implementations, or established engineering alternatives, with rationale.
-- Present at most three to five options, using fewer when sufficient; the final
-  option is always `Other` with free-form input.
-- Do not pad, fabricate, lead, recommend, or include an option conflicting with
-  observable evidence.
-
-## READY quality gate
-
-READY requires every current Requirement behavior, acceptance criterion, dependency,
-and business constraint to trace to actionable engineering decisions and
-verification. Coverage includes boundaries, interfaces, data/migration behavior,
-security, technical errors, operations, risks, and cross-Feature interactions.
-An unresolved Solution-owned decision blocks READY; unresolved business policy
-returns to Grill at the affected Feature. Neither is implicitly deferred downstream.
-
-## Required process
-
-1. Validate every active Requirement version against Planning and read the complete
-   prior Solution Plan. Never design only from the latest changed Requirement.
-2. Inspect the codebase, interfaces, data model, tests, and conventions. Classify
-   unresolved questions by Requirement or Solution ownership and run Engineering
-   clarification for non-inferable decisions, material trade-offs, and external constraints.
-3. Reconcile cross-Feature and non-functional constraints. Identify existing or
-   extractable shared components and utilities and define whether each Feature
-   reuses, extends, or introduces them.
-4. Write one concise `## Solution Summary` inside canonical `solution-plan.md`,
-   covering the current baseline, material cross-Feature effects, and verification
-   approach. Never create `solution-plan-summary.md` or another standalone summary file.
-5. Define boundaries, interfaces, data/migration strategy, security, technical
-   errors, operations, risks, and verification. Provide the Artifact Protocol's
-   Implementation Structure and Test Structure. From repository evidence and the
-   approved architecture, choose package-by-Feature, package-by-layer, or a justified
-   hybrid without assuming a language/framework. Define responsibility boundaries,
-   dependency direction, and production/unit/integration-test placement for
-   controllers/adapters, services/use cases, repositories/data access, domain types,
-   and support components.
-6. Record `Based On Requirements` for every active Feature. Compare each Feature
-   with the prior Solution and record `Feature Engineering Versions`: retain a
-   compatible prior value; use the new Solution Plan Version for added or materially
-   affected Features. Cross-cutting or shared-component changes MUST name and advance
-   every affected Feature; unaffected Features retain their versions. Resolve
-   compatibility uncertainty as an engineering decision.
-7. Record `Shared Components and Utilities` and `Cross-Feature Impact` for every
-   active Feature, including direct/indirect/unaffected classification, rationale,
-   and version action; use `NONE` when applicable. Populate all structured metadata:
-   `Shared Component IDs`, `Feature Dependencies`, `Feature Shared Components`,
-   `Feature Shared Component Access`, `Feature Decision References`, and
-   `Cross-Feature Impact`. Preserve Planning order and resolve every reference.
-   Validate that the union of Planning and Solution dependencies is acyclic. Mark
-   each shared-component relationship `READ` or `WRITE`; when either of two Features
-   writes the same component, establish an engineering dependency order between
-   them. Resolve an unsupported ordering through Engineering clarification rather
-   than guessing. Only `READ`/`READ` co-usage is parallel-safe without another edge.
-8. Maintain an `Engineering Decision Register`. Each current decision records
-   affected Features, Requirement or codebase evidence, and whether it retains,
-   replaces, or supersedes a prior decision. Superseded decisions remain history,
-   never current.
-9. Perform the READY quality gate and record Requirement-to-engineering and
-   verification traceability. Persist the Solution Plan at its Canonical Artifact
-   Path and mark READY only when all decisions are actionable and no business policy
-   was invented.
-10. Apply the Transition Resolution Procedure. If it selects a transition, validate
-    and render exactly one Canonical Handoff Block as final response content, then stop.
-
-Solution MUST NOT alter Requirements, decompose Slices, or implement code. It MUST
-NOT leave multi-role production or test placement unspecified, but also MUST NOT
-create artificial one-class packages when repository convention and cohesion support
-a broader module. Structure decisions are evidence- and responsibility-based.
-
-## Emit conditions after Solution completes
-
-- **FORWARD to Slice**: Rule 7 selects the default dependency-ready Feature Lane lacking a usable current Slice Plan; other ready lanes may start separately through Feature Lane Entry.
-- **RETURN**: Rule 3 selects a persisted blocker; return to its resolved owner and scope.
+Solution never changes Requirements, decomposes Slices, writes code, or leaves
+multi-role source/test placement unspecified.
 
 ## Change impact
 
-Every normative change creates a new Solution Plan version. Only Features whose
-Feature Engineering Version advances have stale Slice, TDD, and Review evidence;
-retained Feature versions keep compatible evidence usable. Preserve history and
-support compatibility with current Requirements, codebase evidence, and explicit
-cross-Feature impact analysis.
-
-<!-- forgeflow-eof: .forgeflow/workflow/solution.md -->
+Normative change creates a new Solution version. Only Features whose Engineering
+Version advances lose current Slice/Implement/Review evidence; retaining a version requires
+current Requirement, repository, and cross-Feature impact evidence.

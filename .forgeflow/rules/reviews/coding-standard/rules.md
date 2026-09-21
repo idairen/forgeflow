@@ -2,7 +2,6 @@
 
 **Plugin:** coding-standard  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -19,9 +18,5 @@
 
 ## Execution Notes
 
-- This plugin applies only to Python source files in the authorized Slice. If none
-  exist, mark the plugin N/A rather than evaluating another language as Python.
-- Evaluate each rule's applicability before compliance and record PASS, VIOLATION,
-  UNKNOWN, or N/A with evidence.
-- Apply the registry Blocking Threshold to each VIOLATION; do not infer blocking
-  disposition from the presence of a style violation alone.
+Apply Registry verdict, evidence, and threshold rules. With no Python source in the
+authorized Slice, mark the plugin N/A; never evaluate another language as Python.

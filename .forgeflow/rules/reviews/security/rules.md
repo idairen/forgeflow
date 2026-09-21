@@ -2,7 +2,6 @@
 
 **Plugin:** security  
 **Version:** 1.0  
-**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -19,8 +18,5 @@
 
 ## Execution Notes
 
-- Evaluate applicability before compliance. Database, API, dependency, logging, or
-  rate-limit rules are N/A when that surface does not exist in the authorized Slice.
-- Record PASS, VIOLATION, UNKNOWN, or N/A with observable evidence.
-- Apply the registry Blocking Threshold to VIOLATION severity; N/A and UNKNOWN do
-  not become violations merely because evidence or a technology is absent.
+Apply Registry verdict, evidence, and threshold rules. Database, API, dependency,
+logging, and rate-limit checks are N/A when that surface is absent from the Slice.

@@ -1,86 +1,71 @@
 # Slice Workflow
 
-Version: 2.11
+Version: 2.12
 
 ## Contract
 
 | Field | Value |
 | --- | --- |
 | Scope | Feature |
-| Owned artifact | Slice Plan |
-| Output | Owned artifact at its Canonical Artifact Path defined by the Artifact Protocol |
-| Required inputs | current READY Planning, Requirement, and Solution Plan; Feature Target Scope |
+| Owns | Slice Plan; delivery decomposition and placement |
+| Inputs | current READY Planning, Requirement, and Solution; one Feature Target Scope |
 
-Slice decomposes exactly one approved Feature into the smallest useful ordered
-delivery increments. The Target Scope is the complete authorization boundary. Other
-Features are future execution scopes and MUST NOT be analyzed, decomposed, or
-modified. A Slice Plan may declare multiple Slices but authorizes none for execution.
+Accept only a valid Handoff or Recovery selected from current `SLICE_VIOLATION`.
+Validate Transition and Handoff, resolve one planned Feature, and freeze it as the
+only productive and Slice Plan mutation Scope. Another Feature requires another
+execution. Declaring several Slices authorizes none of their execution.
 
-## READY quality gate
+## Ready gate
 
-A READY Slice Plan MUST:
+Trace every applicable Requirement behavior and Solution constraint to one or more
+Slices without uncovered obligations, overlap, contradictory ownership, invalid
+dependency, or completion gap. Each Slice supplies observable acceptance evidence,
+checks, dependencies, risks, and completion conditions sufficient for Implement and
+Review. Return missing business policy to Grill and engineering policy to Solution;
+never invent either.
 
-- trace every applicable Requirement behavior and Solution constraint to at least
-  one Slice, with no uncovered obligation or completion gap;
-- contain independently implementable, testable, reviewable, and valuable Slices
-  with non-overlapping ownership and acyclic dependencies;
-- define each Slice's observable acceptance evidence, checks, dependencies, risks,
-  and completion conditions; and
-- map every production and test responsibility to Planned File Placement consistent
-  with the Solution's Implementation Structure and Test Structure.
+Every Slice must have an actionable Verification Plan covering all its acceptance
+conditions and applicable Solution verification obligations. Record one or more
+strategies, rationale, required checks, passing criteria, and evidence requirements
+under the Artifact Protocol. Strategies may combine; no single choice cancels the
+other obligations. Implement may select only explicitly permitted alternatives or
+refine execution details. Missing engineering criteria return to Solution rather
+than becoming a discretionary Implement decision.
 
-Missing business policy returns to Grill. A missing or invalid engineering decision,
-including an absent package/module or test-layout strategy, returns
-`ENGINEERING_GAP` to Solution at Project scope. If the strategy exists but file
-responsibilities cannot be mapped without overlap or omission, persist
-`SLICE_VIOLATION`. Slice MUST NOT invent or redesign upstream contracts.
+## Process
 
-## Required process
+1. Validate entry, the Feature's Requirement, and its current Engineering Version.
+2. Inspect relevant implementation boundaries.
+3. Define dependency-ordered `S-<SliceNumber>` Slices using the Artifact Protocol's
+   canonical Sequence Number; they must be independently implementable,
+   testable, reviewable, and valuable; reject cycles.
+4. For each Slice record intent, acceptance evidence, dependencies, components/files,
+   tests, risks, completion, engineering decisions, and shared components.
+   Add its Verification Plan rows, select justified strategies and map their checks
+   to the current Solution requirements. Preserve mandatory checks and thresholds;
+   state conditions for any Solution-permitted alternative. TDD is a candidate for
+   behavioral changes, not a requirement for configuration, migration, documentation,
+   or every other Slice. Routine commands may be refined during Implement.
+5. Add every Planned File Placement row. Paths/patterns resolve to current
+   Implementation and Test Structures and preserve distinct responsibilities.
+   Include authorized configuration, migration, and documentation changes and their
+   verification placement when applicable; a strategy grants no additional path scope.
+6. Trace Requirement and Solution obligations. Every component and decision resolves
+   in Solution and the Feature's structured mappings; do not infer omitted links.
+7. Persist one immutable Slice Plan whose Feature matches Target Scope and whose
+   Based On Solution matches its Engineering Version; change no other Slice Plan.
+8. Resolve Transition from the saved Slice Plan version under its upstream-persistence
+   rule, recomputing this Feature's Slice evidence currentness. Do not return directly
+   to the requesting Slice or retain an old completion prefix after a plan revision.
+   Transition alone selects the next target under the complete Rule order; emit any
+   exact Handoff as final content, and stop.
 
-1. Run Unified Entry Validation for Handoff Entry, Feature Lane Entry, or Recovery.
-   Without a handoff, Feature Lane Entry requires this exact Slice/Feature action in
-   the current Ready Set; Recovery requires fresh Rule 3 at this Feature from a
-   current `SLICE_VIOLATION`. Validate and freeze exactly one planned Feature.
-2. Validate its current Requirement and Solution Plan, resolve its Feature
-   Engineering Version, and inspect relevant existing implementation boundaries.
-3. Define ordered `S-XX` Slices. For each, record intent, acceptance evidence,
-   dependencies, expected components/files, tests, risks, completion conditions,
-   engineering-decision references, and reused or changed shared components or utilities.
-4. Add Planned File Placement rows for every created, moved, or materially changed
-   production and test responsibility. Every path or pattern MUST resolve to the
-   current Implementation/Test Structure and preserve its responsibility boundaries.
-5. Validate dependency order, reject cycles, perform the READY quality gate, and
-   record Requirement-and-Solution-to-Slice traceability. Every referenced decision
-   or shared component MUST resolve through the current Solution Plan and the
-   targeted Feature's structured mappings; omitted relationships MUST NOT be inferred.
-6. Re-read Planning and Solution immediately before persistence. If the Feature
-   Engineering Version, effective dependencies, or shared-component access changed,
-   stop and resolve from the fresh graph instead of publishing stale lane evidence.
-   Persist an immutable Slice Plan version at its Canonical Artifact Path with the
-   Feature ID and `Based On Solution` equal to that Feature's current Feature
-   Engineering Version.
-7. Confirm that no other Feature's Slice Plan was created or modified. Slice Plans
-   contain no dynamic cursor, `PENDING`, `IN_PROGRESS`, `BLOCKED`, `COMPLETE`, or
-   review-result state; runtime state is derived from TDD and Review evidence.
-8. Apply the Transition Resolution Procedure. If it selects a transition, validate
-   and render exactly one Canonical Handoff Block as the final response content,
-   then stop without consuming its Target Scope.
-
-Slice MUST NOT change business behavior, redesign Solution, write code or TDD
-evidence, or independently choose an execution target. Completing one Feature's
-Slice Plan does not continue work inside this execution or begin TDD. Its Handoff
-may continue the same Lane; independent ready Features may use separate Feature Lane
-Entries without waiting for every Feature to have a Slice Plan.
-
-## Emit conditions after Slice completes a Feature
-
-- **FORWARD to Slice**: Rule 7 selects another dependency-ready Feature Lane lacking a usable current Slice Plan.
-- **FORWARD to TDD**: Rule 10 selects the first incomplete Slice in the selected Lane once that Feature is lane-delivery-ready.
-- **RETURN**: Rule 3 selects a persisted blocker; return to its resolved owner and scope.
+Slice Plans store no runtime cursor, state, blocker projection, or Review result.
+Slice does not alter business behavior, redesign Solution, write code, or select an
+execution target. Missing source/test structure is `ENGINEERING_GAP`; a complete
+structure that cannot support non-overlapping placement is `SLICE_VIOLATION`.
 
 ## Change impact
 
-A decomposition change creates a new Slice Plan version for that Feature. TDD and
-Review evidence tied to older versions remains history but is stale.
-
-<!-- forgeflow-eof: .forgeflow/workflow/slice.md -->
+Decomposition change creates a new Feature Slice Plan version. Evidence tied to the
+older version remains immutable history but is stale.

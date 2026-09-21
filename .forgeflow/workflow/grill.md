@@ -1,109 +1,89 @@
 # Grill Workflow
 
-Version: 2.9
+Version: 2.10
 
 ## Contract
 
 | Field | Value |
 | --- | --- |
 | Scope | Feature |
-| Owned artifact | Requirement |
-| Output | Owned artifact at its Canonical Artifact Path defined by the Artifact Protocol |
-| Required inputs | READY Planning; Target Scope naming one planned Feature |
+| Owns | Feature Lane Record; Requirement; observable business behavior and acceptance policy |
+| Inputs | READY Planning; usable dependency Requirements; one eligible or recovered Feature Target Scope |
 
-Grill completes the stakeholder-owned business contract for exactly one Feature.
-The incoming Target Scope is the complete authorization boundary; other Features
-are future execution scopes and MUST NOT be analyzed, questioned, or modified.
-Ambiguity must be challenged and resolved with the user, never invented.
+Grill obtains stakeholder decisions but never invents them.
 
-## Entry behavior
+## Ownership and entry
 
-On Handoff Entry, run the Unified Entry Validation Procedure. Without a handoff,
-proceed only through Recovery Entry when fresh Rule 3 selects Grill at the exact
-Feature Target Scope from a current `BUSINESS_GAP`. After valid entry, do not emit a
-handoff to the same Feature or ask the user to restart it. A different Feature
-requires a FORWARD Handoff, termination of this execution, and a new invocation.
+Accept only a valid Handoff, Lane Entry, or Recovery selected by the Transition
+Protocol. Validate the complete graph, resolve exactly one planned Feature, and
+freeze it as the only productive and Requirement-mutation Scope. Handoff and Lane
+Entry atomically create its ACTIVE Feature Lane Record before work. Blocker Recovery
+and interrupted Lane Recovery follow their distinct Transition conditions and the
+Artifact Protocol's archival/replacement transaction. A confirmed inactive claim may
+be released without replacement only under the Project-blocker recovery branch;
+that branch authorizes no business work. Another Feature always requires
+another execution and its own authorization.
 
-## Question boundary
+Every transitive Planning dependency must have a usable current Requirement at
+claim time and before persistence. An ACTIVE claim for the same Feature rejects an
+ordinary Entry; only explicit, valid Recovery may replace it. Independent eligible
+Features may run in other executions, but their files, clarification, commands, and
+evidence are outside this Lane.
 
-A question is Requirement-owned only when its answer defines stakeholder business
-policy or actor-observable behavior for the targeted Feature without choosing an
-implementation mechanism.
+A Grill-owned question changes observable Feature behavior without choosing an API,
+technology, architecture, or implementation. It includes actors, triggers,
+permissions, business information and rules, validation, state transitions, success
+and failure, edge cases, acceptance criteria, dependencies, and exclusions.
 
-| Grill MAY ask | Grill MUST defer |
-| --- | --- |
-| actors, goals, triggers, permissions, business information and rules | architecture, frameworks, components, libraries, storage, transactions, migrations |
-| validation constraints, business state transitions, success/failure outcomes | APIs, endpoints, transports, methods, schemas, DTOs, serialization names or types |
-| edge cases, acceptance criteria, business dependencies and exclusions | technical errors, status/error codes, payloads, exceptions, retries, timeouts, logging |
-| whether an operation is rejected, access denied, or partial business effects forbidden | Slice boundaries, tests, code structure, and implementation execution |
+Grill does not choose implementation strategy, components, storage, transactions,
+migrations, tests, Slices, code layout, interfaces, schemas, serialization, technical
+status/error codes, exception mapping, retries, timeouts, or logging. It owns whether
+a business action is rejected, access denied, or partial effects forbidden; Solution
+owns the mechanism. Ask only the business portion of a mixed question.
 
-For a mixed question, ask only the business-outcome portion. Defer engineering to
-Solution, decomposition to Slice, and implementation to TDD. A deferred downstream
-choice neither blocks Requirement readiness nor becomes a Requirement decision.
+## Clarification
 
-## Requirement clarification
+Enumerate decisions supported by Planning, current Requirement evidence, and
+observable behavior. Ask and wait for every missing, ambiguous, or conflicting
+business decision under the Framework policy; skip unnecessary questions.
+Engineering decisions neither block READY nor become Requirement decisions.
 
-Before writing, enumerate confirmed and unresolved business decisions from current
-Planning, relevant existing behavior, and any prior Requirement. For every ambiguous,
-missing, or conflicting Requirement-owned decision, ask the user and wait at the
-same Target Scope; continue follow-up clarification there until resolved. If none
-exists, proceed without manufacturing a question.
+Waiting stays at the same Feature without Handoff and is not itself a blocker. If a
+required decision cannot be obtained across invocations, persist
+`BUSINESS_GAP` under the Artifact and Transition Protocols while retaining the Lane
+claim for explicit Recovery. Independent Lanes remain eligible.
 
-### Clarification presentation
+## Process
 
-- Offer only concrete options supported by current artifacts, existing behavior, or
-  established domain alternatives, with a brief relevant rationale.
-- Present at most three to five options, using fewer when sufficient; the final
-  option is always `Other` with free-form input.
-- Do not pad, fabricate, lead, recommend, or include an option that conflicts with
-  observable evidence. Options support a decision; they are not approval evidence.
+1. Validate entry, atomically establish and freeze the current Lane Attempt under
+   the Artifact Protocol's monotonic counter rule, and record existing canonical
+   Requirement and Lane paths. Release-only Recovery instead releases the confirmed
+   inactive claim, resolves the Project blocker, and stops without business work.
+2. Inspect relevant behavior and dependencies; analyze goals, actors, triggers,
+   rules, outcomes, edge cases, acceptance, dependencies, and exclusions.
+3. Separate confirmed business decisions, Grill clarifications, and deferred
+   engineering questions; resolve the owned decisions without invention.
+4. Trace the business contract to the targeted Feature and current Planning Change
+   Set; historical intent is not an active constraint.
+   At each work checkpoint and before persistence, recheck the frozen claim,
+   Planning, dependencies, and Project blockers. A replaced or absent claim stops
+   this execution without any canonical write or archival. On a Project blocker,
+   release only the still-owned claim and stop business work. For a PLAN_GAP found
+   here, atomically persist the BLOCKED Requirement and archive/release the owned
+   Lane; on failure restore prior files. Re-resolve the committed graph, emit the
+   exact RETURN to Plan, and stop. Never mark this unfinished Lane COMPLETE.
+5. Persist a new target Requirement version with Feature ID and its current Feature
+   Contract Version as Planning Version; mark READY only when business decisions are
+   complete. Requirement persistence and Lane Status COMPLETE form one Artifact
+   Protocol transaction.
+6. Verify that no other Feature's Requirement changed; otherwise stop without a
+   forward Handoff.
+7. Resolve Transition. On join-pending, report Lane completion without a Handoff and
+   stop. Otherwise emit any exact Handoff as final content and stop.
 
-## Required process
+## Ready
 
-1. Validate and freeze exactly one planned Feature. Record existing canonical
-   Requirement paths; only the targeted Feature's path may change.
-2. Inspect relevant behavior and dependencies. Analyze goals, actors, triggers,
-   permissions, rules, information, validation, states, outcomes, edge cases,
-   acceptance criteria, dependencies, and exclusions under the Question boundary.
-3. Separate confirmed decisions from unresolved questions and run Requirement
-   clarification. Do not write a stakeholder answer that the user did not provide.
-4. Complete the business contract and trace its objectives, rules, and acceptance
-   evidence to the target Feature and current Planning Change Set context. Retired or
-   superseded intent is history, not an active constraint.
-5. Persist a new Requirement at its Canonical Artifact Path with the Feature ID and
-   that Feature's current Feature Contract Version as `Planning Version`; the
-   enclosing Planning artifact may have a later version. Mark READY only when no
-   unresolved business decision remains.
-6. Compare the Requirement mutation set with the pre-write set. Exactly zero or one
-   Requirement may change, and any changed path MUST be the target's canonical path.
-   Any other Requirement mutation is non-conforming and forbids READY, FORWARD, or
-   work on another Feature.
-7. Apply the Transition Resolution Procedure. If it selects a transition, validate
-   and render exactly one Canonical Handoff Block as final response content, then
-   stop without consuming its Target Scope.
-
-While awaiting an answer, remain at the same Target Scope, emit no Handoff, and do
-not re-run transition resolution. A pending answer is not a blocker. If a necessary
-business decision cannot be obtained, keep Requirement not ready and report the
-blocker. Grill MUST NOT choose architecture, storage, framework components, Slice
-boundaries, tests, or implementation.
-
-## Completion
-
-Completion concerns only the targeted Feature. Solution is ineligible until every
-planned Requirement is current and READY. An unchanged READY Requirement remains
-current across incremental Planning when its Planning Version still equals that
-Feature's Feature Contract Version.
-
-Completing the targeted Feature does not continue the Grill loop inside this
-execution. A Grill execution that creates or modifies Requirements for more than one Feature is
-non-conforming. Even when another Feature is next, emit its FORWARD Handoff and stop;
-the user, IDE host, or external CLI Runner must start a separate validated execution.
-
-### Emit conditions after Grill completes a Feature
-
-- **FORWARD to Grill**: Rule 5 selects a different Feature lacking a usable current Requirement.
-- **FORWARD to Solution**: Rule 6 selects Solution at Project scope.
-- **RETURN**: Rule 3 selects a persisted blocker or Rule 8 selects a current Review failure; return to the resolved owner and scope.
-
-<!-- forgeflow-eof: .forgeflow/workflow/grill.md -->
+Completion applies only to the target Feature. An unchanged READY Requirement stays
+current while its Planning Version matches that Feature's Contract Version. Solution
+is eligible only after every planned Requirement is current and READY and no ACTIVE
+Lane remains. A COMPLETE Lane Record never authorizes work on another Feature.

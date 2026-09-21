@@ -7,109 +7,76 @@ Version: 2.12
 | Field | Value |
 | --- | --- |
 | Scope | Slice |
-| Owned artifact | Review Report |
-| Output | Owned artifact at its Canonical Artifact Path defined by the Artifact Protocol |
-| Required inputs | Handoff Entry or Feature Lane Entry; current Requirement, Solution Plan, Slice Plan, TDD Record, and implementation evidence |
+| Owns | Review Report; immutable independent disposition |
+| Inputs | valid Handoff; current Requirement, Solution, Slice Plan, Implement, and implementation |
 
-Review independently evaluates exactly one resolver-authorized Slice attempt. It is
-read-only for code, tests, upstream plans, and the TDD Record. Target Scope and
-attempt are the complete authorization boundary. When PASS or FAIL selects a future
-scope, Review MUST only emit that Handoff and stop; it cannot fix, implement, review,
-or create evidence for that target in this execution.
+Review is read-only for code, tests, upstream plans, and Implement. It accepts only Handoff
+Entry—never Recovery—then validates Transition/Handoff, freezes the exact Slice and
+positive current Attempt, and verifies the complete upstream chain. Stale or
+mismatched evidence is not current review work.
 
-## Entry validation
+## Decision
 
-Run Unified Entry Validation for Handoff Entry or Feature Lane Entry. Validate the
-exact Target Scope, selected Lane action, artifact readiness, positive unused attempt,
-completed effective dependencies, and complete upstream version chain. Reject stale,
-mismatched, or duplicate-attempt evidence.
+Independently apply the Framework review gate. Unsupported preference is
+non-blocking. Build the one canonical Findings table first, then derive counts,
+Decision, Return Workflow, and Return Scope:
 
-## Command execution
+- PASS has zero blocking rows and no return metadata.
+- FAIL has blocking rows and one disposition: the Framework's highest-precedence
+  blocking owner and one of that owner's blocking Scopes.
 
-All commands follow the Framework Command execution policy. Independent reruns are
-fresh evidence, not permission for another terminal or concurrent duplicate check.
-Review MUST NOT start a duplicate check while an equivalent process is active. Reuse
-one session when supported and terminate every started process before Handoff.
+Every finding and return identifier resolves in the active graph. Plugin reports are
+supplemental and never determine or replace the canonical Review Report.
 
-## Decision and disposition
+## Process
 
-Apply the Framework Review readiness and decision policy independently:
+All commands follow the Framework command lifecycle.
 
-- PASS requires zero blocking findings and may retain non-blocking findings.
-- FAIL requires one or more blocking findings.
-- A preference without demonstrated correctness, compliance, or material
-  maintainability impact cannot cause FAIL.
+1. Read and freeze Attempt and exact upstream versions from current READY_FOR_REVIEW
+   Implement. Reject an Attempt already occupied by a PASS or FAIL Review, even if its
+   upstream versions are stale. Only Implement allocates the next Attempt; Review never
+   changes the counter or overwrites an old report.
+2. Trace every Slice condition to tests, implementation, and evidence.
+   Independently check the Verification Plan against Solution obligations and the
+   selected strategies/rationales against that plan. Verify all required checks,
+   current target/environment, passing criteria, and evidence references. Review
+   source distinctions: tool success must be relevant and sufficient, model
+   assessment cannot substitute for required execution, and required human acceptance
+   needs the actual acceptor's result. Missing, invented, inconclusive, or unreliable
+   required evidence is evaluated under the shared blocking gate. TDD-specific
+   RED/GREEN/refactor applies only when TDD was selected; other strategies have their
+   own evidence requirements. Report unauthorized strategy substitution to the
+   responsible owner without rewriting the Implement Record or upstream plan.
+3. Execute every enabled plugin from `.forgeflow/rules/reviews/_index.md`, including
+   dependency order, applicability, rules, thresholds, archival, and report formats.
+4. Inspect correctness, regression, Scope, security, maintainability, Solution
+   conformance, and the current knowledge trace.
+5. Compare every created/moved production/test path with Solution structure, Slice
+   placement, and Implement conformance. Explicit structure violations follow architecture
+   plugin severity; unsupported preferences do not block.
+6. Validate structured Feature dependencies, shared components, decision references,
+   and impact metadata when present.
+7. Record each finding with Severity, Owner, Affected Scope, Finding, observable
+   Evidence, and Violated Contract; derive Decision and disposition from the rows.
+8. Validate the complete candidate Review locally before any canonical write:
+   title followed by exactly one Metadata section and its two-column table; all
+   common and Review-specific fields, labels, values and filename/identity matches;
+   exactly one Findings table with required columns, sequential rows, valid owners
+   and scopes; counts, Decision and Return disposition derived from those rows.
+   Check Solution Version against the frozen Feature Engineering Version, and Slice
+   Plan Version against the frozen Slice Plan. Use the already loaded Artifact
+   schema and frozen direct inputs, not another full-graph scan or test/plugin run.
+   Correct candidate formatting within this Review execution before publication;
+   do not change findings, evidence or Decision merely to pass a format check.
+   Missing substantive evidence follows the existing review gate, not a fabricated
+   PASS. An occupied Attempt, changed baseline or unresolved reference is not a
+   formatting correction and follows the existing stop/routing rules.
+9. Recheck that current Implement still matches the frozen Attempt and exact upstream
+   versions, and that no Review occupies the target path. Persist one immutable
+   attempt-specific Review Report with those same values; never overwrite an
+   attempt. A changed baseline ends this review without a report for the new attempt.
+10. Resolve Transition, emit its exact Handoff as final content, and stop.
 
-For FAIL, choose exactly one Return Workflow from all blocking finding owners using
-Framework upstream precedence. Return Scope is the Affected Scope of one blocking
-finding owned by that Workflow. Resolve every Feature/Slice identifier against
-active Planning and the applicable Slice Plan before writing; findings cannot create
-routing identifiers. Review records this disposition; Transition Resolution MUST NOT
-infer or replace it.
-
-The Review Report is the final aggregate decision artifact. Build exactly one
-canonical Findings table first, then derive `Blocking Findings`, `Non-blocking
-Findings`, `Decision`, `Return Workflow`, and `Return Scope`. A zero-finding report
-keeps the header-only table. Plugin reports are supplemental and never replace or
-independently determine the canonical decision.
-
-## Required process
-
-1. Read the positive `attempt` from the current `READY_FOR_REVIEW` TDD Record and
-   reject an attempt already used by another Review Report.
-2. Trace every Slice condition through tests, implementation, and recorded evidence.
-3. Execute all enabled plugins through the authoritative Plugin Registry procedure.
-   Before replacing a configured report path, archive its exact prior content using
-   the Reports History Root procedure.
-4. Inspect correctness, regressions, scope, security, maintainability, Solution
-   conformance, and the complete knowledge trace from Feature Contract through
-   implementation evidence.
-5. Record each finding's severity, Owner Workflow, canonical Affected Scope,
-   observable evidence, and violated contract in the canonical Findings table.
-6. Decide PASS or FAIL. For FAIL, derive Return Workflow by upstream owner
-   precedence and Return Scope from that owner's blocking finding.
-7. Re-read Planning, Solution, Slice Plan, and TDD Record immediately before
-   persistence. If Lane readiness, dependencies, shared access, or any version
-   changed, do not publish a stale decision. Otherwise persist one immutable Review
-   Report at its Canonical Artifact Path. Derive counts
-   and disposition from the Findings rows and include return metadata only for FAIL.
-8. Resolve every cited current decision and version to canonical Artifacts; history
-   may explain evolution but cannot satisfy a current gate. Validate implemented
-   dependencies, shared components, decision references, and current impact entries
-   against structured Solution mappings when present.
-9. Compare every created or moved production/test path with Solution
-   Implementation/Test Structure, Slice Planned File Placement, and TDD File
-   Placement Conformance. An explicit structure-contract violation is blocking under
-   the architecture plugin; an unsupported organization preference is non-blocking.
-10. Apply the Transition Resolution Procedure. If it selects a transition, validate
-    and render exactly one Canonical Handoff Block as final response content, then
-    stop without consuming its Target Scope.
-
-## Emit conditions after Review completes a Slice
-
-- **FORWARD (PASS)**: Rule 10 selects the next incomplete Slice in the same Lane, or the default next dependency-ready Lane after this Feature completes.
-- **TERMINAL / COMPLETE (PASS)**: Rule 11 matches; emit Completed Scope `Project`.
-- **RETURN (FAIL)**: Use the Review Report's selected Return Workflow and canonical Return Scope with Blocker Category `REVIEW_BLOCKER`; Rule 8 routes it.
-
-## Findings and returns
-
-| Finding owner | Canonical route |
-| --- | --- |
-| Local implementation, test, regression, or evidence defect | TDD, same Slice |
-| Invalid Slice boundary, dependency, or completion gap | Slice, affected Feature |
-| Missing or invalid engineering decision | Solution, Project; finding identifies affected Feature and Slice |
-| Missing business policy | Grill, affected Feature |
-
-Every finding cites observable evidence and the violated contract. Preferences with
-no correctness or material maintainability consequence are non-blocking.
-
-## Plugin Registry
-
-`.forgeflow/rules/reviews/_index.md` is the sole registry and execution contract.
-Review MUST NOT duplicate, infer, reorder, or locally redefine registry fields,
-execution steps, thresholds, paths, or report schemas. Execute the registry contract
-exactly, then aggregate each resulting `BLOCKING` row into canonical Findings.
-Plugin reports remain attempt-scoped supplemental evidence outside the active
-Artifact Graph; the Framework decision gate alone determines Review PASS or FAIL.
-
-<!-- forgeflow-eof: .forgeflow/workflow/review.md -->
+Supplemental replacement follows Reports History. Historical evidence may explain
+evolution but cannot satisfy a current gate. Review never repairs implementation,
+edits tests/Implement, changes upstream Artifacts, or begins returned work.

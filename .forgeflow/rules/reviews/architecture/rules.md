@@ -2,7 +2,6 @@
 
 **Plugin:** architecture  
 **Version:** 1.1
-**Severity Guide:** P0=Critical, P1=High, P2=Medium, P3=Info; blocking disposition is determined exclusively by the registry threshold
 
 ## Checklist
 
@@ -20,15 +19,9 @@
 
 ## Execution Notes
 
-- Evaluate applicability before compliance. Layering, dependency injection, REST,
-  database, centralized error handling, and horizontal scaling rules are N/A when
-  the authorized Slice and Solution Plan do not contain that architectural surface.
-- Record PASS, VIOLATION, UNKNOWN, or N/A with observable evidence.
-- Apply the registry Blocking Threshold to each VIOLATION. Review only files and
-  documents needed for the authorized Slice and its declared architectural context.
-- ARC-003 and ARC-009 are applicable when the current Solution/Slice establishes a
-  structure contract. A legacy Solution with no such contract is not by
-  itself a violation; use observable repository conventions and report missing
-  evidence as UNKNOWN or N/A unless another current contract requires RETURN.
-- Do not prescribe Java/Spring package names, package-by-layer, or package-by-Feature
-  as a universal rule. Judge conformance to the current engineering contract.
+Apply Registry verdict, evidence, and threshold rules only to the authorized Slice
+and declared architecture. Absent architectural surfaces are N/A. ARC-003/009 apply
+when current Solution/Slice defines structure; a pre-2.10 Solution's omission alone
+is not a violation, so use repository evidence and UNKNOWN/N/A unless another current
+contract requires RETURN. Judge the current contract, never a universal Java/Spring,
+layer, or Feature packaging preference.
