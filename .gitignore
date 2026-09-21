@@ -60,3 +60,8 @@ Thumbs.db
 
 # Config overrides / local testing
 local_*.json
+
+# Derived execution logs and evidence history
+.forgeflow/runtime/
+.forgeflow/artifacts/history/
+.forgeflow/artifacts.*/

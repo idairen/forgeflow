@@ -225,7 +225,7 @@ class ArtifactParserTests(unittest.TestCase):
             "| # | Severity | Owner Workflow | Affected Scope | Finding | Evidence | Violated Contract |\n"
             "| --- | --- | --- | --- | --- | --- | --- |\n"
             "| 1 | BLOCKING | Solution | Project | Design mismatch | src/api.py | Solution contract |\n"
-            "| 2 | BLOCKING | TDD | Slice: F-01/S-01 | Test failure | tests/test_api.py | TDD contract |\n"
+            "| 2 | BLOCKING | Implement | Slice: F-01/S-01 | Test failure | tests/test_api.py | Implement contract |\n"
         )
         self.write(
             "planning.md",
@@ -534,9 +534,9 @@ class ArtifactParserTests(unittest.TestCase):
                     "Slice IDs": "S-02; S-01",
                 },
             ),
-            "tdd-feature-02-slice-02.md": parsed(
-                "tdd-feature-02-slice-02.md",
-                "TDD Record",
+            "implement-feature-02-slice-02.md": parsed(
+                "implement-feature-02-slice-02.md",
+                "Implement Record",
                 "1.0",
                 "READY_FOR_REVIEW",
                 **{
@@ -584,7 +584,7 @@ class ArtifactParserTests(unittest.TestCase):
         )
         (self.root.parent / "artifacts.20260820010101").mkdir()
 
-        view = ProjectKnowledgeBuilder.build(state, reports)
+        view = ProjectKnowledgeBuilder.build(state, reports, include_history=True)
 
         self.assertEqual(view["authority"], "derived_non_authoritative")
         self.assertEqual(
@@ -597,7 +597,7 @@ class ArtifactParserTests(unittest.TestCase):
             [item["slice_id"] for item in feature["slices"]],
             ["S-02", "S-01"],
         )
-        self.assertEqual(feature["slices"][0]["tdd"]["Attempt"], "2")
+        self.assertEqual(feature["slices"][0]["implement"]["Attempt"], "2")
         self.assertEqual(
             feature["slices"][0]["reviews"][0]["Decision"],
             "FAIL",

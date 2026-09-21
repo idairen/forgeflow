@@ -5,6 +5,19 @@ All notable changes to ForgeFlow are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased — Implement CLI alignment
+
+- Replace the TDD workflow/record with Implement; keep TDD as a verification strategy.
+- Parse strategy selection and recorded verification evidence, including BEHAVIORAL_TEST.
+- Add Grill Lane routing, join waits, exact Handoff projections and large sequence numbers.
+- Validate bounded Attempt history and invalid-Review SHA256 receipt pairs.
+- Add single-workflow commands and read-only routing correction before agent execution.
+- Refresh Python/npm framework installations without deleting project evidence; remove retired launchers.
+- Isolate current IDE acceptance from historical results and test packaged installation in CI.
+
+Breaking migration details: [Implement migration](docs/maintainers/implement-migration.md).
+No current real-host acceptance or public registry publication is implied.
+
 ## [Unreleased]
 
 ### Added

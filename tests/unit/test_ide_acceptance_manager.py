@@ -79,14 +79,22 @@ class IdeAcceptanceManagerTests(unittest.TestCase):
 
             self.assertEqual(result, 1)
 
+    def test_one_adapter_pass_does_not_cover_a_two_adapter_case(self):
+        case = next(c for c in self.cases.values() if "," in MANAGER.case_adapters(c))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_result(root, case, "copilot")
+            results = MANAGER.load_results(root, self.cases)
+        self.assertEqual(MANAGER.case_outcomes(self.cases, results)[case.case_id], "NOT RUN")
+
     def test_release_gate_passes_complete_p0_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for case in self.cases.values():
                 if case.priority != "P0":
                     continue
-                adapter = MANAGER.case_adapters(case).split(",")[0]
-                self._write_result(root, case, adapter)
+                for adapter in MANAGER.case_adapters(case).split(","):
+                    self._write_result(root, case, adapter)
             args = type("Args", (), {"results": root})()
 
             with contextlib.redirect_stdout(io.StringIO()):
@@ -99,8 +107,8 @@ class IdeAcceptanceManagerTests(unittest.TestCase):
             root = Path(directory)
             for case in self.cases.values():
                 if case.priority == "P0":
-                    adapter = MANAGER.case_adapters(case).split(",")[0]
-                    self._write_result(root, case, adapter)
+                    for adapter in MANAGER.case_adapters(case).split(","):
+                        self._write_result(root, case, adapter)
             p1_case = next(
                 case for case in self.cases.values() if case.priority == "P1"
             )

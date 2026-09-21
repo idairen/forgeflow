@@ -23,7 +23,10 @@ export const FRAMEWORK_ENTRIES = Object.freeze([
   "rules",
   "workflow",
 ]);
-const LEGACY_MANAGED_ENTRIES = Object.freeze(["compatibility.md", "conformance"]);
+const LEGACY_MANAGED_ENTRIES = Object.freeze([
+  "compatibility.md", "conformance", "workflow/tdd.md",
+  "adapter/codex/forge-tdd.prompt.md", "adapter/copilot/forge-tdd.prompt.md",
+]);
 const REQUIRED_CONFIG_KEYS = new Set(["mode", "adapter", "root_artifact_dir"]);
 const ALLOWED_CONFIG_KEYS = new Set([
   ...REQUIRED_CONFIG_KEYS,

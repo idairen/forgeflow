@@ -3,6 +3,10 @@
 This checklist separates repository readiness, package verification, real-host
 acceptance, and publication. A prepared test case is not a passed acceptance test.
 
+Current migration notes: [Implement migration](implement-migration.md). Current IDE
+evidence is isolated under `tests/acceptance/ide/results/current/`; old results do
+not satisfy this release gate.
+
 ## 1. Define The Release
 
 - choose the Semantic Version and intended stability level;
@@ -19,6 +23,7 @@ python -m compileall -q src/forgeflow
 python -m unittest discover -s tests -p 'test_*.py'
 python tests/acceptance/ide/manage.py verify
 npm test
+node --test .forgeflow/tests/*.test.cjs
 ```
 
 The working tree must contain no generated runtime evidence, local paths, secrets,

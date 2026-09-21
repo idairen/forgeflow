@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sys
+from pathlib import Path
 
 from ..engine.runner import ForgeRunner
 from ..engine.project_knowledge import ProjectKnowledgeBuilder
@@ -42,8 +43,20 @@ def cmd_plan(args):
             "plan",
             user_input=intent,
             incremental=incremental,
+            handoff_text=Path(args.handoff).read_text(encoding="utf-8") if getattr(args, "handoff", None) else None,
         )
     )
+    print(result)
+    return _single_exit_code(runner)
+
+
+def cmd_workflow(args):
+    """Execute one entry, or emit a read-only correction when authorization is absent."""
+    runner = _make_runner()
+    incoming = Path(args.handoff).read_text(encoding="utf-8") if args.handoff else None
+    result = asyncio.run(runner.execute_single(args.command, handoff_text=incoming,
+                                              confirm_inactive=args.confirm_inactive,
+                                              feature=getattr(args, "feature", None)))
     print(result)
     return _single_exit_code(runner)
 
@@ -98,7 +111,7 @@ def cmd_status(args):
 
 def cmd_knowledge(args):
     """Query the derived, non-authoritative project knowledge view."""
-    state = _make_runner().get_state()
+    state = _make_runner().get_state(include_history=getattr(args, "history", False))
     view = ProjectKnowledgeBuilder.select(
         state["project_knowledge"],
         feature_id=getattr(args, "feature", None),
@@ -183,6 +196,7 @@ def main_cli(argv=None):
     # plan
     p_plan = subparsers.add_parser("plan", help="Execute Plan workflow")
     p_plan.add_argument("--intent", "-i", help="Project intent description")
+    p_plan.add_argument("--handoff", help="File containing a canonical Plan Handoff")
     p_plan.add_argument(
         "--incremental",
         action="store_true",
@@ -193,6 +207,14 @@ def main_cli(argv=None):
         ),
     )
     p_plan.set_defaults(func=cmd_plan)
+
+    for workflow in ("grill", "solution", "slice", "implement", "review"):
+        command = subparsers.add_parser(workflow, help=f"Execute one authorized {workflow.capitalize()} scope")
+        command.add_argument("--handoff", help="File containing the complete canonical Handoff from a prior invocation")
+        if workflow == "grill":
+            command.add_argument("--feature", help="Explicit no-Handoff Lane/Recovery entry for one Feature, e.g. F-01")
+        command.add_argument("--confirm-inactive", action="store_true", help="Confirm the exact prior Grill blocker claim's execution has stopped")
+        command.set_defaults(func=cmd_workflow)
 
     # run
     p_run = subparsers.add_parser("run", help="Start the ForgeFlow pipeline")

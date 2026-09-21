@@ -8,7 +8,7 @@ logger = get_logger()
 
 
 class HandoffParser:
-    """Parse and validate canonical Handoff Protocol 2.6 blocks."""
+    """Parse the four canonical Handoff variants; never normalize old TDD entry."""
 
     _HANDOFF_MARKER = re.compile(r"(?m)^### Handoff[ \t]*$")
     _HANDOFF_ATTEMPT = re.compile(
@@ -20,7 +20,7 @@ class HandoffParser:
         "Grill": "Feature",
         "Solution": "Project",
         "Slice": "Feature",
-        "TDD": "Slice",
+        "Implement": "Slice",
         "Review": "Slice",
     }
     _RETURN_CATEGORIES = {
@@ -33,14 +33,15 @@ class HandoffParser:
     }
     _CANONICAL_ARTIFACT = re.compile(
         r"(?:planning\.md"
-        r"|requirement-feature-\d{2}\.md"
+        r"|requirement-feature-(?:0[1-9]|[1-9][0-9]+)\.md"
         r"|solution-plan\.md"
-        r"|slice-plan-feature-\d{2}\.md"
-        r"|tdd-feature-\d{2}-slice-\d{2}\.md"
-        r"|review-feature-\d{2}-slice-\d{2}-attempt-\d{2}\.md)"
+        r"|lane-feature-(?:0[1-9]|[1-9][0-9]+)\.md"
+        r"|slice-plan-feature-(?:0[1-9]|[1-9][0-9]+)\.md"
+        r"|implement-feature-(?:0[1-9]|[1-9][0-9]+)-slice-(?:0[1-9]|[1-9][0-9]+)\.md"
+        r"|review-feature-(?:0[1-9]|[1-9][0-9]+)-slice-(?:0[1-9]|[1-9][0-9]+)-attempt-(?:0[1-9]|[1-9][0-9]+)\.md)"
     )
     _VERSION = re.compile(r"\d+\.\d+")
-    _SCOPE = re.compile(r"(?:Project|Feature: F-\d{2}|Slice: F-\d{2}/S-\d{2})")
+    _SCOPE = re.compile(r"(?:Project|Feature: F-(?:0[1-9]|[1-9][0-9]+)|Slice: F-(?:0[1-9]|[1-9][0-9]+)/S-(?:0[1-9]|[1-9][0-9]+))")
     _HALTED_REASON = re.compile(r"([a-z][a-z0-9_]*): \S.*")
     _VARIANT_FIELDS = {
         ("FORWARD", None): (
@@ -80,6 +81,33 @@ class HandoffParser:
     }
 
     @classmethod
+    def render_resolution(cls, resolution, source_scope="Project"):
+        """Render read-only routing output; this does not authorize its emitter."""
+        if resolution.get("resolution_rule") in {"rule_1_bootstrap", "rule_5_join_pending"}:
+            return ""
+        status = resolution["pipeline_status"]
+        if status == "WAITING":
+            return ""
+        terminal = status in {"HALTED", "COMPLETE"}
+        transition = "TERMINAL" if terminal else (
+            "RETURN" if resolution.get("blocker_category") else "FORWARD")
+        values = {"Transition": transition, "Source Scope": source_scope}
+        if terminal:
+            values["Terminal Status"] = status
+            values["Completed Scope" if status == "COMPLETE" else "Affected Scope"] = "Project"
+        else:
+            values["Next Workflow"] = resolution["current_workflow"].capitalize()
+            values["Target Scope"] = resolution["target_scope"]
+        if transition == "RETURN" or status == "HALTED":
+            values["Blocker Category"] = resolution.get("blocker_category", "GRAPH_CONTRADICTION")
+        values["Input Artifacts"] = "; ".join(f"{a['filename']} = {a['version']}" for a in resolution.get("input_artifacts", [])) or "NONE"
+        values["Reason"] = resolution.get("resolution_rule", "Fresh graph resolution")
+        if status == "HALTED":
+            values["Reason"] = f"{resolution['reason_code']}: {resolution.get('reason', values['Reason'])}"
+        fields = cls._VARIANT_FIELDS[(transition, status if terminal else None)]
+        return "### Handoff\n\n| Field | Value |\n| --- | --- |\n" + "\n".join(f"| {f} | {values[f]} |" for f in fields)
+
+    @classmethod
     def parse(
         cls,
         text,
@@ -93,6 +121,10 @@ class HandoffParser:
         markers = list(cls._HANDOFF_MARKER.finditer(text))
         if len(markers) != 1:
             logger.debug("Expected exactly one ### Handoff marker")
+            return None
+
+        prefix = text[:markers[0].start()]
+        if sum(1 for line in prefix.splitlines() if re.match(r"^\s*(```|~~~)", line)) % 2:
             return None
 
         block = text[markers[0].end():].strip()
@@ -174,8 +206,6 @@ class HandoffParser:
 
         if expected_source_workflow:
             canonical = expected_source_workflow.capitalize()
-            if canonical == "Tdd":
-                canonical = "TDD"
             expected_scope = cls._WORKFLOW_SCOPES.get(canonical)
             if expected_scope is None or cls._scope_kind(values["Source Scope"]) != expected_scope:
                 logger.debug("Source Scope does not match emitting workflow")
@@ -202,7 +232,8 @@ class HandoffParser:
                 logger.debug("Invalid Input Artifacts entry: %s", entry)
                 return False
             filename, version = parts
-            if cls._CANONICAL_ARTIFACT.fullmatch(filename) is None:
+            legacy_terminal = terminal_status == "HALTED" and re.fullmatch(r"tdd-feature-(0[1-9]|[1-9][0-9]+)-slice-(0[1-9]|[1-9][0-9]+)\.md", filename)
+            if cls._CANONICAL_ARTIFACT.fullmatch(filename) is None and not legacy_terminal:
                 logger.debug("Invalid canonical artifact filename: %s", filename)
                 return False
             if filename in filenames:

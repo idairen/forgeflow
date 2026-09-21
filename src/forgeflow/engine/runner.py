@@ -24,7 +24,7 @@ class ForgeRunner:
         "grill": "Requirement Decomposition",
         "solution": "Engineering Design",
         "slice": "Feature Decomposition",
-        "tdd": "Test-Driven Development",
+        "implement": "Implementation and Verification",
         "review": "Quality Gate",
     }
 
@@ -92,6 +92,8 @@ class ForgeRunner:
             self.artifacts_dir
         )
         initial_resolution = StateResolver.resolve(initial_artifact_state)
+        if initial_resolution.get("entry_mode") == "bootstrap" and self._reports_require_reset():
+            return self._finish_run({"result": "PIPELINE_WAITING", "error": "non_empty_reports_require_explicit_reset"}, run_started_at, history_start)
         initial_entry_error = None
         initial_has_planning = (
             initial_artifact_state.get("artifacts", {}).get("planning.md")
@@ -152,6 +154,12 @@ class ForgeRunner:
             self.current_scope = step_resolution["target_scope"]
             source_workflow = self.current_workflow
             source_scope = self.current_scope
+
+            if step_resolution.get("entry_mode") == "recovery" and source_workflow == "grill":
+                f = source_scope.removeprefix("Feature: ")[2:]
+                lane = artifact_state.get("artifacts", {}).get(f"lane-feature-{f}.md")
+                if lane and lane["status"] == "ACTIVE":
+                    return self._finish_run({"result": "PIPELINE_WAITING", "error": "explicit_lane_inactivity_confirmation_required", "resolution": step_resolution}, run_started_at, history_start)
 
             logger.info(
                   "[%s/%d] Executing: %s (%s) at %s "
@@ -284,6 +292,9 @@ class ForgeRunner:
                     break
 
                 if not self.handoff_parser.has_handoff_attempt(llm_output):
+                    if post_resolution["pipeline_status"] == "WAITING":
+                        waiting_without_handoff = True
+                        break
                     waiting_authorized = (
                         post_artifact_state == artifact_state
                         or self._same_authorization(
@@ -433,6 +444,9 @@ class ForgeRunner:
         workflow_name,
         user_input=None,
         incremental=False,
+        handoff_text=None,
+        confirm_inactive=False,
+        feature=None,
     ):
         """Manual-mode: execute one workflow."""
         if workflow_name not in self._WORKFLOW_TITLES:
@@ -451,6 +465,13 @@ class ForgeRunner:
             self.artifacts_dir,
              )
         workflow_resolution = StateResolver.resolve(artifact_state)
+        if feature is not None:
+            if workflow_name != "grill" or handoff_text:
+                raise ValueError("--feature is a no-Handoff Grill Lane/Recovery entry")
+            workflow_resolution = StateResolver.grill_entry(artifact_state, feature, confirm_inactive)
+        if workflow_resolution.get("entry_mode") == "bootstrap" and self._reports_require_reset():
+            await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "non_empty_reports_require_explicit_reset"})
+            return "Reports Root is non-empty; explicit reset authorization is required before Plan."
         has_planning = (
             artifact_state.get("artifacts", {}).get("planning.md") is not None
         )
@@ -469,6 +490,22 @@ class ForgeRunner:
                 workflow_resolution = self._subsequent_plan_resolution()
         status = artifact_state.get("status", "unknown")
         logger.debug("Artifacts status: %s", status)
+
+        no_handoff_entry = workflow_resolution.get("entry_mode") in {"bootstrap", "subsequent_plan", "recovery", "lane"}
+        if subsequent_error is None and not no_handoff_entry:
+            incoming = HandoffParser.parse(handoff_text) if handoff_text else None
+            errors = self._handoff_graph_errors(incoming, artifact_state, workflow_resolution, None, "Project") if incoming else ["missing_or_invalid_handoff"]
+            if errors or workflow_resolution.get("current_workflow") != workflow_name:
+                await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "routing_correction", "graph_resolution": workflow_resolution})
+                return HandoffParser.render_resolution(workflow_resolution) or json.dumps(workflow_resolution, indent=2)
+        if workflow_name == "grill" and workflow_resolution.get("entry_mode") == "recovery":
+            feature = workflow_resolution["target_scope"].removeprefix("Feature: ")
+            lane = artifact_state.get("artifacts", {}).get(f"lane-feature-{feature[2:]}.md")
+            if lane and lane["status"] == "ACTIVE":
+                if not confirm_inactive:
+                    await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "explicit_lane_inactivity_confirmation_required"})
+                    return "Confirm the prior execution is stopped using --confirm-inactive before recovering this exact Grill claim."
+                workflow_resolution["confirmed_inactive_claim"] = {"filename": lane["filename"], "version": lane["version"], "attempt": lane["metadata"]["Attempt"]}
 
         if subsequent_error is not None or (
             workflow_resolution["pipeline_status"] != "ACTIVE"
@@ -581,6 +618,9 @@ class ForgeRunner:
                 entry["result"] = "STEP_BLOCKED"
                 entry["error"] = "invalid_handoff"
                 entry["validation_errors"] = ["invalid_handoff"]
+            elif post_resolution["pipeline_status"] == "WAITING":
+                entry["result"] = "STEP_WAITING"
+                entry["output"] = llm_output
             elif (
                 post_artifact_state == artifact_state
                 or self._same_authorization(
@@ -628,13 +668,16 @@ class ForgeRunner:
             return json.dumps(entry, indent=2)
         return llm_output or ""
 
-    def get_state(self):
+    def get_state(self, include_history=False):
         """Return current runner state as dict."""
         artifact_state = ArtifactParser.detect_artifact_state(self.artifacts_dir)
         pipeline_state = StateResolver.resolve(artifact_state)
+        if pipeline_state["pipeline_status"] == "HALTED":
+            artifact_state = {**artifact_state, "status": "invalid"}
         project_knowledge = ProjectKnowledgeBuilder.build(
             artifact_state,
             reports_dir=self.reports_dir,
+            **({"include_history": True} if include_history else {}),
         )
         self.current_workflow = pipeline_state["current_workflow"]
         self.current_scope = pipeline_state["target_scope"]
@@ -644,6 +687,9 @@ class ForgeRunner:
               "target_scope": pipeline_state["target_scope"],
               "resolution_rule": pipeline_state["resolution_rule"],
               "entry_mode": pipeline_state.get("entry_mode"),
+              "input_artifacts": pipeline_state.get("input_artifacts", []),
+              "eligible_features": pipeline_state.get("eligible_features", []),
+              "active_lanes": pipeline_state.get("active_lanes", []),
               "history_len": len(self.history),
               "artifacts_dir": self.artifacts_dir,
               "runtime_dir": self.runtime_dir,
@@ -657,6 +703,12 @@ class ForgeRunner:
     def _resolve_pipeline_state(self):
         artifact_state = ArtifactParser.detect_artifact_state(self.artifacts_dir)
         return StateResolver.resolve(artifact_state)
+
+    def _reports_require_reset(self):
+        root = plib.Path(self.reports_dir)
+        if root.is_symlink() or (root.exists() and not root.is_dir()):
+            raise ValueError("Reports Root must be a regular directory")
+        return root.exists() and any(root.iterdir())
 
     @staticmethod
     def _same_authorization(resolution, workflow, scope):
@@ -674,6 +726,8 @@ class ForgeRunner:
             return "subsequent_plan_requires_valid_artifact_graph"
         if planning is None or planning.get("status") != "READY":
             return "subsequent_plan_requires_ready_planning"
+        if any(a.get("artifact_type") == "Feature Lane Record" and a.get("status") == "ACTIVE" for a in artifacts.values()):
+            return "subsequent_plan_requires_released_lanes"
         if resolution.get("resolution_rule") == "rule_3_persisted_blocker":
             return "subsequent_plan_cannot_bypass_persisted_blocker"
         if StateResolver.has_current_failed_review(artifact_state):
@@ -743,6 +797,9 @@ class ForgeRunner:
                 errors.append("halted_reason_does_not_match_graph")
         else:
             artifacts = artifact_state.get("artifacts", {})
+            expected_evidence = StateResolver.input_projection(artifact_state, resolution)
+            if handoff["input_artifacts"] != expected_evidence:
+                errors.append("input_artifact_projection_does_not_match_graph")
             for evidence in handoff["input_artifacts"]:
                 artifact = artifacts.get(evidence["filename"])
                 if artifact is None:
@@ -997,7 +1054,8 @@ class ForgeRunner:
     def _entry_context(resolution):
         entry_mode = resolution.get("entry_mode")
         if entry_mode is None:
-            return None
+            return {"entry_mode": "handoff", "handoff": HandoffParser.render_resolution(resolution),
+                    "workflow": resolution["current_workflow"], "target_scope": resolution["target_scope"]}
         context = {
             "entry_mode": entry_mode,
             "workflow": resolution["current_workflow"],
@@ -1006,6 +1064,10 @@ class ForgeRunner:
         }
         if resolution.get("blocker_category") is not None:
             context["blocker_category"] = resolution["blocker_category"]
+        if resolution.get("confirmed_inactive_claim") is not None:
+            context["confirmed_inactive_claim"] = resolution["confirmed_inactive_claim"]
+        if resolution.get("release_only"):
+            context["release_only"] = True
         return context
 
     def _agent_command(self, prompt_text):

@@ -17,7 +17,8 @@ FRAMEWORK_ENTRIES = (
     "rules",
     "workflow",
 )
-LEGACY_MANAGED_ENTRIES = ("compatibility.md", "conformance")
+LEGACY_MANAGED_ENTRIES = ("compatibility.md", "conformance", "workflow/tdd.md",
+                          "adapter/codex/forge-tdd.prompt.md", "adapter/copilot/forge-tdd.prompt.md")
 
 
 def initialize_project(project_root, adapter, force=False):

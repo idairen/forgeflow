@@ -16,7 +16,9 @@
 - [CLI Project Knowledge test plan](./testing/cli-knowledge-test-plan.md)
 - [IDE acceptance assets](../tests/acceptance/ide/README.md)
 
-## Presentations
+## Historical presentations
+
+These decks describe earlier versions. They are not current workflow or release acceptance evidence.
 
 - [ForgeFlow enterprise roadshow](./presentations/forgeflow-enterprise-roadshow.pdf)
 - [Executive architecture brief - English](./presentations/forgeflow-executive-architecture-brief.en.pdf)

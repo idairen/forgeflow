@@ -65,6 +65,27 @@ test("installs the selected Codex adapter in project configuration", (testContex
   assert.equal(readJson(join(project, "forgeflow.json")).adapter, "codex");
 });
 
+test("refresh removes retired TDD launchers and preserves legacy project evidence", (testContext) => {
+  const project = temporaryProject(testContext);
+  assert.equal(runInstaller(project, "init").status, 0);
+  const root = join(project, ".forgeflow");
+  for (const name of ["workflow/tdd.md", "adapter/codex/forge-tdd.prompt.md", "adapter/copilot/forge-tdd.prompt.md"]) {
+    writeFileSync(join(root, name), "retired framework file");
+  }
+  mkdirSync(join(root, "artifacts"), { recursive: true });
+  const evidence = join(root, "artifacts/tdd-feature-01-slice-01.md");
+  writeFileSync(evidence, "original legacy evidence");
+  const result = runInstaller(project, "init", "--force");
+  assert.equal(result.status, 0, result.stderr);
+  for (const name of ["workflow/tdd.md", "adapter/codex/forge-tdd.prompt.md", "adapter/copilot/forge-tdd.prompt.md"]) {
+    assert.equal(existsSync(join(root, name)), false);
+  }
+  assert.equal(readFileSync(evidence, "utf8"), "original legacy evidence");
+  for (const name of ["protocol/transition.md", "protocol/review-recovery.md", "workflow/implement.md"]) {
+    assert.equal(existsSync(join(root, name)), true);
+  }
+});
+
 
 test("refuses existing project files without force", (testContext) => {
   const project = temporaryProject(testContext);

@@ -2,6 +2,9 @@
 import pathlib
 import re
 
+from .verification import parse_verification, table
+from .attempts import inspect_attempts
+
 from ..logging_config import get_logger
 
 logger = get_logger()
@@ -12,17 +15,18 @@ class ArtifactParser:
 
     _FILE_RULES = (
         (re.compile(r"planning\.md"), "Planning", "Plan"),
-        (re.compile(r"requirement-feature-(\d{2})\.md"), "Requirement", "Grill"),
+        (re.compile(r"lane-feature-((?:0[1-9]|[1-9][0-9]+))\.md"), "Feature Lane Record", "Grill"),
+        (re.compile(r"requirement-feature-((?:0[1-9]|[1-9][0-9]+))\.md"), "Requirement", "Grill"),
         (re.compile(r"solution-plan\.md"), "Solution Plan", "Solution"),
-        (re.compile(r"slice-plan-feature-(\d{2})\.md"), "Slice Plan", "Slice"),
+        (re.compile(r"slice-plan-feature-((?:0[1-9]|[1-9][0-9]+))\.md"), "Slice Plan", "Slice"),
         (
-            re.compile(r"tdd-feature-(\d{2})-slice-(\d{2})\.md"),
-            "TDD Record",
-            "TDD",
+            re.compile(r"implement-feature-((?:0[1-9]|[1-9][0-9]+))-slice-((?:0[1-9]|[1-9][0-9]+))\.md"),
+            "Implement Record",
+            "Implement",
         ),
         (
             re.compile(
-                r"review-feature-(\d{2})-slice-(\d{2})-attempt-(\d{2})\.md"
+                r"review-feature-((?:0[1-9]|[1-9][0-9]+))-slice-((?:0[1-9]|[1-9][0-9]+))-attempt-((?:0[1-9]|[1-9][0-9]+))\.md"
             ),
             "Review Report",
             "Review",
@@ -30,14 +34,16 @@ class ArtifactParser:
     )
     _FORBIDDEN_ARTIFACT_FILES = {"solution-plan-summary.md"}
     _ALLOWED_STATUS = {
+        "Feature Lane Record": {"ACTIVE", "COMPLETE"},
         "Planning": {"DRAFT", "BLOCKED", "READY"},
         "Requirement": {"DRAFT", "BLOCKED", "READY"},
         "Solution Plan": {"DRAFT", "BLOCKED", "READY"},
         "Slice Plan": {"DRAFT", "BLOCKED", "READY"},
-        "TDD Record": {"IN_PROGRESS", "BLOCKED", "READY_FOR_REVIEW"},
+        "Implement Record": {"IN_PROGRESS", "BLOCKED", "READY_FOR_REVIEW"},
         "Review Report": {"READY"},
     }
     _TYPE_FIELDS = {
+        "Feature Lane Record": ("Feature ID", "Feature Contract Version", "Attempt", "Dependency Requirement Versions", "Claim Evidence"),
         "Planning": ("Feature IDs", "Feature Contract Versions", "Change Set"),
         "Requirement": ("Feature ID", "Planning Version"),
         "Solution Plan": (
@@ -45,12 +51,13 @@ class ArtifactParser:
             "Feature Engineering Versions",
         ),
         "Slice Plan": ("Feature ID", "Based On Solution", "Slice IDs"),
-        "TDD Record": (
+        "Implement Record": (
             "Feature ID",
             "Slice ID",
             "Attempt",
             "Solution Version",
             "Slice Plan Version",
+            "Verification Strategies",
         ),
         "Review Report": (
             "Feature ID",
@@ -64,10 +71,10 @@ class ArtifactParser:
         ),
     }
     _VERSION = re.compile(r"\d+\.\d+")
-    _FEATURE = re.compile(r"F-(\d{2})")
-    _SLICE = re.compile(r"S-(\d{2})")
-    _SHARED_COMPONENT = re.compile(r"SC-(\d{2})")
-    _ENGINEERING_DECISION = re.compile(r"ED-(\d{2})")
+    _FEATURE = re.compile(r"F-((?:0[1-9]|[1-9][0-9]+))")
+    _SLICE = re.compile(r"S-((?:0[1-9]|[1-9][0-9]+))")
+    _SHARED_COMPONENT = re.compile(r"SC-((?:0[1-9]|[1-9][0-9]+))")
+    _ENGINEERING_DECISION = re.compile(r"ED-((?:0[1-9]|[1-9][0-9]+))")
     _IMPACT_VALUES = {"DIRECT", "INDIRECT", "UNAFFECTED"}
     _SOLUTION_IMPACT_FIELDS = (
         "Shared Component IDs",
@@ -78,20 +85,20 @@ class ArtifactParser:
     )
     _EMPTY_FEATURES = "NONE"
     _EMPTY_FEATURE_APPROVAL = re.compile(r"APPROVED: \S.*")
-    _SCOPE = re.compile(r"(?:Project|Feature: F-\d{2}|Slice: F-\d{2}/S-\d{2})")
+    _SCOPE = re.compile(r"(?:Project|Feature: F-(?:0[1-9]|[1-9][0-9]+)|Slice: F-(?:0[1-9]|[1-9][0-9]+)/S-(?:0[1-9]|[1-9][0-9]+))")
     _BLOCKER_ROUTES = {
         "PLAN_GAP": ("Plan", "Project"),
         "BUSINESS_GAP": ("Grill", "Feature"),
         "ENGINEERING_GAP": ("Solution", "Project"),
         "SLICE_VIOLATION": ("Slice", "Feature"),
-        "IMPLEMENTATION_GAP": ("TDD", "Slice"),
+        "IMPLEMENTATION_GAP": ("Implement", "Slice"),
     }
     _REVIEW_WORKFLOW_SCOPES = {
         "Plan": "Project",
         "Grill": "Feature",
         "Solution": "Project",
         "Slice": "Feature",
-        "TDD": "Slice",
+        "Implement": "Slice",
     }
     _REVIEW_OWNER_ORDER = tuple(_REVIEW_WORKFLOW_SCOPES)
     _FINDINGS_HEADER = (
@@ -148,7 +155,7 @@ class ArtifactParser:
     def detect_artifact_state(cls, root_dir):
         """Return the validated active artifact set and graph-level errors."""
         root = pathlib.Path(root_dir)
-        if not root.exists():
+        if not root.exists() and not root.is_symlink():
             return {
                 "status": "empty",
                 "root": str(root),
@@ -157,7 +164,7 @@ class ArtifactParser:
                 "diagnostics": [],
                 "ignored": [],
             }
-        if not root.is_dir():
+        if root.is_symlink() or not root.is_dir():
             return {
                 "status": "invalid",
                 "root": str(root),
@@ -182,12 +189,20 @@ class ArtifactParser:
             if path.name == "history" and path.is_dir():
                 ignored.append("history/")
                 continue
+            if path.is_symlink() or (cls._match_filename(path.name) and not path.is_file()):
+                errors.append(f"invalid artifact path: {path.name}")
+                diagnostics.append({"code": "artifact_invalid", "artifacts": [cls._artifact_evidence(path)]})
+                continue
             if not path.is_file():
                 ignored.append(path.name + ("/" if path.is_dir() else ""))
                 continue
 
             rule = cls._match_filename(path.name)
             if rule is None:
+                if re.fullmatch(r"tdd-feature-\d+-slice-\d+\.md", path.name):
+                    errors.append(f"retired active TDD requires explicit migration: {path.name}")
+                    diagnostics.append({"code": "artifact_invalid", "artifacts": [cls._artifact_evidence(path)]})
+                    continue
                 if path.name in cls._FORBIDDEN_ARTIFACT_FILES:
                     errors.append(f"forbidden artifact filename: {path.name}")
                     diagnostics.append(
@@ -242,6 +257,16 @@ class ArtifactParser:
                 }
             )
 
+        for artifact in artifacts.values():
+            if artifact["artifact_type"] != "Implement Record":
+                continue
+            try:
+                artifact.update(inspect_attempts(root, artifact, artifacts, cls._parse_metadata))
+                cls._validate_required_verification(artifact, artifacts)
+            except (ValueError, OSError, UnicodeError) as error:
+                errors.append(f"{artifact['filename']}: {error}")
+                diagnostics.append({"code": "artifact_invalid", "artifacts": [cls._artifact_evidence(root / artifact['filename'])]})
+
         status = "invalid" if errors else ("active" if artifacts else "empty")
         logger.debug(
             "Detected %d valid artifact(s), %d error(s), and %d ignored entry(s) in %s",
@@ -260,7 +285,36 @@ class ArtifactParser:
         }
 
     @classmethod
+    def _validate_required_verification(cls, record, artifacts):
+        meta = record["metadata"]
+        plan = artifacts.get(f"slice-plan-feature-{meta['Feature ID'][2:]}.md")
+        if not plan or meta["Slice Plan Version"] != plan["version"] or record["status"] != "READY_FOR_REVIEW":
+            return
+        selected = {r["Strategy"] for r in record.get("verification_selection", [])}
+        evidence = record.get("verification_evidence", [])
+        for obligation in plan.get("verification_plan", []):
+            if obligation["Slice ID"] != meta["Slice ID"]:
+                continue
+            required = set(obligation["Strategies"].split("; "))
+            if not required <= selected:
+                # Conditions remain normative prose evaluated by the participant;
+                # the CLI never infers an unstated alternative from convenience.
+                if "alternative" not in obligation["Rationale"].lower():
+                    raise ValueError("READY_FOR_REVIEW omits mandatory Slice strategy")
+                choices = [s for s in record.get("verification_selection", []) if s["Governing Obligation"] == obligation["Obligation"]]
+                if not choices:
+                    raise ValueError("missing permitted alternative rationale")
+            for check in obligation["Required Checks"].split("; "):
+                rows = [e for e in evidence if e["Obligation or Check"] == check]
+                if not rows or rows[-1]["Result"] not in {"SUCCEEDED", "NOT_APPLICABLE"}:
+                    raise ValueError(f"READY_FOR_REVIEW missing or pending required check: {check}")
+                if rows[-1]["Result"] == "NOT_APPLICABLE" and "applicab" not in obligation["Rationale"].lower():
+                    raise ValueError("NOT_APPLICABLE lacks an explicit plan condition")
+
+    @classmethod
     def _artifact_evidence(cls, path):
+        if path.is_symlink():
+            return {"filename": path.name, "version": "INVALID_VERSION"}
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError):
@@ -335,6 +389,13 @@ class ArtifactParser:
         cls._validate_planning_sections(text, metadata, expected_type, errors)
         cls._validate_structure_sections(text, expected_type, errors)
         cls._validate_solution_summary(text, metadata, expected_type, errors)
+        verification = {}
+        try:
+            verification = parse_verification(text, metadata, expected_type)
+        except (ValueError, KeyError) as error:
+            errors.append(str(error))
+        if metadata.get("Workflow") == "TDD":
+            errors.append("retired TDD workflow declaration")
         findings = []
         if expected_type == "Review Report":
             findings, finding_errors = cls._parse_review_findings(text)
@@ -353,7 +414,23 @@ class ArtifactParser:
             "version": version,
             "status": status,
             "metadata": metadata,
+            "text": text,
+            **verification,
         }
+        if expected_type == "Planning":
+            try:
+                feature_rows = table(text, "Features", ("Feature ID", "Title", "Outcome", "Dependencies"))
+                feature_ids = metadata["Feature IDs"].split("; ")
+                if [r["Feature ID"] for r in feature_rows] != feature_ids:
+                    raise ValueError("Features table does not match metadata order")
+                dependencies = {r["Feature ID"]: [] if r["Dependencies"] == "NONE" else r["Dependencies"].split(", ") for r in feature_rows}
+                if any(d not in feature_ids or d == f for f, ds in dependencies.items() for d in ds) or cls._dependency_cycle(dependencies):
+                    raise ValueError("invalid Planning dependency graph")
+                artifact["dependencies"] = dependencies
+            except ValueError as error:
+                if "## Features" in text or metadata.get("Artifact Protocol Version"):
+                    return None, [str(error)]
+                artifact["dependencies"] = {f: [] for f in metadata["Feature IDs"].split("; ") if f != "NONE"}
         if expected_type == "Review Report":
             artifact["findings"] = findings
         return artifact, []
@@ -361,6 +438,8 @@ class ArtifactParser:
     @staticmethod
     def _parse_metadata(text):
         lines = text.splitlines()
+        if lines.count("## Metadata") != 1:
+            return {}, ["artifact requires exactly one Metadata section"]
         if not lines or re.fullmatch(r"# \S.*", lines[0]) is None:
             return {}, ["artifact must begin with a level-one title"]
 
@@ -479,7 +558,7 @@ class ArtifactParser:
         section_names = {
             "Solution Plan": ("Implementation Structure", "Test Structure"),
             "Slice Plan": ("Planned File Placement",),
-            "TDD Record": ("File Placement Conformance",),
+            "Implement Record": ("File Placement Conformance",),
         }.get(artifact_type, ())
         if not section_names:
             return
@@ -650,11 +729,11 @@ class ArtifactParser:
     @classmethod
     def _validate_identifiers(cls, metadata, filename_match, artifact_type, errors):
         groups = filename_match.groups()
-        if artifact_type in {"Requirement", "Slice Plan", "TDD Record", "Review Report"}:
+        if artifact_type in {"Feature Lane Record", "Requirement", "Slice Plan", "Implement Record", "Review Report"}:
             feature = cls._FEATURE.fullmatch(metadata.get("Feature ID", ""))
             if feature is None or feature.group(1) != groups[0]:
                 errors.append("Feature ID does not match canonical filename")
-        if artifact_type in {"TDD Record", "Review Report"}:
+        if artifact_type in {"Implement Record", "Review Report"}:
             slice_id = cls._SLICE.fullmatch(metadata.get("Slice ID", ""))
             if slice_id is None or slice_id.group(1) != groups[1]:
                 errors.append("Slice ID does not match canonical filename")
@@ -662,7 +741,7 @@ class ArtifactParser:
             attempt = metadata.get("Attempt", "")
             if not attempt.isdigit() or int(attempt) <= 0 or int(attempt) != int(groups[2]):
                 errors.append("Attempt does not match canonical filename")
-        elif artifact_type == "TDD Record":
+        elif artifact_type in {"Implement Record", "Feature Lane Record"}:
             attempt = metadata.get("Attempt", "")
             if not attempt.isdigit() or int(attempt) <= 0:
                 errors.append("Attempt must be a positive integer")
@@ -719,11 +798,16 @@ class ArtifactParser:
             cls._validate_identifier_list(
                 metadata.get("Slice IDs", ""), cls._SLICE, "Slice IDs", errors
             )
+        elif artifact_type == "Feature Lane Record":
+            dependency_versions = metadata.get("Dependency Requirement Versions", "")
+            if dependency_versions != "NONE":
+                cls._validate_version_map(dependency_versions, "Dependency Requirement Versions", errors)
 
         version_fields = {
+            "Feature Lane Record": ("Feature Contract Version",),
             "Requirement": ("Planning Version",),
             "Slice Plan": ("Based On Solution",),
-            "TDD Record": ("Solution Version", "Slice Plan Version"),
+            "Implement Record": ("Solution Version", "Slice Plan Version"),
             "Review Report": ("Solution Version", "Slice Plan Version"),
         }
         for field in version_fields.get(artifact_type, ()):
@@ -881,12 +965,20 @@ class ArtifactParser:
         if planning is None or solution is None:
             return []
         metadata = solution["metadata"]
-        if not all(field in metadata for field in cls._SOLUTION_IMPACT_FIELDS):
-            return []
-
         feature_ids_value = planning["metadata"].get("Feature IDs", "NONE")
         feature_ids = [] if feature_ids_value == "NONE" else feature_ids_value.split("; ")
         errors = []
+        baseline = [entry.split(" = ", 1)[0] for entry in metadata["Based On Requirements"].split("; ")]
+        engineering = [entry.split(" = ", 1)[0] for entry in metadata["Feature Engineering Versions"].split("; ")]
+        if baseline != engineering:
+            return ["solution-plan.md: Requirement and engineering maps disagree"]
+        if baseline != feature_ids:
+            if not cls._valid_prior_solution_baseline(planning, solution, baseline):
+                return ["solution-plan.md: unexplained prior Planning baseline"]
+            solution["valid_but_stale"] = True
+            feature_ids = baseline
+        if not all(field in metadata for field in cls._SOLUTION_IMPACT_FIELDS):
+            return errors
         relation_maps = {
             field: cls._relation_map_values(metadata[field])
             for field in cls._SOLUTION_IMPACT_FIELDS[1:]
@@ -911,6 +1003,69 @@ class ArtifactParser:
         if any(component not in components for values in component_map.values() for component in values):
             errors.append("solution-plan.md: Feature Shared Components references unknown component")
         return errors
+
+    @classmethod
+    def _valid_prior_solution_baseline(cls, planning, solution, features):
+        """Read only Planning lineage and Requirement versions referenced by Solution."""
+        root = pathlib.Path(planning["path"]).parent
+        history = root / "history"
+        if history.is_symlink():
+            return False
+        current_version = tuple(map(int, planning["version"].split(".")))
+        candidates = []
+        for path in history.glob("planning-v*.md"):
+            match = re.fullmatch(r"planning-v(\d+\.\d+)\.md", path.name)
+            if not match or tuple(map(int, match[1].split("."))) >= current_version:
+                continue
+            if path.is_symlink():
+                return False
+            parsed, errors = cls._parse_artifact(path, re.fullmatch("planning", "planning"), "Planning", "Plan")
+            if errors or parsed["version"] != match[1]:
+                return False
+            candidates.append(parsed)
+        candidates.sort(key=lambda a: tuple(map(int, a["version"].split("."))))
+        candidates.append(planning)
+        references = dict(e.split(" = ") for e in solution["metadata"]["Based On Requirements"].split("; "))
+        for index, candidate in enumerate(candidates[:-1]):
+            if candidate["status"] != "READY" or candidate["metadata"]["Feature IDs"].split("; ") != features:
+                continue
+            versions = dict(e.split(" = ") for e in candidate["metadata"]["Feature Contract Versions"].split("; "))
+            valid = True
+            for feature, version in references.items():
+                name = f"requirement-feature-{feature[2:]}"
+                paths = [root / (name + ".md"), history / f"{name}-v{version}.md",
+                         history / f"retired-feature-{feature[2:]}" / (name + ".md")]
+                matched = False
+                for path in paths:
+                    if not path.is_file() or path.is_symlink() or path.parent.is_symlink():
+                        continue
+                    rule = cls._match_filename(name + ".md")
+                    req, errors = cls._parse_artifact(path, *rule)
+                    if not errors and req["version"] == version and req["status"] == "READY" and req["metadata"]["Planning Version"] == versions[feature]:
+                        matched = True
+                        break
+                valid &= matched
+            if not valid:
+                continue
+            for old, new in zip(candidates[index:], candidates[index + 1:]):
+                try:
+                    changes = table(new["text"], "Change Set", ("Feature ID", "Change", "Previous Contract Version", "Current Contract Version", "Rationale"))
+                    before = dict(e.split(" = ") for e in old["metadata"]["Feature Contract Versions"].split("; "))
+                    after = dict(e.split(" = ") for e in new["metadata"]["Feature Contract Versions"].split("; "))
+                    if {r["Feature ID"] for r in changes} != set(before) | set(after):
+                        valid = False
+                    for row in changes:
+                        f = row["Feature ID"]
+                        if row["Previous Contract Version"] != before.get(f, "NONE") or row["Current Contract Version"] != after.get(f, "NONE"):
+                            valid = False
+                        allowed = {"ADDED"} if f not in before else {"RETIRED"} if f not in after else {"MODIFIED"} if before[f] != after[f] else {"RETAINED", "REORDERED"}
+                        if row["Change"] not in allowed:
+                            valid = False
+                except (KeyError, ValueError):
+                    valid = False
+            if valid:
+                return True
+        return False
 
     @staticmethod
     def _relation_map_values(value):

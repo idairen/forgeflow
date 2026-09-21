@@ -6,8 +6,8 @@ import re
 class ProjectImpactAnalyzer:
     """Build and query a non-authoritative impact model from Solution metadata."""
 
-    _FEATURE = re.compile(r"F-\d{2}")
-    _COMPONENT = re.compile(r"SC-\d{2}")
+    _FEATURE = re.compile(r"F-(?:0[1-9]|[1-9][0-9]+)")
+    _COMPONENT = re.compile(r"SC-(?:0[1-9]|[1-9][0-9]+)")
     _FIELDS = (
         "Shared Component IDs",
         "Feature Dependencies",

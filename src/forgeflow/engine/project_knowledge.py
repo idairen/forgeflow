@@ -10,22 +10,24 @@ from .project_impact import ProjectImpactAnalyzer
 class ProjectKnowledgeBuilder:
     """Build and render a queryable projection over ForgeFlow evidence."""
 
-    _FEATURE = re.compile(r"F-\d{2}")
-    _SLICE_SCOPE = re.compile(r"(F-\d{2})/(S-\d{2})")
+    _FEATURE = re.compile(r"F-(?:0[1-9]|[1-9][0-9]+)")
+    _SLICE_SCOPE = re.compile(r"(F-(?:0[1-9]|[1-9][0-9]+))/(S-(?:0[1-9]|[1-9][0-9]+))")
     _HISTORICAL_CONTRACTS = (
         (re.compile(r"planning-v(\d+\.\d+)\.md"), "planning"),
         (re.compile(r"solution-plan-v(\d+\.\d+)\.md"), "solution"),
     )
 
     @classmethod
-    def build(cls, artifact_state, reports_dir=None):
+    def build(cls, artifact_state, reports_dir=None, include_history=False):
         artifact_root = pathlib.Path(artifact_state.get("root", ""))
         graph_is_invalid = artifact_state.get("status") == "invalid"
         artifacts = artifact_state.get("artifacts", {})
-        history = cls._knowledge_history(artifact_root, reports_dir)
+        history = cls._knowledge_history(artifact_root, reports_dir) if include_history else {
+            "artifact_history": [], "supplemental_reports": [], "report_history": [], "rotated_evidence_roots": []}
         timeline, warnings = cls._contract_timeline(
             artifact_root,
             {} if graph_is_invalid else artifacts,
+            include_history=include_history,
         )
         base = {
             "schema_version": 1,
@@ -87,6 +89,7 @@ class ProjectKnowledgeBuilder:
                 {
                     "feature_id": feature_id,
                     "contract_version": contract_versions.get(feature_id),
+                    "lane": cls._artifact_reference(artifacts.get(f"lane-feature-{feature_number}.md"), extra_fields=("Attempt", "Feature Contract Version", "Dependency Requirement Versions", "Claim Evidence")),
                     "requirement": cls._artifact_reference(
                         requirement,
                         extra_fields=("Planning Version",),
@@ -231,7 +234,7 @@ class ProjectKnowledgeBuilder:
                         "",
                         f"### {feature['feature_id']}/{slice_item['slice_id']}",
                         "",
-                        cls._reference_line("TDD", slice_item.get("tdd")),
+                        cls._reference_line("Implement", slice_item.get("implement")),
                     ]
                 )
                 for review in slice_item.get("reviews", []):
@@ -337,7 +340,7 @@ class ProjectKnowledgeBuilder:
     def _slice_knowledge(cls, artifacts, feature_id, slice_id):
         feature_number = feature_id.removeprefix("F-")
         slice_number = slice_id.removeprefix("S-")
-        tdd = artifacts.get(f"tdd-feature-{feature_number}-slice-{slice_number}.md")
+        implement = artifacts.get(f"implement-feature-{feature_number}-slice-{slice_number}.md")
         review_prefix = f"review-feature-{feature_number}-slice-{slice_number}-attempt-"
         reviews = sorted(
             (
@@ -349,8 +352,8 @@ class ProjectKnowledgeBuilder:
         )
         return {
             "slice_id": slice_id,
-            "tdd": cls._artifact_reference(
-                tdd,
+            "implement": cls._artifact_reference(
+                implement,
                 extra_fields=("Attempt", "Solution Version", "Slice Plan Version"),
             ),
             "reviews": [
@@ -413,7 +416,7 @@ class ProjectKnowledgeBuilder:
         }
 
     @classmethod
-    def _contract_timeline(cls, artifact_root, artifacts):
+    def _contract_timeline(cls, artifact_root, artifacts, include_history=False):
         timeline = {"planning": [], "solution": []}
         warnings = []
         current = (
@@ -433,7 +436,7 @@ class ProjectKnowledgeBuilder:
             timeline[kind].append(entry)
 
         history_root = artifact_root / "history"
-        if history_root.is_dir() and not history_root.is_symlink():
+        if include_history and history_root.is_dir() and not history_root.is_symlink():
             for path in sorted(history_root.rglob("*.md")):
                 if not path.is_file() or path.is_symlink():
                     continue

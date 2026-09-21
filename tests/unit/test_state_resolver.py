@@ -12,6 +12,7 @@ def artifact(filename, artifact_type, version, status, **metadata):
         "version": version,
         "status": status,
         "metadata": metadata,
+        "verification_actionable": artifact_type == "Slice Plan",
     }
 
 
@@ -65,10 +66,10 @@ def slice_plan(status="READY", solution_version="1.0", slices="S-01"):
     )
 
 
-def tdd(status="READY_FOR_REVIEW", attempt="1"):
+def implement(status="READY_FOR_REVIEW", attempt="1"):
     return artifact(
-        "tdd-feature-01-slice-01.md",
-        "TDD Record",
+        "implement-feature-01-slice-01.md",
+        "Implement Record",
         "1.0",
         status,
         **{
@@ -143,12 +144,12 @@ class StateResolverTests(unittest.TestCase):
             ),
             (
                 state(planning(), requirement(), solution(), slice_plan()),
-                "tdd",
+                "implement",
                 "Slice: F-01/S-01",
-                "rule_10_tdd_required",
+                "rule_10_implement_required",
             ),
             (
-                state(planning(), requirement(), solution(), slice_plan(), tdd()),
+                state(planning(), requirement(), solution(), slice_plan(), implement()),
                 "review",
                 "Slice: F-01/S-01",
                 "rule_9_review_required",
@@ -166,7 +167,7 @@ class StateResolverTests(unittest.TestCase):
                 requirement(),
                 solution(),
                 slice_plan(),
-                tdd(),
+                implement(),
                 review(),
             )
         )
@@ -187,13 +188,13 @@ class StateResolverTests(unittest.TestCase):
             requirement(),
             solution(),
             slice_plan(),
-            tdd(),
-            review("FAIL", "TDD", "Slice: F-01/S-01"),
+            implement(),
+            review("FAIL", "Implement", "Slice: F-01/S-01"),
         )
 
         self.assert_resolution(
             artifact_state,
-            "tdd",
+            "implement",
             "Slice: F-01/S-01",
             "rule_8_review_failure",
         )

@@ -1,3 +1,5 @@
+> 历史输入示例：旧用例编号对应 legacy 测试计划。用于当前用例时应重新确认范围，不继承旧结果。
+
 # ForgeFlow IDE Test Inputs
 
 以下文本用于真实 IDE 测试。每次都应从 `/` 菜单选择对应 ForgeFlow Prompt，再粘贴输入；普通文本输入不能替代 Prompt 发现测试。

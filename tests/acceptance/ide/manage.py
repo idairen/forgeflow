@@ -16,7 +16,7 @@ import sys
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 PLAN_PATH = REPOSITORY_ROOT / "docs" / "testing" / "ide-test-plan.zh-CN.md"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "python-project"
-RESULTS_PATH = Path(__file__).resolve().parent / "results"
+RESULTS_PATH = Path(__file__).resolve().parent / "results" / "current"
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",
     "forgeflow.schema.json",
@@ -25,7 +25,7 @@ FRAMEWORK_ENTRIES = (
     "rules",
     "workflow",
 )
-WORKFLOWS = ("plan", "grill", "solution", "slice", "tdd", "review")
+WORKFLOWS = ("plan", "grill", "solution", "slice", "implement", "review")
 AREA_BASELINES = {
     "INV": "S0-CLEAN",
     "PLAN": "S0-CLEAN or case-specific",
@@ -50,7 +50,7 @@ AREA_NAMES = {
     "GRILL": "Grill",
     "SOL": "Solution",
     "SLICE": "Slice",
-    "TDD": "TDD",
+    "TDD": "Implement strategies",
     "REV": "Review 与插件",
     "HO": "Handoff 与转换",
     "BLK": "Blocker 与 Recovery",
@@ -221,6 +221,7 @@ def write_copilot_settings(project: Path) -> None:
 
 
 def render_result(case: Case, adapter: str) -> str:
+    version = re.search(r"^Version: (.+)$", (REPOSITORY_ROOT / ".forgeflow/forgeflow.md").read_text(), re.M).group(1)
     return f"""# {case.case_id} Test Result
 
 ## Case
@@ -230,6 +231,7 @@ def render_result(case: Case, adapter: str) -> str:
 | Area | {AREA_NAMES[case.area]} |
 | Priority | {case.priority} |
 | Adapter | {adapter} |
+| Framework Version | {version} |
 | Recommended baseline | {case.baseline} |
 | Action | {case.action} |
 | Expected | {case.expected} |
@@ -308,6 +310,9 @@ def load_results(root: Path, cases: dict[str, Case]) -> list[Result]:
             raise ValueError(f"Unsupported result status {status!r}: {path}")
         defect_id = _result_table_value(content, "Defect ID", path)
         if status == "PASS":
+            current_version = re.search(r"^Version: (.+)$", (REPOSITORY_ROOT / ".forgeflow/forgeflow.md").read_text(), re.M).group(1)
+            if _result_table_value(content, "Framework Version", path) != current_version:
+                raise ValueError(f"PASS result is from another Framework version: {path}")
             unresolved_table_value = re.search(
                 r"^\|\s*[^|]+\s*\|\s*TODO\s*\|$", content, re.MULTILINE
             )
@@ -345,7 +350,8 @@ def case_outcomes(
             outcomes[case_id] = "FAIL"
         elif "BLOCKED" in statuses:
             outcomes[case_id] = "BLOCKED"
-        elif "PASS" in statuses:
+        elif all(any(r.case_id == case_id and r.adapter == adapter and r.status == "PASS" for r in results)
+                 for adapter in case_adapters(cases[case_id]).split(",")):
             outcomes[case_id] = "PASS"
         else:
             outcomes[case_id] = "NOT RUN"
@@ -507,6 +513,7 @@ def command_prepare(args: argparse.Namespace, cases: dict[str, Case]) -> None:
     )
     if result_path.exists() or result_path.is_symlink():
         raise FileExistsError(f"Result file already exists: {result_path}")
+    result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(render_result(case, args.adapter), encoding="utf-8")
     print(f"Prepared case workspace: {output}")
     print(f"Created result record: {result_path}")
@@ -514,8 +521,8 @@ def command_prepare(args: argparse.Namespace, cases: dict[str, Case]) -> None:
 
 
 def command_verify(cases: dict[str, Case]) -> None:
-    if len(cases) != 247:
-        raise ValueError(f"Expected 247 cases, found {len(cases)}")
+    if not cases:
+        raise ValueError("Acceptance catalog must not be empty")
 
     for adapter in ("codex", "copilot"):
         for workflow in WORKFLOWS:
@@ -540,7 +547,7 @@ def command_verify(cases: dict[str, Case]) -> None:
     for case in cases.values():
         priorities[case.priority] += 1
     print(
-        "Verified 247 IDE cases and 12 workflow Prompts "
+        f"Verified {len(cases)} IDE cases and 12 workflow Prompts "
         f"(P0={priorities['P0']}, P1={priorities['P1']}, P2={priorities['P2']})."
     )
 

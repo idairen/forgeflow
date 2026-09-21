@@ -47,6 +47,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run npx installer tests
         run: npm test
+      - name: Run Markdown contract regressions
+        run: node --test .forgeflow/tests/*.test.cjs
       - name: Verify npm package contents
         run: npm pack --dry-run --json > npm-pack.json
 
@@ -75,7 +77,11 @@ jobs:
             --disable-pip-version-check --no-index dist/*.whl
           "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" --help
           "${RUNNER_TEMP}/forgeflow-wheel/bin/python" -c \
-            'from pathlib import Path; import forgeflow; root = Path(forgeflow.__file__).parent / "_template"; assert (root / ".forgeflow" / "forgeflow.md").is_file(); assert (root / "forgeflow.json").is_file()'
+            'from pathlib import Path; import forgeflow; root = Path(forgeflow.__file__).parent / "_template"; assert (root / ".forgeflow" / "protocol" / "transition.md").is_file(); assert (root / ".forgeflow" / "workflow" / "implement.md").is_file(); assert not (root / ".forgeflow" / "workflow" / "tdd.md").exists(); assert (root / "forgeflow.json").is_file()'
+          project_root="$(mktemp -d)"
+          cd "${project_root}"
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" init --adapter codex
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" status
       - name: Pack npm distribution
         run: npm pack --pack-destination "${RUNNER_TEMP}" --json > npm-pack.json
       - name: Install from npm tarball
@@ -86,4 +92,7 @@ jobs:
           npm exec --yes --package "${RUNNER_TEMP}/${package_name}" -- \
             forgeflow init --adapter copilot
           test -f .forgeflow/forgeflow.md
+          test -f .forgeflow/protocol/transition.md
+          test -f .forgeflow/workflow/implement.md
+          test ! -e .forgeflow/workflow/tdd.md
           test -f forgeflow.json

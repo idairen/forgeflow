@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from forgeflow.engine.project_knowledge import ProjectKnowledgeBuilder
 
@@ -40,8 +41,8 @@ def knowledge_view():
                 "engineering_version": None,
                 "slice_plan": None,
                 "slices": [
-                    {"slice_id": "S-02", "tdd": None, "reviews": []},
-                    {"slice_id": "S-01", "tdd": None, "reviews": []},
+                    {"slice_id": "S-02", "implement": None, "reviews": []},
+                    {"slice_id": "S-01", "implement": None, "reviews": []},
                 ],
             },
             {
@@ -76,6 +77,12 @@ def knowledge_view():
 
 
 class ProjectKnowledgeTests(unittest.TestCase):
+    def test_default_view_does_not_scan_history(self):
+        state = {"status": "empty", "root": "/not-a-project", "artifacts": {}}
+        with patch.object(ProjectKnowledgeBuilder, "_knowledge_history", side_effect=AssertionError("history scanned")):
+            view = ProjectKnowledgeBuilder.build(state)
+        self.assertEqual(view["history"]["artifact_history"], [])
+
     def test_selects_feature_and_slice_without_reordering(self):
         selected = ProjectKnowledgeBuilder.select(
             knowledge_view(),
@@ -160,7 +167,7 @@ class ProjectKnowledgeTests(unittest.TestCase):
                 "errors": [],
             }
 
-            view = ProjectKnowledgeBuilder.build(state)
+            view = ProjectKnowledgeBuilder.build(state, include_history=True)
 
         self.assertEqual(
             view["timeline"]["planning"][0]["summary"],
@@ -184,7 +191,7 @@ class ProjectKnowledgeTests(unittest.TestCase):
                 "errors": [],
             }
 
-            view = ProjectKnowledgeBuilder.build(state)
+            view = ProjectKnowledgeBuilder.build(state, include_history=True)
 
         self.assertEqual(view["status"], "empty")
         self.assertEqual(

@@ -37,7 +37,7 @@ class HandoffParserTests(unittest.TestCase):
             handoff_table(
                 [
                     ("Transition", "RETURN"),
-                    ("Next Workflow", "TDD"),
+                    ("Next Workflow", "Implement"),
                     ("Source Scope", "Slice: F-01/S-01"),
                     ("Target Scope", "Slice: F-01/S-01"),
                     ("Blocker Category", "IMPLEMENTATION_GAP"),
@@ -53,7 +53,7 @@ class HandoffParserTests(unittest.TestCase):
         )
 
         self.assertEqual(parsed["transition"], "RETURN")
-        self.assertEqual(parsed["next_workflow"], "tdd")
+        self.assertEqual(parsed["next_workflow"], "implement")
         self.assertEqual(parsed["blocker_category"], "IMPLEMENTATION_GAP")
 
     def test_parses_terminal_complete_and_halted_variants(self):
