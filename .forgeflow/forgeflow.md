@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.7
+Version: 3.8
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents. The
 versioned Artifact Graph is the sole persistent source of truth; conversation,
@@ -10,8 +10,8 @@ launchers, logs, and derived views are never authoritative.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.7 | `forgeflow.md` |
-| Artifact Protocol | 2.18 | `protocol/artifact.md` |
+| Framework | 3.8 | `forgeflow.md` |
+| Artifact Protocol | 2.19 | `protocol/artifact.md` |
 | Transition Protocol | 1.8 | `protocol/transition.md` |
 | Handoff Protocol | 2.15 | `protocol/handoff.md` |
 

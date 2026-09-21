@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.18
+Version: 2.19
 
 ## Purpose
 
@@ -552,6 +552,7 @@ types, independent Attempts, or Review decisions. The supported identifiers are:
 | Strategy | Required execution pattern and evidence |
 | --- | --- |
 | TDD | Run a relevant test first and capture RED caused by the intended missing/incorrect behavior; implement minimum behavior for GREEN; refactor as needed and rerun relevant verification. A broken environment is not RED evidence. |
+| BEHAVIORAL_TEST | Execute tests against approved observable behavior during or after implementation; record expected and actual results, relevant acceptance/regression coverage, target/environment, and execution evidence. Historical RED is not required and must not be claimed. This strategy cannot replace mandatory TDD or required human acceptance. |
 | CHARACTERIZATION_TEST | Capture relevant existing behavior before modification, establish repeatable tests, then compare after changes; preserved behavior is not automatically desired behavior beyond the approved scope. |
 | MIGRATION_REHEARSAL | Rehearse against the declared representative environment/data; check resulting schema/data integrity and the required failure/recovery paths. |
 | STATIC_VALIDATION | Execute applicable parsing, typing, linting, build or static checks; record their limits and retain any required behavioral verification. |
@@ -569,6 +570,20 @@ mandatory check, narrow its coverage, lower a threshold, replace required human
 acceptance, or switch strategy because a check failed or its environment is absent.
 Changed engineering requirements return to Solution; an inadequate Slice mapping
 returns to Slice. Multiple strategy runs remain in the same frozen Attempt.
+
+Implement's selection procedure and candidate guidance live in its Workflow, not
+in upstream readiness rules. Existing Slice strategy commitments remain mandatory
+unless their approved alternative conditions apply; adding a supported identifier
+does not rewrite those commitments. Regression is a verification purpose; unit,
+integration, contract, and end-to-end are test levels, not additional strategies.
+Record applicable levels and regression checks under the governing obligations.
+
+An implementation method describes how Implement organizes authorized changes,
+not what behavior, architecture, Slice boundary, or passing criteria to choose.
+Methods are optional free-form prose in Implementation Summary, with a brief reason
+when used; they are not Verification Strategies and require no metadata field,
+separate table, Artifact, Status, Attempt, or approval gate. A method supplies no
+verification evidence by itself. Existing records without method prose remain valid.
 
 Each Implement Record contains `## Verification Selection` with:
 

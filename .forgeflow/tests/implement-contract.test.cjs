@@ -23,7 +23,7 @@ const section = (s, a, b) => {
 const rows = s => s.split('\n').filter(l => l.startsWith('| '))
   .map(l => l.slice(1, -1).split('|').map(v => v.trim()));
 const workflows = ['Plan', 'Grill', 'Solution', 'Slice', 'Implement', 'Review'];
-const strategyIds = ['TDD', 'CHARACTERIZATION_TEST', 'MIGRATION_REHEARSAL',
+const strategyIds = ['TDD', 'BEHAVIORAL_TEST', 'CHARACTERIZATION_TEST', 'MIGRATION_REHEARSAL',
   'STATIC_VALIDATION', 'CONFIGURATION_VALIDATION', 'SECURITY_SCAN', 'BENCHMARK',
   'DOCUMENTATION_VALIDATION', 'MANUAL_ACCEPTANCE'];
 
@@ -85,7 +85,7 @@ test('static: workflow/type/path schema rejects TDD as a current implementation 
   assert.match(handoff,/TDD is a verification strategy, not a valid Next Workflow/);
 });
 
-test('static: TDD and eight non-TDD strategies are supported, without extra workflows', () => {
+test('static: TDD and nine non-TDD strategies are supported, without extra workflows', () => {
   const registry=rows(section(artifact,'| Strategy | Required execution pattern and evidence |','TDD is the default candidate')).slice(2);
   assert.deepEqual(registry.map(r=>r[0]),strategyIds);
   assert.equal(workflows.includes('TDD'),false);
@@ -176,4 +176,51 @@ test('static: no strategy grants unplanned configuration, migration or documenta
   assert.match(artifact,/only\s+when authorized by Solution\/Slice placement/);
   assert.match(read('workflow/slice.md'),/a strategy grants no additional path scope/);
   assert.match(implement,/one authorized Slice|only the authorized changes/);
+});
+
+test('static: behavioral testing is executable evidence, not fabricated TDD or human approval', () => {
+  const strategies = rows(section(artifact,
+    '| Strategy | Required execution pattern and evidence |', 'TDD is the default candidate')).slice(2);
+  const behavioral = strategies.find(row => row[0] === 'BEHAVIORAL_TEST')[1];
+  assert.match(behavioral, /Execute tests against approved observable behavior/);
+  assert.match(behavioral, /expected and actual results/);
+  assert.match(behavioral, /Historical RED is not required and must not be claimed/);
+  assert.match(behavioral, /cannot replace mandatory TDD or required human acceptance/);
+});
+
+test('static: selection guidance cannot unlock a mandatory Slice strategy or bypass missing policy', () => {
+  const selection = section(implement, '## Strategy selection', '## Implementation methods')
+    .replace(/\s+/g, ' ');
+  assert.match(selection, /Retain every mandatory strategy and check/);
+  assert.match(selection, /only when its stated condition holds/);
+  assert.match(selection, /never grants an alternative absent from the approved plan/);
+  assert.match(selection, /Unresolved selection follows the existing BLOCKED allocation and RETURN rules without code changes/);
+  assert.match(selection, /unavailable environment, or missed pre-change baseline is not permission to switch/);
+  // The existing Slice schema still requires supported strategies, not a method or AUTO placeholder.
+  const sliceContract = section(artifact, '### Slice Plan', '### Verification strategies and evidence');
+  assert.match(sliceContract, /Every listed strategy is required unless/);
+  assert.match(sliceContract, /Strategies use one or more\s+supported identifiers/);
+});
+
+test('static: every registered strategy has selection guidance without becoming another workflow', () => {
+  const selection = section(implement, '| Change or obligation |', '## Implementation methods');
+  for (const id of strategyIds) assert.ok(selection.includes(id), `Missing candidate guidance: ${id}`);
+  const manifest = rows(section(framework, '| Workflow | Artifact |', '## Normative model')).slice(2);
+  assert.deepEqual(manifest.map(row => row[0]), workflows);
+});
+
+test('static: optional methods preserve existing record shape, evidence gate and frozen Attempt', () => {
+  const policy = section(artifact, 'An implementation method describes', 'Each Implement Record contains')
+    .replace(/\s+/g, ' ');
+  assert.match(policy, /optional free-form prose in Implementation Summary/);
+  assert.match(policy, /not Verification Strategies/);
+  assert.match(policy, /Existing records without method prose remain valid/);
+  assert.match(policy, /A method supplies no verification evidence by itself/);
+  const methods = section(implement, '## Implementation methods', '## Review-ready gate')
+    .replace(/\s+/g, ' ');
+  assert.match(methods, /change within the frozen Attempt/);
+  assert.match(methods, /A method change creates no new Attempt or approval gate/);
+  assert.match(methods, /outside the approved contracts require RETURN to their owner/);
+  const fields = rows(section(artifact, '### Type-specific metadata', '### Feature-scoped versions'));
+  assert.equal(fields.some(row => /Method/.test(row.join(' '))), false);
 });

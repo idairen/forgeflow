@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.12
+Version: 2.13
 
 ## Contract
 
@@ -43,6 +43,79 @@ select an explicitly permitted alternative, but cannot waive mandatory checks,
 lower thresholds, or use a rationale to approve a weaker strategy. TDD is one
 strategy, not this Workflow's universal execution order. Completing the Slice
 authorizes neither Review nor another Slice in this execution.
+
+## Strategy selection
+
+A strategy determines the execution pattern and evidence; a method organizes the
+authorized edits. Neither changes upstream ownership or authorizes Review PASS/FAIL.
+Implement makes routine choices from approved contracts and repository evidence,
+without asking the user to select strategy names or approve an implementation method.
+Missing business decisions return to Grill (or Plan for project scope); missing
+engineering policy returns to Solution; missing Slice mapping returns to Slice.
+Actual required human acceptance remains a separate evidence obligation.
+
+Before the entry allocation/persistence step:
+
+1. Collect this Slice's acceptance conditions, Solution verification obligations,
+   Slice Verification Plan, mandatory strategies/checks, passing criteria, required
+   evidence sources, and permitted alternatives. Do not invent missing obligations.
+2. Inspect relevant existing behavior, tests, authorized paths, and available
+   environment. Identify change types and any pre-change evidence that must be
+   captured before edits. Repository facts guide execution, not new requirements.
+3. Retain every mandatory strategy and check. Select an explicitly permitted
+   alternative only when its stated condition holds, recording the condition and
+   supporting evidence in the selection rationale. Candidate guidance below may
+   guide that choice or supplementary verification; it never grants an alternative
+   absent from the approved plan. A legacy or incomplete plan gains no waiver.
+4. Check coverage obligation by obligation: each required property has concrete
+   checks, unchanged passing criteria, and the required evidence source. Combine
+   strategies where needed; neither one successful strategy nor a method discharges
+   another obligation. Do not add irrelevant checks just to use more strategies.
+5. Record strategies, rationale and governing obligations in Verification Selection;
+   list concrete checks in Verification Evidence as NOT_RUN until executed. Use the
+   existing tables, not a new decision Artifact. Unresolved selection follows the
+   existing BLOCKED allocation and RETURN rules without code changes.
+
+The following are candidates only, subject to step 3. Apply all relevant rows rather
+than selecting one row for the whole Slice:
+
+| Change or obligation | Candidate strategies and selection evidence |
+| --- | --- |
+| New or changed executable behavior | TDD when a meaningful behavior-related failing test can be established before edits with a practical feedback cycle. BEHAVIORAL_TEST when permitted and tests are built during/after implementation; record why and preserve the same required behavioral coverage. |
+| Existing behavior without reliable coverage | CHARACTERIZATION_TEST captures the relevant baseline before modification; TDD or BEHAVIORAL_TEST verifies approved changed behavior. Existing behavior alone is not an acceptance policy. |
+| Data/schema migration | MIGRATION_REHEARSAL against the declared data/environment, plus required behavior, integrity and recovery checks. Do not design migration policy here. |
+| Configuration, build or startup settings | CONFIGURATION_VALIDATION for parsing and effective behavior; STATIC_VALIDATION supplements it where applicable. Syntax alone cannot establish runtime effect. |
+| Performance changes | BENCHMARK with the required comparable baseline, workload and thresholds, while retaining correctness/regression verification. |
+| Security-related changes | SECURITY_SCAN where applicable to the obligation, plus required behavioral checks such as access control. A clean scan does not prove those behaviors. |
+| Documentation or examples | DOCUMENTATION_VALIDATION; execute examples when required and compare them with the approved contract and actual implementation. |
+| Required human acceptance | MANUAL_ACCEPTANCE with the actual designated acceptor's observations/result; never replace it with model assessment. |
+| Applicable typing, linting, parsing or build checks | STATIC_VALIDATION alongside any required behavioral evidence. |
+
+Mandatory TDD remains mandatory even when another candidate is more convenient.
+A failed check, unavailable environment, or missed pre-change baseline is not
+permission to switch to a weaker strategy or manufacture evidence. Correct a local
+problem or persist its blocker; changes to requirements return to their owner.
+
+## Implementation methods
+
+After inspecting the code, Implement may choose or combine the following methods
+within the current Slice. These are guidance, not a required enumeration:
+
+| Method | When it fits and its boundary |
+| --- | --- |
+| Direct implementation | A clear, bounded change within approved structures and responsibilities. |
+| Reproduce then repair | A reproducible deviation from an existing contract; reproduce, locate the cause, repair, and verify regressions without redefining expected behavior. |
+| Behavior-preserving refactoring | Internal restructuring authorized by this Slice; preserve required behavior and approved module responsibilities/dependencies. |
+| Small changes with frequent verification | Changes benefit from short feedback cycles; these are execution steps, not new Slices or additional delivery authority. |
+| Minimal-diff repair | A localized issue can be fixed within a narrow change; small size never excuses an unresolved blocking issue. |
+| Mechanical transformation | Repeated edits follow an explicit rule within authorized paths; inspect and verify transformed output, including generated changes. |
+
+If used, record the method and reason briefly in Implementation Summary. Methods may
+change within the frozen Attempt as inspection reveals better local execution steps;
+update that prose when material, while preserving selected verification obligations
+and pre-change evidence. A method change creates no new Attempt or approval gate.
+Changes to business behavior, architecture/interfaces/data policy, delivery boundaries,
+or passing criteria outside the approved contracts require RETURN to their owner.
 
 ## Review-ready gate
 
