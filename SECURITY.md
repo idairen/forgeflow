@@ -41,9 +41,10 @@ Adapter, CLI, and installer behavior may change between minor versions.
 
 ### Markdown Protocol Core
 
-The normative `.forgeflow/` framework is Markdown and JSON. Reading those files does
-not itself execute code. However, their content is consumed as instructions by an AI
-Agent. Treat framework files, project Artifacts, supplemental Reports, source code,
+The normative ForgeFlow core consists of Markdown contracts. The JSON configuration
+schema supports optional tooling and does not define or override core authority.
+Reading these files does not itself execute code, but Markdown instructions are
+consumed by an AI Agent. Treat framework files, project Artifacts, supplemental Reports, source code,
 and user input as potentially untrusted prompt input.
 
 Artifact ownership and Handoff validation constrain ForgeFlow state transitions.

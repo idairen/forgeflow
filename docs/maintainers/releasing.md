@@ -7,10 +7,24 @@ Current migration notes: [Implement migration](implement-migration.md). Current 
 evidence is isolated under `tests/acceptance/ide/results/current/`; old results do
 not satisfy this release gate.
 
+## Source publication and validated releases
+
+Publishing source under the repository's MIT License does not itself establish
+host compatibility or production readiness. Keep the Technical Preview label and
+state unverified capabilities explicitly. Community documents support maintenance;
+their existence is not an acceptance test.
+
+For a validated IDE core release, follow all gates below. Query current results
+with `manage.py summary` and `manage.py release-gate`; do not reuse a dated local
+readiness report as approval. Review CI for the exact candidate commit, scan the
+intended Git history and package contents for sensitive material, and check rights
+and attribution for contributed or third-party content. Local files cannot prove
+remote repository protections, registry ownership or public installability.
+
 ## 1. Define The Release
 
 - choose the Semantic Version and intended stability level;
-- confirm `pyproject.toml` and `package.json` use the same version;
+- confirm `pyproject.toml`, `package.json` and `src/forgeflow/__init__.py` use the same version;
 - move completed entries from `Unreleased` into a dated release section;
 - document breaking protocol or package changes and migration steps;
 - confirm the ForgeFlow name and distribution identifiers remain acceptable for use.
@@ -40,8 +54,9 @@ current canonical `.forgeflow/` template and provide the `forge` command.
 
 ## 4. Record Real-Host Acceptance
 
-Use `tests/acceptance/ide/` to capture critical Codex and Copilot evidence. At
-minimum, cover:
+Use the [current plan](../testing/ide-test-plan.zh-CN.md) and
+[acceptance instructions](../../tests/acceptance/ide/README.md) to capture evidence
+for every required adapter. At minimum, cover:
 
 - launcher discovery and native-plan isolation;
 - single and multiple Feature progression;

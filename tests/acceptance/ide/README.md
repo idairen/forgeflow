@@ -1,191 +1,90 @@
-# ForgeFlow IDE Acceptance Test Assets
+# ForgeFlow IDE acceptance
 
-本目录把 `docs/testing/ide-test-plan.zh-CN.md` 中的 当前版本场景转化为可执行的 IDE 测试资产。
+The [current plan](../../../docs/testing/ide-test-plan.zh-CN.md) defines the cases.
+`manage.py` prepares workspaces and checks recorded evidence; it never executes an
+IDE, calls an Agent, or turns prepared fixtures into PASS results.
 
-旧版结果保留在 `results/`；当前版本仅从 `results/current/` 读取，不继承历史 PASS。
+Current results belong in `results/current/`. Older files directly under `results/`
+and the [legacy plan](../../../docs/testing/ide-test-plan.legacy.zh-CN.md) remain
+historical evidence and do not satisfy the current gate. `inputs.md` is a historical
+input library: adapt inputs to the current case and record the exact input used.
 
-## 设计原则
-
-- 测试必须通过真实 IDE Prompt 调用完成。
-- S1–S7 快照必须由真实 IDE 流程生成，不能提交人工伪造的“通过”制品。
-- 每个破坏性用例使用独立工作区副本。
-- `manage.py` 只准备、复制和检查测试资产，不执行 ForgeFlow 工作流。
-- `.forgeflow/artifacts/` 始终是测试项目的权威状态；结果记录不能代替 Artifact 证据。
-
-## 目录
-
-```text
-tests/acceptance/ide/
-├── README.md
-├── manage.py
-├── inputs.md
-├── fixtures/python-project/
-├── results/
-├── snapshots/       # 本地生成，默认不提交
-└── workspaces/      # 本地生成，默认不提交
-```
-
-## 1. 校验测试资产
+## Inspect the current suite
 
 ```bash
 python3 tests/acceptance/ide/manage.py verify
-```
-
-期望输出：
-
-```text
-Verified 25 IDE cases and 12 workflow Prompts (P0=24, P1=1, P2=0).
-```
-
-## 2. 查看用例
-
-```bash
 python3 tests/acceptance/ide/manage.py list --priority P0
-python3 tests/acceptance/ide/manage.py list --area INV
-python3 tests/acceptance/ide/manage.py show IDE-INV-003
-python3 tests/acceptance/ide/manage.py export
+python3 tests/acceptance/ide/manage.py show IDE-PLAN-101
 ```
 
-`list` 和 `show` 直接读取权威测试计划，不维护第二份容易过期的用例清单。
-仓库同时保存生成后的 `forgeflow-ide-test-cases.csv`，方便使用 Excel、Numbers
-或测试管理平台执行和记录结果。计划发生变化后，可用 `export` 重新生成 CSV。
+The current plan contains 25 cases (24 P0, 1 P1) and covers 12 adapter launchers.
+Use `verify` and `list` for the current counts, not historical reports. The CSV is
+an exported view; regenerate it with `manage.py export` after changing the plan.
+Identifiers containing `TDD` are retained case IDs, not a TDD Workflow declaration.
 
-## 3. 创建干净测试工作区
-
-Copilot：
+## Create isolated host workspaces
 
 ```bash
 python3 tests/acceptance/ide/manage.py init \
   --adapter copilot \
   --output tests/acceptance/ide/workspaces/copilot-happy
-```
-
-该命令会：
-
-- 复制最小 Python 项目；
-- 安装当前仓库中的 Framework、Protocols、Workflows、Rules 和 Adapters；
-- 创建空 Artifact Root 和 Reports Root；
-- 写入 VS Code `chat.promptFilesLocations`，启用 `.forgeflow/adapter/copilot`；
-- 不创建任何 Planning 或下游 Artifact。
-
-Codex：
-
-```bash
 python3 tests/acceptance/ide/manage.py init \
   --adapter codex \
   --output tests/acceptance/ide/workspaces/codex-happy
 ```
 
-Codex 的 Prompt 发现方式由实际宿主配置；工具不会虚构 Codex IDE 注册文件。
+The helper copies the minimal Python fixture, installs the current framework and
+creates empty artifact/report roots. It configures Copilot prompt discovery in
+VS Code. Codex discovery depends on the actual host; the helper does not invent
+registration files. Open each workspace in its intended host, invoke the actual
+launcher and capture the host, version, model, mode, input and full response.
 
-## 4. 执行 Prompt 接管测试
+Run the current plan's entry and normal-delivery cases first, then isolated failure,
+recovery, version and parity cases. Each invocation remains inside its authorized
+Workflow and Scope; a test plan does not override the core's entry requirements.
 
-1. 在 IDE 中打开新建工作区根目录。
-2. 确认 `/` 菜单显示六个 `forge-*` Prompt。
-3. 把 Copilot 当前模式切换到 native Plan。
-4. 从 `/` 菜单选择 `/forge-plan`。
-5. 粘贴 `inputs.md` 的 `INPUT-INITIAL-01`。
-6. 保存完整响应、截图和 `git diff`。
-7. 确认生成的是 `.forgeflow/artifacts/planning.md`，而不是 Copilot implementation plan。
+## Capture and reuse real checkpoints
 
-优先执行测试计划的批次 A。
-
-## 5. 生成真实状态快照
-
-在真实 IDE 中完成每个门禁后关闭正在运行的进程，并从仓库根目录执行：
+After a real execution reaches the intended checkpoint and all related processes
+have stopped:
 
 ```bash
 python3 tests/acceptance/ide/manage.py snapshot \
   --source tests/acceptance/ide/workspaces/copilot-happy \
   --output tests/acceptance/ide/snapshots/S1-PLANNED-copilot
-```
-
-依次保存：
-
-```text
-S1-PLANNED
-S2-BUSINESS
-S3-ENGINEERING
-S4-DELIVERY
-S5-REVIEW
-S6-FAIL
-S7-COMPLETE
-```
-
-快照命令会排除 `.git`、缓存和 `.forgeflow/runtime/`，但保留代码、Artifacts、Reports 和两个 history 根。
-
-## 6. 准备一个独立用例
-
-```bash
-python3 tests/acceptance/ide/manage.py prepare IDE-GRAPH-002 \
+python3 tests/acceptance/ide/manage.py prepare IDE-GRAPH-101 \
   --adapter copilot \
   --source tests/acceptance/ide/snapshots/S1-PLANNED-copilot \
-  --output tests/acceptance/ide/workspaces/IDE-GRAPH-002-copilot
+  --output tests/acceptance/ide/workspaces/IDE-GRAPH-101-copilot
 ```
 
-命令会：
+Choose a checkpoint appropriate to each case; some require later Implement/Review
+state. The helper rejects existing destinations and symbolic links, copies the
+workspace and creates a result template. It does not inject contradictions or run
+workflows. Any deliberate malformed fixture must be isolated, identified as test
+input and never represented as real successful workflow output.
 
-- 拒绝覆盖已有目录；
-- 拒绝复制包含符号链接的工作区；
-- 创建独立工作区；
-- 在工作区旁边生成结果记录文件；
-- 打印推荐的前置快照。
+## Record actual outcomes
 
-工具不会自动注入矛盾、修改 Artifact 或执行 Prompt。按照测试计划只引入当前用例描述的一个变化，避免多个错误干扰 primary contradiction 判断。
-
-## 7. 记录结果
-
-默认结果文件集中保存在本地 `results/` 目录，并且不会提交到 Git：
+Default templates are written outside the tested workspace under:
 
 ```text
-tests/acceptance/ide/results/IDE-GRAPH-002.copilot.result.md
+tests/acceptance/ide/results/current/IDE-GRAPH-101.copilot.result.md
 ```
 
-填写：
-
-- IDE、扩展、模型和模式版本；
-- Prompt 是否从命令菜单选择以及来源；
-- 用户输入；
-- 执行前后文件清单；
-- Artifact、Report 和 Handoff 证据；
-- PASS/FAIL/BLOCKED/NOT RUN；
-- 缺陷编号。
-
-结果文件位于测试工作区之外，避免被 Agent 当作项目需求或 Review 输入。
-
-将 `Status` 改为 `PASS` 前，必须替换结果模板里的全部 `TODO`，并保持
-`Defect ID = NONE`。包含占位内容的 PASS 会被汇总工具拒绝。
-
-## 8. 汇总与发布门禁
-
-汇总当前本地真实执行结果：
+Record Framework Version, adapter, host/model versions, exact inputs and outputs,
+file changes, Artifact/Report/Handoff evidence, status and any defect. Before PASS,
+replace every TODO, use the current Framework Version and set Defect ID to NONE.
+The records must refer to retrievable real evidence. Check for secrets before
+sharing; only intentionally reviewed evidence should be committed.
 
 ```bash
 python3 tests/acceptance/ide/manage.py summary
-```
-
-执行 IDE 发布准出门禁：
-
-```bash
 python3 tests/acceptance/ide/manage.py release-gate
 ```
 
-门禁要求全部 199 个 P0 用例有完整的真实 `PASS` 证据。任何未执行、失败
-或阻塞的 P0，以及已经记录的 P1 `FAIL`/`BLOCKED`，都会返回非零退出码。
-该命令只读取结果记录，不执行 IDE、不调用 Agent，也不会把准备好的用例
-视为通过。
-
-## 9. 推荐执行顺序
-
-```text
-1. manage.py verify
-2. 创建 Copilot 与 Codex 干净工作区
-3. 执行批次 A：Prompt 接管
-4. 执行批次 B：生成 S1–S7
-5. 从快照复制批次 C/D/E 用例
-6. 执行 Adapter parity
-7. 执行 `manage.py summary`
-8. 执行 `manage.py release-gate`
-```
-
-完整期望结果、优先级和准出规则以 `docs/testing/ide-test-plan.zh-CN.md` 为准。
+All P0 cases need valid PASS evidence from every adapter prescribed for that case.
+Recorded P1 FAIL/BLOCKED outcomes also block release. NOT RUN stays NOT RUN until
+actually executed. The gate validates records, not the truth of their claims;
+maintainers must review the evidence. Historical PASS cannot be reused as current
+host conformance.

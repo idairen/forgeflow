@@ -43,10 +43,10 @@ plans are conservatively routed for structured revision rather than guessed.
 
 The participant must provide the protected mutation/exclusion required by Lane,
 Implement and recovery transactions. The runner does not implement a portable
-multi-file transaction service. The protocol conflicts identified in framework
-review still need real-host verification and any separately approved core repairs.
+multi-file transaction service. If execution exposes a contract conflict, preserve the evidence and report it;
+migration guidance does not authorize weakening the higher-precedence contract.
 
-Historical IDE results and decks are not current conformance evidence. Current
+Historical IDE results are not current conformance evidence. Current
 acceptance uses `tests/acceptance/ide/results/current/`; release-gate stays blocked
 until real current-version P0 evidence exists. No registry upload, Git tag or GitHub
 release is part of local preparation.

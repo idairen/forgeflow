@@ -39,14 +39,14 @@ test. Use a temporary project or the acceptance helpers under
 | Path | Responsibility |
 |------|----------------|
 | `.forgeflow/forgeflow.md` | Normative framework entry and precedence |
-| `.forgeflow/protocol/` | Artifact and Handoff contracts |
+| `.forgeflow/protocol/` | Artifact, Transition, Handoff and optional invalid-Review recovery contracts |
 | `.forgeflow/workflow/` | Workflow ownership and execution contracts |
 | `.forgeflow/adapter/` | Thin host-specific launchers |
 | `.forgeflow/rules/reviews/` | Review plugin registry and rules |
 | `src/forgeflow/` | Optional Python CLI and deterministic state handling |
 | `npm/` | Installer-only Node.js package |
 | `tests/` | Unit, integration, contract, and real-host acceptance assets |
-| `docs/` | Guides, testing documentation, and presentations |
+| `docs/` | Migration, testing and release guidance |
 
 The files under `.forgeflow/` are the canonical installed framework source. Avoid
 duplicating normative rules in Adapters, README examples, or CLI code.
@@ -74,6 +74,7 @@ python -m compileall -q src/forgeflow
 python -m unittest discover -s tests -p 'test_*.py'
 python tests/acceptance/ide/manage.py verify
 npm test
+node --test .forgeflow/tests/*.test.cjs
 npm pack --dry-run --json
 ```
 
@@ -140,3 +141,23 @@ Do not open a public issue for a suspected vulnerability. Follow `SECURITY.md`.
 
 By submitting a contribution, you agree that it may be distributed under the
 repository's MIT License and that you have the right to submit it.
+
+## Support and project decisions
+
+Use the GitHub bug form for reproducible defects and the feature/protocol forms
+for proposals. For usage questions, open a feature/protocol form with a clearly labeled usage question. Include the commit/version, OS, Python/Node versions, adapter/host
+versions, model, reproduction steps and redacted evidence. Distinguish actual host
+execution from automated fixtures. Account and host-provider issues belong to the
+respective provider. Support is best-effort; production suitability is not promised.
+
+The repository owner, `@idairen`, maintains releases, security response and merge
+decisions. Contributors propose changes through pull requests. Changes to ownership,
+entry, versions, Handoffs or package identity need a recorded design rationale;
+record decisions in issues, pull requests or the Changelog. Follow the
+[code of conduct](CODE_OF_CONDUCT.md).
+
+Current priorities are real-host acceptance, contract regression coverage and a
+reproducible end-to-end example. These are maintenance goals, not delivered
+capabilities or promised dates. Releases follow the
+[release process](docs/maintainers/releasing.md); current acceptance results must
+support every compatibility claim.

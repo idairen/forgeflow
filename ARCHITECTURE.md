@@ -55,6 +55,44 @@ attempts from becoming reviewable again. Explicit recovery is maintenance, not a
 seventh Workflow. The CLI diagnoses and routes; it does not automatically dispose
 project evidence.
 
+## Strategy and method selection
+
+The [Implement workflow](.forgeflow/workflow/implement.md) owns the selection
+procedure. Solution defines obligations, passing criteria and evidence sources;
+Slice maps them to each delivery unit. Implement inspects local behavior, tests,
+authorized paths and environment, retains mandatory checks, and selects an
+alternative only when an approved condition is met. It records the obligation
+mapping before implementation. Missing engineering policy returns to Solution;
+missing Slice mapping returns to Slice. Routine execution choices do not require
+users to choose strategy names.
+
+Strategies can be combined; passing one check never discharges another required
+obligation. TDD requires genuine pre-change behavioral RED. BEHAVIORAL_TEST does
+not claim historical RED. Characterization and benchmarks retain required baselines;
+manual acceptance requires the actual acceptor's result. The full supported list
+and evidence schema live in the [Artifact Protocol](.forgeflow/protocol/artifact.md).
+
+Methods such as direct implementation, reproduce-then-repair, behavior-preserving
+refactoring, small changes with frequent verification, minimal-diff repair and
+mechanical transformation organize authorized changes. They are optional summary
+prose, may be combined, and create no new Artifact, Attempt or approval gate.
+They cannot change business policy, engineering contracts or Slice boundaries.
+
+## Entry and recovery
+
+Transition defines five entries: Bootstrap, Subsequent Plan, Handoff, Lane and
+Recovery. Review accepts only Handoff. Missing/invalid Handoff permits read-only
+routing correction when no valid alternative entry applies; it authorizes no
+implementation or artifact repair. A receiver validates the complete fresh graph
+and exact ordered input projection. Emitting a Handoff ends the invocation.
+
+Invalid-Review recovery is separately authorized maintenance. Only an eligible
+format defect may be disposed of through protected preservation of original bytes
+and a SHA256 receipt. Known blocking dispositions and valid PASS/FAIL reports are
+not eligible. The old Attempt remains occupied; later Implement and Review require
+fresh entry and evidence. See the optional
+[recovery procedure](.forgeflow/protocol/review-recovery.md), loaded only on request.
+
 ## Compatibility and boundaries
 
 Feature contract and engineering versions preserve compatible downstream evidence.
@@ -73,5 +111,5 @@ acceptance is stored separately from historical evidence. Python/npm packages sh
 the same canonical framework, and npm remains installer-only.
 
 See [release process](docs/maintainers/releasing.md) and
-[migration notes](docs/maintainers/implement-migration.md). Historical comparisons
-and slide decks remain context, not current behavior specifications.
+[migration notes](docs/maintainers/implement-migration.md). The Markdown contracts
+define behavior; this explanation does not create additional authority.

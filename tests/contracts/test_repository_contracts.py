@@ -24,20 +24,10 @@ class RepositoryContractTests(unittest.TestCase):
             "tests/integration/test_cli_knowledge.py",
             "tests/contracts/test_repository_contracts.py",
             "tests/acceptance/ide/manage.py",
-            "docs/guides/concept-and-architecture.md",
             "docs/testing/ide-test-plan.zh-CN.md",
             "docs/testing/cli-knowledge-test-plan.md",
-            "docs/presentations/forgeflow-enterprise-roadshow.pdf",
-            "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
-            "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
-            "docs/presentations/forgeflow-engineering-protocol.en.md",
-            "docs/presentations/forgeflow-engineering-protocol.zh-CN.md",
-            "scripts/build_executive_brief.py",
             "ARCHITECTURE.zh-CN.md",
             "CODE_OF_CONDUCT.md",
-            "GOVERNANCE.md",
-            "ROADMAP.md",
-            "SUPPORT.md",
             "SECURITY.md",
             "CONTRIBUTING.md",
             ".github/CODEOWNERS",
@@ -60,66 +50,6 @@ class RepositoryContractTests(unittest.TestCase):
             self.assertTrue((ROOT / relative).exists(), relative)
         for relative in removed_paths:
             self.assertFalse((ROOT / relative).exists(), relative)
-
-    def test_executive_briefs_are_bilingual_pdf_outputs(self):
-        briefs = {
-            "en": ROOT
-            / "docs/presentations/forgeflow-executive-architecture-brief.en.pdf",
-            "zh-CN": ROOT
-            / "docs/presentations/forgeflow-executive-architecture-brief.zh-CN.pdf",
-        }
-        for locale, path in briefs.items():
-            with self.subTest(locale=locale):
-                self.assertGreater(path.stat().st_size, 100_000)
-                self.assertEqual(path.read_bytes()[:5], b"%PDF-")
-
-        generator = (ROOT / "scripts/build_executive_brief.py").read_text(
-            encoding="utf-8"
-        )
-        for concept in (
-            "Artifact Graph",
-            "Agent-agnostic Core",
-            "HANDOFF & RETURN PROTOCOL",
-            "FEATURE / SLICE",
-            "FROM SDLC TO AI ENGINEERING PROTOCOL",
-            "AGENT INDEPENDENCE",
-            "方向，不是当前能力声明",
-        ):
-            self.assertIn(concept, generator)
-
-    def test_engineering_protocol_presentations_are_bilingual_and_current(self):
-        presentations = {
-            "en": ROOT / "docs/presentations/forgeflow-engineering-protocol.en.md",
-            "zh-CN": ROOT
-            / "docs/presentations/forgeflow-engineering-protocol.zh-CN.md",
-        }
-        required_concepts = {
-            "Agent-Agnostic Engineering Protocol",
-            "Artifact Graph",
-            "Return",
-            "Recovery",
-            "Codex",
-            "Copilot",
-            "GitHub Spec Kit",
-            "OpenSpec",
-            "BMAD Method",
-            "SpecDD",
-            "Plugin-Based Review",
-        }
-        for locale, path in presentations.items():
-            content = path.read_text(encoding="utf-8")
-            with self.subTest(locale=locale):
-                self.assertEqual(content.count("```mermaid"), 4)
-                for concept in required_concepts:
-                    self.assertIn(concept, content)
-                if locale == "en":
-                    self.assertIn("What makes ForgeFlow distinctive", content)
-                    self.assertIn("Recommended adoption path", content)
-                    self.assertIn("not a current validated-integration claim", content)
-                else:
-                    self.assertIn("ForgeFlow 与众不同的地方", content)
-                    self.assertIn("建议采用路径", content)
-                    self.assertIn("不是当前已验证集成", content)
 
     def test_json_documents_are_parseable(self):
         for relative in (

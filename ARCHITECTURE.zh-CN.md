@@ -29,6 +29,35 @@ Implement 在批准范围内选择验证策略和局部实施 Method，不能改
 TDD 是十种验证策略之一，Method 是可选说明，不新增状态或审批。CLI 能检查记录结构、
 引用和结果，不能证明模型声称的执行真实，也不能代替 Review 判断业务正确性和覆盖充分性。
 
+## 策略与方法的选择
+
+[Implement Workflow](.forgeflow/workflow/implement.md) 拥有具体选择步骤。
+Solution 定义验证义务、通过标准与证据来源；Slice 映射到每个交付单元。
+Implement 检查现有行为、测试、授权路径与环境，保留全部必需检查，只有在批准的
+替代条件成立时才选替代策略。修改实现前先记录策略与义务映射。缺少工程政策返回
+Solution，缺少 Slice 映射返回 Slice；常规执行选择不要求用户挑选策略名称。
+
+策略可以组合，一项检查成功不能抵消另一项义务。TDD 需要修改前真实的行为 RED；
+BEHAVIORAL_TEST 不声称历史 RED；行为刻画和性能比较保留必需基线；人工验收需要
+指定验收人的真实结果。完整策略清单和证据表以
+[Artifact Protocol](.forgeflow/protocol/artifact.md) 为准。
+
+方法包括直接实现、先复现再修复、保持行为的重构、小步修改并频繁验证、最小差异修复、
+机械转换。这些是可组合的指导，作为可选说明写入 Implementation Summary，不新增
+Artifact、Attempt 或审批，也不改变业务政策、工程契约和 Slice 边界。
+
+## 入口与恢复
+
+Transition 定义 Bootstrap、Subsequent Plan、Handoff、Lane、Recovery 五种入口。
+Review 仅接受 Handoff。缺少或无效的 Handoff 且无其他合法入口时，只读解析当前路由
+并停止，不授权实施或修复产物。接收方重新核验完整当前图和精确有序输入投影；
+发出 Handoff 即结束本次执行。
+
+无效 Review 恢复是单独授权的维护操作。仅符合条件的格式缺陷可在受保护事务中保留
+原始字节和 SHA256 回执后移出活动路径；已知阻塞或有效 PASS/FAIL 不适用。
+旧 Attempt 永久占号，后续 Implement/Review 仍需新鲜授权和验证。只有显式要求时
+才加载[可选恢复程序](.forgeflow/protocol/review-recovery.md)。
+
 ## 兼容与发布
 
 旧 Solution 只有在 Planning、Requirement 历史可验证时才可作为 stale 基线。

@@ -45,12 +45,14 @@ replaced by a more convenient strategy.
 Python 3.10+ is required for `forge`. From this repository:
 
 ```bash
-python -m venv .venv
-.venv/bin/python -m pip install -e .
-.venv/bin/forge --help
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+forge --help
 ```
 
-In a target repository, use the installed command:
+Keep this environment active when changing to a target repository. Alternatively,
+use the absolute path to the installed `.venv/bin/forge` command:
 
 ```bash
 forge init --adapter codex
@@ -132,8 +134,8 @@ python tests/acceptance/ide/manage.py release-gate
 ```
 
 The final command intentionally remains blocked until current-version real IDE
-results have been captured. Historical results and presentations describe earlier
-versions and are not current conformance evidence. CLI validation checks structure,
+results have been captured. Historical IDE results describe earlier versions and are not current conformance
+evidence. CLI validation checks structure,
 references, routing and recorded results; independent Review must assess semantic
 coverage, actual execution output and business correctness. Legacy prose-only Slice
 verification plans require a structured revision for automated CLI routing.
@@ -141,3 +143,15 @@ verification plans require a structured revision for automated CLI routing.
 See [architecture](ARCHITECTURE.md), [中文架构](ARCHITECTURE.zh-CN.md),
 [release process](docs/maintainers/releasing.md), [contributing](CONTRIBUTING.md),
 [security](SECURITY.md), and [license](LICENSE).
+
+## Documentation and support
+
+Use the [documentation index](docs/README.md) to find migration and testing guides.
+The [sample project](examples/sample-project/README.md) demonstrates installation
+and the Plan/Grill checkpoint; it is not a complete verified delivery example.
+For questions, defect reports and project decisions, see
+[contributing and support](CONTRIBUTING.md#support-and-project-decisions).
+
+ForgeFlow is distributed under the [MIT License](LICENSE). Source availability,
+package publication and a validated host release are distinct milestones. The
+release gate reports the current evidence; no stored test count is a release approval.
