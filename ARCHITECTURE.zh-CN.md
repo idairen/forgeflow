@@ -7,6 +7,21 @@
 → 单个 Workflow → Adapter。核心在设计上是 Agent-agnostic；专用 launcher 为 Codex 和 Copilot。
 Handoff 不会让 Artifact 自动变为真实，真实 IDE Acceptance 必须独立取得。
 
+## 入门术语
+
+| 术语 | 含义 |
+| --- | --- |
+| Feature | Planning 中具有稳定标识的业务成果。 |
+| Slice | Feature 内由 Slice Plan 定义的交付单元。 |
+| Artifact | 持久化的规范记录，需结合产物图校验有效性、版本和当前性。 |
+| Handoff | 发给下一次调用的最终路由消息，本身不能证明引用证据有效。 |
+| Lane | 对一个 eligible Feature 的 Grill 执行范围领取，不是 Implement 交付通道。 |
+| Attempt | 与版本引用一起区分当前执行、重试及历史的执行标识。 |
+| Barrier | 对相关完整集合的就绪条件，例如全部 Requirement READY 后才能进入 Solution。 |
+| Strategy / Method | 带有证据义务的验证方式 / 组织已授权实施工作的可选指导。 |
+
+以上是入门摘要。精确定义和有效性规则仍以权威契约为准，不新增状态或字段。
+
 ## 执行链
 
 Plan → 按 Planning 依赖并行 Grill → 全部 Requirement READY → Solution → 全部 Feature

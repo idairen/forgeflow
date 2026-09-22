@@ -12,6 +12,12 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.urls]
+Repository = "https://github.com/idairen/forgeflow-ai"
+Documentation = "https://github.com/idairen/forgeflow-ai/blob/main/docs/README.md"
+Issues = "https://github.com/idairen/forgeflow-ai/issues"
+Changelog = "https://github.com/idairen/forgeflow-ai/blob/main/CHANGELOG.md"
+
 [project.scripts]
 forge = "forgeflow.cli.main:main_cli"
 

@@ -10,6 +10,20 @@ The normative source is [`.forgeflow/`](.forgeflow/forgeflow.md): Framework 3.8,
 Artifact 2.19, Transition 1.8, Handoff 2.15, and Implement 2.13. The CLI follows
 those contracts; it does not supersede them or decide whether a model's evidence is true.
 
+## When to use ForgeFlow
+
+Use ForgeFlow when a change needs explicit business decisions, scoped delivery,
+traceable verification and independent Review. It can guide a new application or
+an approved change to an existing codebase. The six workflow boundaries and retained
+evidence add work; consider that cost for one-off edits that need little coordination.
+It does not supply a hosted agent, provider account or universal IDE registration.
+
+Start with the [quickstart](docs/quickstart.md), then the
+[delivery tutorial](examples/complete-delivery/README.md). For an existing codebase,
+use the [adoption guide](docs/existing-projects.md). Keep the
+[CLI/config reference](docs/reference/cli.md) and
+[troubleshooting guide](docs/troubleshooting.md) nearby.
+
 ## Delivery model
 
 ```text

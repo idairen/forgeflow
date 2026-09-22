@@ -1,24 +1,49 @@
 # ForgeFlow documentation
 
-Start with the [README](../README.md) for installation, commands and limitations.
-The normative source is [`.forgeflow/forgeflow.md`](../.forgeflow/forgeflow.md);
-these guides explain it and never override it.
+The normative source is [`.forgeflow/forgeflow.md`](../.forgeflow/forgeflow.md).
+These guides explain it and never override it. Start with the
+[project overview](../README.md#when-to-use-forgeflow).
 
-| Audience | Document |
-| --- | --- |
-| Users and contributors | [Architecture](../ARCHITECTURE.md) / [中文架构](../ARCHITECTURE.zh-CN.md) |
-| Upgrading projects | [Implement migration](maintainers/implement-migration.md) |
-| Review plugin authors | [Review plugins](../PLUGINS.md) |
-| First-time users | [Quickstart and usability checks](quickstart.md) |
-| End-to-end learning | [Runnable delivery tutorial](../examples/complete-delivery/README.md) |
-| Real-project evidence | [Task-manager case: FAIL, rework and recovery](testing/evidence/task-manager/README.md) |
-| Host selection | [Compatibility and evidence](testing/compatibility.md) |
-| Contributors | [Contributing and support](../CONTRIBUTING.md) |
-| Security reporters | [Security policy](../SECURITY.md) |
-| Maintainers | [Release process](maintainers/releasing.md) |
-| Acceptance testers | [Current IDE plan](testing/ide-test-plan.zh-CN.md) and [execution instructions](../tests/acceptance/ide/README.md) |
-| CLI contributors | [Knowledge-view test plan](testing/cli-knowledge-test-plan.md) |
+## Start here
+
+- [Quickstart and host entry](quickstart.md): installation, conversation versus
+  terminal commands, clarification and the first Handoff.
+- [Runnable delivery tutorial](../examples/complete-delivery/README.md): an inventory
+  defect/repair exercise and the six workflow steps.
+- [Existing projects](existing-projects.md): adopting the framework, incremental
+  work and sharing project evidence through a team's Git process.
+
+## Daily use and reference
+
+- [CLI and configuration](reference/cli.md): commands, options, config, logs and exit codes.
+- [Troubleshooting](troubleshooting.md): symptoms, diagnostics and authorized next actions.
+- [Architecture and glossary](../ARCHITECTURE.md) / [中文架构与术语](../ARCHITECTURE.zh-CN.md).
+- [Compatibility and evidence](testing/compatibility.md): host claims and their limits.
+- [Implement migration](maintainers/implement-migration.md): framework refresh and legacy evidence.
+- [Review plugins](../PLUGINS.md): registry, applicability, thresholds and reports.
+
+## Contribute and release
+
+- [Contributing and support](../CONTRIBUTING.md).
+- [Security policy](../SECURITY.md).
+- [Release process](maintainers/releasing.md).
+
+Run `python3 scripts/check_docs.py` from the source checkout before submitting
+public documentation changes. CI checks local link targets, Markdown heading
+anchors, and presence of Python command/option/config names in the reference.
+The checker supports repository inline and explicit reference links; it is not a
+full Markdown renderer. It does not request external URLs or establish that prose,
+examples or host claims are semantically correct; those require review.
+
+## Tests and execution evidence
+
+- [Real task-manager case](testing/evidence/task-manager/README.md): historical
+  FAIL/rework/PASS and recovery evidence with provenance and baseline limits.
+- [Current IDE plan](testing/ide-test-plan.zh-CN.md) and
+  [execution instructions](../tests/acceptance/ide/README.md).
+- [Knowledge-view test plan](testing/cli-knowledge-test-plan.md).
+- [Sample Plan/Grill checkpoint](../examples/sample-project/README.md).
 
 Historical IDE plans and results are retained for traceability, not current
-conformance evidence. Obsolete presentations and duplicate introductory guides
-were removed; their earlier versions remain in Git history.
+conformance evidence. Teaching fixtures are not real-host acceptance. Obsolete
+presentations and duplicate introductory guides remain available in Git history.

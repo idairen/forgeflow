@@ -36,12 +36,12 @@ rule. No Planning or application code should exist yet. Run `forge init` without
 
 ## 3. Choose the execution interface
 
-**IDE:** open the initialized project, enable/discover its six launcher files using
-the host's supported configuration, and invoke the Plan launcher. The dedicated
-files are under `.forgeflow/adapter/codex/` or `.forgeflow/adapter/copilot/`.
-Installation alone does not register every host's command menu. Generic Markdown
-participants read the framework, Artifact, Transition, Handoff and exactly one
-authorized Workflow in order.
+**IDE or agent conversation:** open the initialized project in the selected host
+and use the [entry instructions below](#ide-entry-and-verification). The dedicated
+launcher files are under `.forgeflow/adapter/codex/` or
+`.forgeflow/adapter/copilot/`. Installation alone does not register every host's
+command menu. Generic Markdown participants read the framework, Artifact,
+Transition, Handoff and exactly one authorized Workflow in order.
 
 **Python orchestrator:** separately install and authenticate the selected external
 agent executable. The current backends invoke `codex exec` or `gh copilot`; confirm
@@ -86,6 +86,47 @@ stderr to distinguish them. It never authorizes automatic progression.
 Use `forge status` to inspect the graph; use `forge handoff` only as a historical
 runtime view and revalidate it before reuse. The external `forge run --auto`
 orchestrator may execute distinct authorized steps, but waits still require action.
+
+## IDE entry and verification
+
+The maintainer confirmed these invocation forms on 2026-09-22. They are reported
+working entry points, not a claim that every host version discovers the files
+without configuration. The exact discovery settings and extension/CLI versions
+for these two invocation forms have not been supplied.
+
+| Interface | Where to type | Plan invocation |
+| --- | --- | --- |
+| IntelliJ IDEA + Copilot | Copilot conversation in the project | `/forge-plan` |
+| Codex CLI | Inside the Codex conversation opened for the project | `forge-plan` |
+| Optional Python orchestrator | Terminal in the initialized project root | `forge plan --intent "..."` |
+
+For either conversation interface:
+
+1. Initialize with the matching adapter: `forge init --adapter copilot` for
+   IntelliJ + Copilot, or `forge init --adapter codex` for Codex.
+2. Open the initialized application root in the host. Confirm that
+   `.forgeflow/adapter/<adapter>/forge-plan.prompt.md` exists and is accessible.
+3. Enter the reported invocation in that host's conversation and supply your
+   explicit project intent. `forge-plan` inside Codex is not a standalone shell
+   executable installed by the Python or npm package.
+4. Inspect the response and changes. The launcher requires the Framework,
+   Artifact, Transition, Handoff and Plan contracts, in order. Plan may ask
+   questions and wait; it must not switch to a generic native planning mode or
+   begin implementing application code.
+5. When Plan legitimately finishes, retain its canonical Handoff. Start the next
+   authorized workflow in a new invocation with that complete context. Its target
+   comes from current resolution, not from this tutorial's assumed sequence.
+
+If the host cannot find the launcher, first check the selected adapter and project
+root, then its prompt discovery settings. Do not infer registration from the
+presence of a Markdown file. The acceptance helper configures VS Code Copilot
+prompt locations, but that is not an IntelliJ configuration recipe. Capture the
+actual host settings when documenting a new working installation.
+
+This invocation confirmation is separate from the
+[historical task-manager artifact case](testing/evidence/task-manager/README.md).
+It does not independently identify which host produced each archived artifact or
+establish current-version acceptance. See the [compatibility matrix](testing/compatibility.md).
 
 ## First-time user check
 

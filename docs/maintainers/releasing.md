@@ -38,6 +38,7 @@ python -m unittest discover -s tests -p 'test_*.py'
 python tests/acceptance/ide/manage.py verify
 npm test
 node --test .forgeflow/tests/*.test.cjs
+python scripts/check_docs.py
 ```
 
 The working tree must contain no generated runtime evidence, local paths, secrets,

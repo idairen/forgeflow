@@ -46,7 +46,7 @@ test. Use a temporary project or the acceptance helpers under
 | `src/forgeflow/` | Optional Python CLI and deterministic state handling |
 | `npm/` | Installer-only Node.js package |
 | `tests/` | Unit, integration, contract, and real-host acceptance assets |
-| `docs/` | Migration, testing and release guidance |
+| `docs/` | User guides, CLI/config reference, migration, testing and release guidance |
 
 The files under `.forgeflow/` are the canonical installed framework source. Avoid
 duplicating normative rules in Adapters, README examples, or CLI code.
@@ -76,6 +76,7 @@ python tests/acceptance/ide/manage.py verify
 npm test
 node --test .forgeflow/tests/*.test.cjs
 npm pack --dry-run --json
+python scripts/check_docs.py
 ```
 
 These commands validate repository behavior and test assets. They do not prove model
@@ -145,7 +146,7 @@ repository's MIT License and that you have the right to submit it.
 ## Support and project decisions
 
 Use the GitHub bug form for reproducible defects and the feature/protocol forms
-for proposals. For usage questions, open a feature/protocol form with a clearly labeled usage question. Include the commit/version, OS, Python/Node versions, adapter/host
+for proposals. For usage questions, use the [usage question form](https://github.com/idairen/forgeflow-ai/issues/new?template=question.yml) after checking [troubleshooting](docs/troubleshooting.md). Include the commit/version, OS, Python/Node versions, adapter/host
 versions, model, reproduction steps and redacted evidence. Distinguish actual host
 execution from automated fixtures. Account and host-provider issues belong to the
 respective provider. Support is best-effort; production suitability is not promised.

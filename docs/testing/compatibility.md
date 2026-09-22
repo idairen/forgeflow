@@ -40,6 +40,15 @@ Place reviewed case records under `tests/acceptance/ide/results/current/`, using
 checks those records; absent records mean the gate cannot establish coverage, not
 that it has independently disproved a maintainer's reported success.
 
+## Reported invocation forms
+
+On 2026-09-22 the maintainer additionally confirmed `/forge-plan` in an IntelliJ
+Copilot conversation and `forge-plan` inside a Codex CLI conversation. See the
+[entry walkthrough](../quickstart.md#ide-entry-and-verification). Extension/CLI
+versions and prompt discovery settings for these entry forms were not supplied.
+This establishes reported invocation forms, not Copilot parity, current-suite PASS,
+or a new host attribution for each artifact in the historical case above.
+
 ## Tooling matrix
 
 | Component | Declared target | Evidence boundary |

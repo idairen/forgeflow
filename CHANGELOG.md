@@ -26,6 +26,12 @@ Earlier development notes remain available in Git history.
 
 ### Release preparation
 
+- Add CLI/configuration reference, troubleshooting and existing-project adoption
+  guidance, introductory terms, and maintainer-confirmed host invocation forms.
+- Add a usage-question issue form and Python package project links.
+- Check public documentation links/anchors and CLI/config name coverage in CI;
+  this does not validate external URLs or real-host behavior.
+
 - Archive sanitized real-project evidence for FAIL/rework/PASS and invalid-Review
   recovery, with original hashes and explicit historical/current-version limits.
   Preserve current-CLI compatibility diagnostics without changing source artifacts.

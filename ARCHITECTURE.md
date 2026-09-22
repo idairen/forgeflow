@@ -20,6 +20,22 @@ one agent process, checks its result against fresh graph evidence, and records
 non-authoritative diagnostics. `ProjectKnowledgeBuilder` and `ProjectImpactAnalyzer`
 render disposable views. Neither a view nor runtime history authorizes progression.
 
+## Terms used in the workflow
+
+| Term | Meaning |
+| --- | --- |
+| Feature | A declared business outcome with a stable identity in Planning. |
+| Slice | A delivery unit within a Feature, defined by its Slice Plan. |
+| Artifact | A canonical persisted record whose validity, versions and currentness are checked against the graph. |
+| Handoff | The final routing message for a new invocation; it is not proof that its referenced evidence is valid. |
+| Lane | A claimed Grill execution scope for one eligible Feature, not an Implement delivery lane. |
+| Attempt | An execution identity used with version references to distinguish current work from retries and history. |
+| Barrier | A readiness condition over the relevant complete set, such as all Requirements READY before Solution. |
+| Strategy / method | A verification approach with evidence obligations / optional guidance for organizing authorized implementation. |
+
+These are introductory summaries. Exact definitions and validity rules remain in
+the normative contracts; this glossary introduces no new state or field.
+
 ## Flow and concurrency
 
 Plan → dependency-ready Grill Lanes → all Requirements READY → Solution → every
