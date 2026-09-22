@@ -9,7 +9,10 @@ these guides explain it and never override it.
 | Users and contributors | [Architecture](../ARCHITECTURE.md) / [中文架构](../ARCHITECTURE.zh-CN.md) |
 | Upgrading projects | [Implement migration](maintainers/implement-migration.md) |
 | Review plugin authors | [Review plugins](../PLUGINS.md) |
-| First-time users | [Small sample project](../examples/sample-project/README.md) |
+| First-time users | [Quickstart and usability checks](quickstart.md) |
+| End-to-end learning | [Runnable delivery tutorial](../examples/complete-delivery/README.md) |
+| Real-project evidence | [Task-manager case: FAIL, rework and recovery](testing/evidence/task-manager/README.md) |
+| Host selection | [Compatibility and evidence](testing/compatibility.md) |
 | Contributors | [Contributing and support](../CONTRIBUTING.md) |
 | Security reporters | [Security policy](../SECURITY.md) |
 | Maintainers | [Release process](maintainers/releasing.md) |

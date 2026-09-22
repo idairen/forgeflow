@@ -52,6 +52,32 @@ both package manifests before publication.
 The npm artifact must remain installer-only. The Python artifact must contain the
 current canonical `.forgeflow/` template and provide the `forge` command.
 
+### Reproducible local package checks
+
+Install `build` in the active development environment. From the repository root:
+
+```bash
+python -m build --sdist --wheel
+npm pack --pack-destination dist
+python scripts/verify_packages.py \
+  --wheel dist/forgeflow-0.1.0-py3-none-any.whl \
+  --sdist dist/forgeflow-0.1.0.tar.gz \
+  --npm dist/idairen-forgeflow-0.1.0.tgz
+python examples/complete-delivery/check.py
+```
+
+Use the actual filenames for the chosen release version; do not mix older artifacts
+from the output directory. The archive checker compares bundled contracts and
+Python sources byte-for-byte with the checkout, verifies the license and installer
+entrypoint, rejects project evidence/unsafe paths, and emits SHA256 digests. It is
+not a complete malware, secret or legal-provenance scanner.
+
+For a clean local install, create a fresh virtual environment and install the wheel
+with `python -m pip install --no-index /absolute/path/to/the.whl`. Follow the
+[quickstart](../quickstart.md) in a new project. Separately run the npm tarball with
+`npm exec --yes --package /absolute/path/to/the.tgz -- forgeflow init --adapter copilot`.
+Neither operation publishes a package or runs an Agent.
+
 ## 4. Record Real-Host Acceptance
 
 Use the [current plan](../testing/ide-test-plan.zh-CN.md) and
@@ -92,6 +118,28 @@ not execute an IDE or replace maintainer review of the captured evidence.
 These repository settings are configured on GitHub and cannot be proven by local
 files alone.
 
+### Read-only remote verification
+
+Run these with a working GitHub login; a failed request is unverified, not PASS:
+
+```bash
+gh repo view idairen/forgeflow-ai --json nameWithOwner,isPrivate,defaultBranchRef,url
+gh run list --repo idairen/forgeflow-ai --commit "$(git rev-parse HEAD)"
+gh api repos/idairen/forgeflow-ai/rulesets
+gh api repos/idairen/forgeflow-ai/branches/main/protection
+gh api repos/idairen/forgeflow-ai/private-vulnerability-reporting
+npm whoami
+npm owner ls @idairen/forgeflow
+```
+
+Use the actual default branch if it differs from `main`. A 404 for one protection
+endpoint may mean missing access or a different protection mechanism; review both
+rulesets and classic protection, including bypasses and required check names.
+Registry package lookup alone does not prove publishing rights. Confirm Python
+project ownership using the intended maintainer account before uploading; do not
+assume the generic `forgeflow` name is available. No name or version is changed
+automatically by these checks.
+
 ## 6. Publish
 
 1. Merge the release preparation with all required checks passing.
@@ -106,9 +154,30 @@ files alone.
 Do not describe a package as publicly available until the registry lookup and clean
 installation succeed.
 
+After explicit release authorization, use the reviewed distributions, not a rebuild
+with different contents. For example, `npm publish dist/<reviewed-package>.tgz`
+and `python -m twine upload dist/<reviewed-wheel>.whl dist/<reviewed-sdist>.tar.gz`
+are publishing actions, not preflight checks. Select authentication/provenance
+settings for the intended registry account before running them. Never paste tokens
+into an issue, command example, Artifact or captured acceptance result.
+
 ## 7. Post-Release
 
 - verify GitHub and registry metadata, checksums, links, and installation commands;
 - open a new `Unreleased` section if needed;
 - monitor issues and security reports;
 - record any known limitations without overstating compatibility.
+
+## Source and attribution review
+
+The repository uses MIT and declares no Python or npm runtime dependencies. Build,
+test and host tools retain their own licensing and must be reviewed if redistributed.
+Git authorship alone does not prove that every contributed file has redistribution
+rights. Review imported/generated assets and third-party snippets at the release
+commit and retain any required notices.
+
+The unused historical roadshow image was removed from the current source tree;
+its origin was not documented and it was not in either package allowlist. Removal
+from the current tree does not remove earlier Git history. When publishing history,
+include historical assets in the attribution review; do not infer their origin
+from the repository-wide MIT notice.

@@ -108,6 +108,30 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.assertEqual(result["pipeline_status"], "COMPLETE")
         self.assertIsNotNone(HandoffParser.parse(HandoffParser.render_resolution(result)))
 
+    def test_fail_rework_pass_preserves_prior_attempt_evidence(self):
+        self.delivery()
+        self.implement(attempt=1)
+        self.review(decision="FAIL", attempt=1)
+        original_record = (self.root / "implement-feature-01-slice-01.md").read_text()
+        original_review = (self.root / "review-feature-01-slice-01-attempt-01.md").read_bytes()
+        self.assertEqual(self.graph()[1]["resolution_rule"], "rule_8_review_failure")
+        # Synthetic graph transition, not an actual Agent or independent Review.
+        self.write("history/implement-feature-01-slice-01-attempt-01.md", original_record)
+        self.implement(attempt=2)
+        state, result = self.graph()
+        self.assertEqual(state["errors"], [])
+        self.assertEqual(result["current_workflow"], "review")
+        self.review(attempt=2)
+        self.assertEqual(self.graph()[1]["pipeline_status"], "COMPLETE")
+        self.assertEqual(
+            (self.root / "review-feature-01-slice-01-attempt-01.md").read_bytes(),
+            original_review,
+        )
+        self.assertEqual(
+            (self.root / "history/implement-feature-01-slice-01-attempt-01.md").read_text(),
+            original_record,
+        )
+
     def test_pending_required_check_cannot_reach_review(self):
         self.delivery()
         self.implement(result="NOT_RUN")

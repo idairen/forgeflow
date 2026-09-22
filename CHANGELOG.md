@@ -24,6 +24,22 @@ Earlier development notes remain available in Git history.
 - Preserve valid-but-stale Solution baselines only with supporting lineage;
   stale evidence cannot satisfy delivery or completion gates.
 
+### Release preparation
+
+- Archive sanitized real-project evidence for FAIL/rework/PASS and invalid-Review
+  recovery, with original hashes and explicit historical/current-version limits.
+  Preserve current-CLI compatibility diagnostics without changing source artifacts.
+
+
+- Add an executable inventory-transfer teaching example, with actual failure and
+  repair checks, and a full six-workflow walkthrough. Teaching results do not
+  constitute independent Review or IDE acceptance.
+- Add a first-run guide and compatibility/evidence matrix, distinguishing reported
+  successful IDE execution from public case records awaiting archival.
+- Remove the unused historical roadshow image from the current source tree.
+- Verify wheel, sdist and npm archive contents against the checkout in CI; run the
+  executable example in the Python matrix.
+
 ### Installation and maintenance
 
 - Package the current framework in Python and npm distributions. The npm package

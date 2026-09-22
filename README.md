@@ -2,7 +2,9 @@
 
 ForgeFlow is a repository-native Markdown protocol for AI-assisted software delivery,
 with an optional Python CLI and an npm framework installer. **Technical Preview**:
-local tests and package checks do not establish real Codex/Copilot acceptance.
+local tests and package checks do not establish host compatibility. See the
+[compatibility and evidence table](docs/testing/compatibility.md) for the inspected real-project
+case, its version baseline and remaining host metadata.
 
 The normative source is [`.forgeflow/`](.forgeflow/forgeflow.md): Framework 3.8,
 Artifact 2.19, Transition 1.8, Handoff 2.15, and Implement 2.13. The CLI follows
@@ -133,8 +135,9 @@ python tests/acceptance/ide/manage.py verify
 python tests/acceptance/ide/manage.py release-gate
 ```
 
-The final command intentionally remains blocked until current-version real IDE
-results have been captured. Historical IDE results describe earlier versions and are not current conformance
+The final command evaluates the current-version IDE records on disk. Reported
+successful runs must be archived and mapped to cases before the gate can confirm
+their coverage. Historical IDE results describe earlier versions and are not current conformance
 evidence. CLI validation checks structure,
 references, routing and recorded results; independent Review must assess semantic
 coverage, actual execution output and business correctness. Legacy prose-only Slice
@@ -147,8 +150,11 @@ See [architecture](ARCHITECTURE.md), [中文架构](ARCHITECTURE.zh-CN.md),
 ## Documentation and support
 
 Use the [documentation index](docs/README.md) to find migration and testing guides.
-The [sample project](examples/sample-project/README.md) demonstrates installation
-and the Plan/Grill checkpoint; it is not a complete verified delivery example.
+Follow the [first-run guide](docs/quickstart.md) and
+[complete delivery tutorial](examples/complete-delivery/README.md) for a runnable
+application defect/repair example and all six workflow steps. The earlier
+[sample checkpoint](examples/sample-project/README.md) illustrates Plan/Grill only.
+Teaching fixtures are not substitutes for independent real-host evidence.
 For questions, defect reports and project decisions, see
 [contributing and support](CONTRIBUTING.md#support-and-project-decisions).
 
