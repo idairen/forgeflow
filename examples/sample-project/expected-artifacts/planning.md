@@ -25,7 +25,7 @@ Deliver an authenticated task-management HTTP API for a small engineering team.
 ## Success Measures
 
 - Approved users can authenticate and complete the declared task workflows.
-- Every Feature proceeds through Requirement, Solution, Slice, TDD, and Review evidence.
+- Every Feature proceeds through Requirement, Solution, Slice, Implement, and Review evidence.
 
 ## Project Constraints
 

@@ -113,8 +113,10 @@ silently releases a claim or archives a Review. The host/participant must provid
 protected transactions; the CLI does not turn sequential agent file writes into
 atomic multi-file updates.
 
-Exit codes: `0` successful step/completion, `1` error or invalid command, `2`
-incomplete/waiting/routing correction, `130` interruption. Runtime logs under
+Exit codes: `0` successful step/completion, `1` execution or validation error, `2`
+incomplete/waiting/routing correction **or command-line argument parsing error**
+(such as an unknown subcommand), `130` interruption. Inspect the response and
+stderr before treating `2` as a workflow wait. Runtime logs under
 `.forgeflow/runtime/` are disposable diagnostics, never workflow authority.
 
 ## Upgrading existing projects

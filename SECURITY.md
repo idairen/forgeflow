@@ -63,8 +63,10 @@ source code, secrets, customer data, or regulated information.
 The optional `forge` CLI starts an external Agent process in the project root:
 
 - the Codex Adapter uses `codex exec` with a workspace-write sandbox;
-- the Copilot Adapter uses `gh copilot` with project-scoped `write` and `shell`
-  tools enabled non-interactively.
+- the Copilot Adapter uses `gh copilot` with the project root as its working
+  directory and `write` and `shell` tools enabled non-interactively. The working
+  directory is not a filesystem sandbox; access restrictions and tool permissions
+  are controlled by the host.
 
 Commands are constructed with `asyncio.create_subprocess_exec` rather than shell
 interpolation, but the selected Agent may still read project files, modify source

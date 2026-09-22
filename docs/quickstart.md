@@ -53,9 +53,21 @@ forge plan --intent "Describe the project outcome and confirmed scope here"
 ```
 
 Use the [inventory tutorial](../examples/complete-delivery/README.md) for a concrete
-intent and six-workflow walkthrough. During clarification, supply the answer in the
-same authorized host conversation; do not invent a continuation token or start an
-unrelated workflow. A CLI process does not preserve an IDE conversation session.
+intent and six-workflow walkthrough.
+
+In an IDE, answer clarification questions in the same authorized host conversation.
+The Python CLI instead launches a single agent process per invocation: it does not
+provide an interactive clarification loop or a command to resume that conversation.
+Codex runs with `--ephemeral`; Copilot runs with `--no-ask-user`.
+
+If a CLI Plan call asks for clarification, retain its questions and inspect
+`forge status`. If the project is still at Bootstrap with no Planning artifact and
+an empty Reports Root, make a new `forge plan --intent "..."` call containing the
+complete original intent and your explicit answers. This is a fresh invocation,
+not a resumed conversation. For clarification in a later workflow, use the IDE
+host with the captured context and the current workflow's required entry or
+recovery authorization. Do not reset evidence, invent a continuation token, or
+advance to the next workflow merely to bypass a question.
 
 ## 4. Follow the handoff
 
@@ -68,7 +80,9 @@ forge grill --handoff /absolute/path/to/plan-response.md
 
 The filename above is a placeholder for actual captured output, not a generated
 sample to copy. Let current resolution determine subsequent commands. A correction
-response or exit code 2 is a stop/wait, not permission to continue inside that call.
+response ends the invocation. Exit code `2` can mean incomplete execution, waiting,
+routing correction, or a command-line argument error; inspect the response and
+stderr to distinguish them. It never authorizes automatic progression.
 Use `forge status` to inspect the graph; use `forge handoff` only as a historical
 runtime view and revalidate it before reuse. The external `forge run --auto`
 orchestrator may execute distinct authorized steps, but waits still require action.
