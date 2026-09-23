@@ -1,0 +1,119 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  documentation:
+    name: Documentation links and reference
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Check public documentation
+        run: python scripts/check_docs.py
+
+  python-core:
+    name: Python ${{ matrix.python-version }} core
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install ForgeFlow
+        run: python -m pip install --disable-pip-version-check -e .
+      - name: Compile Python sources
+        run: python -m compileall -q src/forgeflow
+      - name: Run executable delivery tutorial
+        run: python examples/complete-delivery/check.py
+      - name: Smoke-test Python CLI
+        run: python -m forgeflow --help
+      - name: Run core and repository contract tests
+        run: python -m unittest discover -s tests -p 'test_*.py'
+
+  npm-installer:
+    name: Node ${{ matrix.node-version }} installer
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["18", "22"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Run npx installer tests
+        run: npm test
+      - name: Run Markdown contract regressions
+        run: node --test .forgeflow/tests/*.test.cjs
+      - name: Verify npm package contents
+        run: npm pack --dry-run --json > npm-pack.json
+
+  package-smoke:
+    name: Install packaged artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build Python distributions
+        run: |
+          python -m pip install --disable-pip-version-check build
+          python -m build --sdist --wheel
+      - name: Install and inspect Python wheel
+        run: |
+          python -m venv "${RUNNER_TEMP}/forgeflow-wheel"
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/python" -m pip install \
+            --disable-pip-version-check --no-index dist/*.whl
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" --help
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/python" -c \
+            'from pathlib import Path; import forgeflow; root = Path(forgeflow.__file__).parent / "_template"; assert (root / ".forgeflow" / "protocol" / "transition.md").is_file(); assert (root / ".forgeflow" / "workflow" / "implement.md").is_file(); assert not (root / ".forgeflow" / "workflow" / "tdd.md").exists(); assert (root / "forgeflow.json").is_file()'
+          project_root="$(mktemp -d)"
+          cd "${project_root}"
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" init --adapter codex
+          "${RUNNER_TEMP}/forgeflow-wheel/bin/forge" status
+      - name: Pack npm distribution
+        run: npm pack --pack-destination "${RUNNER_TEMP}" --json > npm-pack.json
+      - name: Verify release archive contents
+        run: |
+          package_name="$(node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync("npm-pack.json", "utf8")); process.stdout.write(data[0].filename)')"
+          python scripts/verify_packages.py \
+            --wheel dist/*.whl --sdist dist/*.tar.gz \
+            --npm "${RUNNER_TEMP}/${package_name}"
+      - name: Install from npm tarball
+        run: |
+          package_name="$(node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync("npm-pack.json", "utf8")); process.stdout.write(data[0].filename)')"
+          project_root="$(mktemp -d)"
+          cd "${project_root}"
+          npm exec --yes --package "${RUNNER_TEMP}/${package_name}" -- \
+            forgeflow init --adapter copilot
+          test -f .forgeflow/forgeflow.md
+          test -f .forgeflow/protocol/transition.md
+          test -f .forgeflow/workflow/implement.md
+          test ! -e .forgeflow/workflow/tdd.md
+          test -f forgeflow.json

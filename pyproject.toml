@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgeflow"
+version = "0.1.0"
+description = "Repository-native control protocol and Python orchestrator for AI-assisted software delivery"
+authors = [{ name = "Dairen" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/idairen/forgeflow"
+Documentation = "https://github.com/idairen/forgeflow/blob/main/docs/README.md"
+Issues = "https://github.com/idairen/forgeflow/issues"
+Changelog = "https://github.com/idairen/forgeflow/blob/main/CHANGELOG.md"
+
+[project.scripts]
+forge = "forgeflow.cli.main:main_cli"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

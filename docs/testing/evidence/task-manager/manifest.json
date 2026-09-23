@@ -1,0 +1,577 @@
+{
+  "source_label": "maintainer-provided offline task-manager workspace",
+  "inspection_date": "2026-09-22",
+  "source_framework_git_head": "06fd3811b6d02e4fcb44cbb9c62e1d760309f5ce",
+  "note": "Git HEAD is not a content baseline: current contract bytes are fingerprinted separately. Excerpts redact absolute local paths. This is historical case evidence, not current release-gate PASS.",
+  "contracts": [
+    {
+      "path": "forgeflow.md",
+      "version": "3.7",
+      "source_sha256": "ca65c6753c0b00e071fa28b27c3f3f488e59768d6362082d2fc1c6d75d512d53",
+      "matches_release_checkout": false
+    },
+    {
+      "path": "protocol/artifact.md",
+      "version": "2.18",
+      "source_sha256": "d23f5afd94595ace19a5231a4d885f5cda870a173dbc2d908c521c5b168dd579",
+      "matches_release_checkout": false
+    },
+    {
+      "path": "protocol/transition.md",
+      "version": "1.8",
+      "source_sha256": "104ce77fa0123761b7fcec2013550814c9ecb74c7e1e22e2f09d11470bffb060",
+      "matches_release_checkout": true
+    },
+    {
+      "path": "protocol/handoff.md",
+      "version": "2.15",
+      "source_sha256": "3dfd28e872812e92ed21b7189344913d34f07196fd29babc850df6b2891778eb",
+      "matches_release_checkout": true
+    },
+    {
+      "path": "workflow/implement.md",
+      "version": "2.12",
+      "source_sha256": "c885c6d6328eb4b885b9a74e12faafd328d325402c4d14ccfb02c024be4a7a21",
+      "matches_release_checkout": false
+    },
+    {
+      "path": "protocol/review-recovery.md",
+      "version": "1.0",
+      "source_sha256": "645a8055b3412d3f14dadd3349669ec5c7dc68f14aae199768eeb67035c986f2",
+      "matches_release_checkout": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/implement-feature-01-slice-01.md",
+      "source_sha256": "edf71739aa5e8d106dcc3f68607b4c20f109bb15bd0ccbe09d3aae09f2ac7961",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.6",
+        "Status": "READY_FOR_REVIEW",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "7",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/implement-feature-01-slice-02.md",
+      "source_sha256": "cc0b2d8150f15c4f5c60088ddc17def777255e030d37a473d9e97c874b70cc6d",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.2",
+        "Status": "READY_FOR_REVIEW",
+        "Feature ID": "F-01",
+        "Slice ID": "S-02",
+        "Attempt": "5",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/implement-feature-01-slice-03.md",
+      "source_sha256": "132c5d729e426cfd89f4a04d1ef8fe52ef0ab8a24ae4835f1a51934dd028b657",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.2",
+        "Status": "READY_FOR_REVIEW",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "6",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/implement-feature-02-slice-01.md",
+      "source_sha256": "227676a9a953c83857084345a043dc717313fc8b111376d80ef3df2caa3fbdee",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.2",
+        "Status": "BLOCKED",
+        "Feature ID": "F-02",
+        "Slice ID": "S-01",
+        "Attempt": "5",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.3",
+        "Blocker Category": "ENGINEERING_GAP"
+      }
+    },
+    {
+      "path": "artifacts/implement-feature-02-slice-02.md",
+      "source_sha256": "490c2d4fec7c28d1c38c75fe83852323e4140e06130047a535df490741ad4bc7",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.2",
+        "Status": "READY_FOR_REVIEW",
+        "Feature ID": "F-02",
+        "Slice ID": "S-02",
+        "Attempt": "4",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/implement-feature-02-slice-03.md",
+      "source_sha256": "f8a80ef774d7e3a6a00fdb8796193584d057f94a6b66950f9a6efd931ce2ccc7",
+      "metadata_as_recorded": {
+        "Artifact Type": "Implement Record",
+        "Version": "1.0",
+        "Status": "BLOCKED",
+        "Feature ID": "F-02",
+        "Slice ID": "S-03",
+        "Attempt": "1",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2",
+        "Blocker Category": "SLICE_VIOLATION"
+      }
+    },
+    {
+      "path": "artifacts/lane-feature-01.md",
+      "source_sha256": "5a033094715d225d85251bc931363986a8f385cbb643e8e32446c61fb3b57deb",
+      "metadata_as_recorded": {
+        "Artifact Type": "Feature Lane Record",
+        "Version": "1.0",
+        "Status": "COMPLETE",
+        "Feature ID": "F-01",
+        "Attempt": "1"
+      }
+    },
+    {
+      "path": "artifacts/lane-feature-02.md",
+      "source_sha256": "07b90025e87f4d86ed698c1f4b6ea8782029c9b576031d31080e7b675c23dd21",
+      "metadata_as_recorded": {
+        "Artifact Type": "Feature Lane Record",
+        "Version": "1.1",
+        "Status": "COMPLETE",
+        "Feature ID": "F-02",
+        "Attempt": "2"
+      }
+    },
+    {
+      "path": "artifacts/planning.md",
+      "source_sha256": "ab4614991de72aff04ae9b56ac66b19a91b77faac6526415fe31d8deea72a778",
+      "metadata_as_recorded": {
+        "Artifact Type": "Planning",
+        "Version": "1.1",
+        "Status": "READY"
+      }
+    },
+    {
+      "path": "artifacts/requirement-feature-01.md",
+      "source_sha256": "5acff0eda02bbe9cb78be2eb2bd72cb0ece617c63e034e49b7b67373ee031b1e",
+      "metadata_as_recorded": {
+        "Artifact Type": "Requirement",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01"
+      }
+    },
+    {
+      "path": "artifacts/requirement-feature-02.md",
+      "source_sha256": "5612f50b9d765102451afbbe4be162f26485ac4a7911a8cfb457ffbfe65e523c",
+      "metadata_as_recorded": {
+        "Artifact Type": "Requirement",
+        "Version": "1.1",
+        "Status": "READY",
+        "Feature ID": "F-02"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-01-attempt-01.md",
+      "source_sha256": "be2b8eaaf7c388f69abfdb77d8864a087de3b0b6d1e166a5d4fa9101846fd67a",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "1",
+        "Decision": "FAIL",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-01-attempt-02.md",
+      "source_sha256": "adf65b108c20ed18f992a0ba357fb19f0f9910120dde34ac1f47f0905a338438",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "2",
+        "Decision": "PASS",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-01-attempt-05.md",
+      "source_sha256": "e9e01b58f7041237a12f82f25970d835d140ae15a702d5ceb7f614b8bd9335ce",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "5",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.5"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-01-attempt-06.md",
+      "source_sha256": "499d4cbe4833fcc5e7117ad89d7d045536a765866fefab3e6c04ec517b090c7c",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "6",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.5"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-01-attempt-07.md",
+      "source_sha256": "0d18cce5d597acb8f2585f9b9dc97d459a04a1d73a49c4d0e1e47302f924bf4d",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-01",
+        "Attempt": "7",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-02-attempt-02.md",
+      "source_sha256": "1886a631c8c85a9cda863481c65923125351c92041f2f59ad6cacb828bdd406c",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-02",
+        "Attempt": "2",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.4"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-02-attempt-03.md",
+      "source_sha256": "8b93d82d84cfa494e672790e3960893e9bfafc0c67520040602b16ba7fe620a0",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-02",
+        "Attempt": "3",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.4"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-02-attempt-05.md",
+      "source_sha256": "4edec751d9abd97440bd74a2f000043f3e6abf35c8ba07e4e8bbe856f7af52e2",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-02",
+        "Attempt": "5",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-03-attempt-01.md",
+      "source_sha256": "3a486cbe9fa27c269d5f6de678ce3b42c469d0cf7556838de545d339fcb5692c",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "1",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.4"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-03-attempt-03.md",
+      "source_sha256": "d734b89a04e80a5451d158e1290cbc683b24581871a4ae408c75339fa75acf94",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "3",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.5"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-03-attempt-04.md",
+      "source_sha256": "52651c634da48a95a40a990e6acd76fecf2ab548c757e71ab771e02ea4ccca01",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "4",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.5"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-03-attempt-05.md",
+      "source_sha256": "856731db0b54062fda6c95ad9de87ad95fe274b78425123510da7d00cb0a252b",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "5",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-01-slice-03-attempt-06.md",
+      "source_sha256": "d67f404d6d418bcbebfc755aa8d336d8bbfe5564bbb272bad992182800633628",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Slice ID": "S-03",
+        "Attempt": "6",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.6"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-01-attempt-01.md",
+      "source_sha256": "e8abeef827512cf7c32c0c5517868cb979d20ae24b6c8748a597a6fd63be4e0a",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-01",
+        "Attempt": "1",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.0"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-01-attempt-03.md",
+      "source_sha256": "dd47ee05226e8be042012f79800bc20f5afea90c90173951a88a9dab38750de7",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-01",
+        "Attempt": "3",
+        "Decision": "PASS",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.1"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-01-attempt-04.md",
+      "source_sha256": "1f43f11cf0ddab82097426b2e3baa566ae8cc74583ea41ab7e96547b4ba4f713",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-01",
+        "Attempt": "4",
+        "Decision": "PASS",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-02-attempt-01.md",
+      "source_sha256": "b103a079db5f793c47ad735a259949fc700b558c93fbfc9e02939526367e2d62",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-02",
+        "Attempt": "1",
+        "Decision": "FAIL",
+        "Solution Version": "1.3",
+        "Slice Plan Version": "1.1"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-02-attempt-03.md",
+      "source_sha256": "c70dad9a02f2dd77dc715783fef37a9b736f200037379d52326e8e116dabe961",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-02",
+        "Attempt": "3",
+        "Decision": "FAIL",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/review-feature-02-slice-02-attempt-04.md",
+      "source_sha256": "93fc056c3a1d769440113fdef8eb5a8d99e43cc4c33fb89fc865fcc09bc68df1",
+      "metadata_as_recorded": {
+        "Artifact Type": "Review Report",
+        "Version": "1.0",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Slice ID": "S-02",
+        "Attempt": "4",
+        "Decision": "PASS",
+        "Solution Version": "1.2",
+        "Slice Plan Version": "1.2"
+      }
+    },
+    {
+      "path": "artifacts/slice-plan-feature-01.md",
+      "source_sha256": "19eed0f4ded30d0750b47ed8c5c80f0a0d1bf763bdd66e7fa2a5a98171d37b0b",
+      "metadata_as_recorded": {
+        "Artifact Type": "Slice Plan",
+        "Version": "1.6",
+        "Status": "READY",
+        "Feature ID": "F-01",
+        "Based On Solution": "1.3"
+      }
+    },
+    {
+      "path": "artifacts/slice-plan-feature-02.md",
+      "source_sha256": "edc44b41be15a1adc9511706bd157e947d8c8c56b2d3887cbc1e032a2dc29e55",
+      "metadata_as_recorded": {
+        "Artifact Type": "Slice Plan",
+        "Version": "1.4",
+        "Status": "READY",
+        "Feature ID": "F-02",
+        "Based On Solution": "1.4"
+      }
+    },
+    {
+      "path": "artifacts/solution-plan.md",
+      "source_sha256": "b969a31dd7b5de84b7c6944f64be7ddcb9787bcf71a83c38a7d36cb5d4224239",
+      "metadata_as_recorded": {
+        "Artifact Type": "Solution Plan",
+        "Version": "1.4",
+        "Status": "READY"
+      }
+    }
+  ],
+  "excerpts": [
+    {
+      "source": "artifacts/review-feature-01-slice-03-attempt-05.md",
+      "file": "review-feature-01-slice-03-attempt-05.excerpt.md",
+      "source_sha256": "856731db0b54062fda6c95ad9de87ad95fe274b78425123510da7d00cb0a252b",
+      "excerpt_sha256": "156eccc9ec90a212659014da9f4f2bc762d9794e3a2edcd8984de2b92b7f50e2",
+      "line_start": 1,
+      "line_end": 65
+    },
+    {
+      "source": "artifacts/review-feature-01-slice-03-attempt-06.md",
+      "file": "review-feature-01-slice-03-attempt-06.excerpt.md",
+      "source_sha256": "d67f404d6d418bcbebfc755aa8d336d8bbfe5564bbb272bad992182800633628",
+      "excerpt_sha256": "00596b805b5a007e9e62fb9e9ff2ce6cd82c7d1ef97660de74a8be6ea0f393c5",
+      "line_start": 1,
+      "line_end": 70
+    },
+    {
+      "source": "artifacts/implement-feature-02-slice-01.md",
+      "file": "implement-feature-02-slice-01.excerpt.md",
+      "source_sha256": "227676a9a953c83857084345a043dc717313fc8b111376d80ef3df2caa3fbdee",
+      "excerpt_sha256": "51b70a95a308d7958b2be06fb4ac89dd88c8c05fe846882303dee796ca572924",
+      "line_start": 1,
+      "line_end": 48
+    },
+    {
+      "source": "docs/2026-09-13-f01-s01-review-recovery.md",
+      "file": "2026-09-13-f01-s01-review-recovery.excerpt.md",
+      "source_sha256": "30e07364941dfeeace203af5a53c737c63586642f0be7a131b4339804b8124d4",
+      "excerpt_sha256": "7cad1c18c86a32deca57773228e1bd710f8177b8d6fadf594f966a982cc386f5",
+      "line_start": 1,
+      "line_end": 80
+    }
+  ],
+  "recovery_pair": {
+    "original": "artifacts/history/invalid-review/review-feature-01-slice-01-attempt-04.md",
+    "receipt": "artifacts/history/invalid-review/review-feature-01-slice-01-attempt-04.receipt.md",
+    "original_sha256": "5e4868e9072af573dade6fb19558bb8551163709db0f3318695a3280fa5c4fe7",
+    "receipt_sha256": "417a424f0d186b87c350f53784446cd993cf2b5e2869798d09c71aae1a3bcf6d",
+    "digest_matches_receipt": true,
+    "canonical_source_absent": true,
+    "limit": "Digest and file disposition verified now; concurrent-writer exclusion and rollback were not re-exercised."
+  },
+  "current_cli_cross_version_diagnostic": {
+    "cli_commit": "43f0180d21bc890fd00ceb0a9d442acc45c3fefc",
+    "state": "invalid",
+    "rule": "rule_2_graph_contradiction",
+    "errors": [
+      "implement-feature-01-slice-01.md: invalid File Placement Conformance table header",
+      "implement-feature-01-slice-02.md: TDD requires recorded RED before GREEN execution evidence",
+      "implement-feature-01-slice-03.md: TDD requires recorded RED before GREEN execution evidence",
+      "implement-feature-02-slice-01.md: invalid File Placement Conformance table header",
+      "implement-feature-02-slice-02.md: executable strategy requires tool evidence",
+      "implement-feature-02-slice-03.md: invalid File Placement Conformance table header",
+      "planning.md: missing metadata: Feature IDs",
+      "planning.md: invalid Feature IDs",
+      "planning.md: Feature Contract Versions does not match Feature IDs",
+      "slice-plan-feature-01.md: missing metadata: Slice IDs",
+      "slice-plan-feature-01.md: invalid Slice IDs",
+      "slice-plan-feature-01.md: 'Slice IDs'",
+      "slice-plan-feature-02.md: missing metadata: Slice IDs",
+      "slice-plan-feature-02.md: invalid Slice IDs",
+      "slice-plan-feature-02.md: 'Slice IDs'",
+      "non_empty_artifact_root_without_valid_planning"
+    ],
+    "limit": "Read-only current CLI on older working-tree artifacts; does not establish whether the original IDE run failed, nor assign every difference to the framework versus CLI."
+  },
+  "host_attestation": {
+    "source": "explicit maintainer confirmation in review conversation",
+    "ide": "IntelliJ IDEA",
+    "ide_version": "2026.2.1",
+    "adapter": "codex",
+    "model": "gpt-6-astra",
+    "extension_or_cli_version": null,
+    "host_os_version": null,
+    "artifact_root_relative_to_project": ".forgeflow/artifacts",
+    "note": "User-confirmed environment; not inferred from directory names or independently measured by this audit. Original evidence hashes remain unchanged."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@idairen/forgeflow",
+  "version": "0.1.0",
+  "description": "npx installer for the ForgeFlow Markdown framework; workflow execution remains in the Python CLI",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "forgeflow": "npm/bin/forgeflow.js"
+  },
+  "files": [
+    ".forgeflow/forgeflow.md",
+    ".forgeflow/forgeflow.schema.json",
+    ".forgeflow/adapter",
+    ".forgeflow/protocol",
+    ".forgeflow/rules",
+    ".forgeflow/workflow",
+    "forgeflow.json",
+    "npm/bin",
+    "npm/lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test npm/test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idairen/forgeflow.git"
+  },
+  "homepage": "https://github.com/idairen/forgeflow#readme",
+  "bugs": {
+    "url": "https://github.com/idairen/forgeflow/issues"
+  },
+  "keywords": [
+    "forgeflow",
+    "ai",
+    "workflow",
+    "copilot",
+    "codex",
+    "installer"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

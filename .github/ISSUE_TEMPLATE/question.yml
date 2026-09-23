@@ -1,0 +1,30 @@
+name: Usage question
+description: Ask about setup, commands, workflow entry, or interpreting evidence
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check docs/quickstart.md and docs/troubleshooting.md first.
+        Redact credentials and private project data. Use SECURITY.md for vulnerabilities.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question and intended outcome
+      description: What are you trying to do, and where are you stuck?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit/package and framework versions, OS, Python/Node, host/extension or agent CLI version, adapter and model. Mark unknown values explicitly.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Steps and redacted evidence
+      description: Exact command or host input, output/diagnostics, what you tried, and whether any agent or Lane is still active.
+    validations:
+      required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/idairen/forgeflow/security/policy
+    about: Follow the private reporting process; do not disclose vulnerabilities publicly.
+  - name: Support guidance
+    url: https://github.com/idairen/forgeflow/blob/main/CONTRIBUTING.md#support-and-project-decisions
+    about: Check required diagnostic information and current support boundaries.

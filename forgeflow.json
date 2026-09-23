@@ -1,0 +1,7 @@
+{
+  "mode": "auto",
+  "adapter": "copilot",
+  "model": null,
+  "execution_timeout_seconds": 900,
+  "root_artifact_dir": ".forgeflow/artifacts"
+}

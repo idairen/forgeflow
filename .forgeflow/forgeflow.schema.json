@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ForgeFlow Project Configuration",
+  "description": "Strict configuration for the ForgeFlow CLI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "adapter", "root_artifact_dir"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["auto", "manual"],
+      "description": "Controls Python CLI orchestration only. Direct IDE launcher invocations are always single-workflow and stop after emitting a Handoff."
+    },
+    "adapter": {
+      "type": "string",
+      "enum": ["copilot", "codex"]
+    },
+    "model": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "execution_timeout_seconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 900
+    },
+    "root_artifact_dir": {
+      "const": ".forgeflow/artifacts"
+    }
+  }
+}
