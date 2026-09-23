@@ -63,7 +63,7 @@ npm pack --pack-destination dist
 python scripts/verify_packages.py \
   --wheel dist/forgeflow-0.1.0-py3-none-any.whl \
   --sdist dist/forgeflow-0.1.0.tar.gz \
-  --npm dist/idairen-forgeflow-0.1.0.tgz
+  --npm dist/dairen-forgeflow-0.1.0.tgz
 python examples/complete-delivery/check.py
 ```
 
@@ -130,7 +130,7 @@ gh api repos/idairen/forgeflow/rulesets
 gh api repos/idairen/forgeflow/branches/main/protection
 gh api repos/idairen/forgeflow/private-vulnerability-reporting
 npm whoami
-npm owner ls @idairen/forgeflow
+npm owner ls @dairen/forgeflow
 ```
 
 Use the actual default branch if it differs from `main`. A 404 for one protection
