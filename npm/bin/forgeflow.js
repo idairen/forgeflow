@@ -42,7 +42,7 @@ function parseArguments(argv) {
   if (argv[0] !== "init") {
     throw new Error(
       "The npx package supports installation only. "
-      + "Use 'npx @idairen/forgeflow init' or the Python 'forge' CLI."
+      + `Use 'npx ${PACKAGE_NAME} init' or the Python 'forge' CLI.`
     );
   }
 

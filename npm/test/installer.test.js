@@ -181,6 +181,7 @@ test("rejects Node implementations of Python CLI commands", (testContext) => {
     const result = runInstaller(project, command);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /supports installation only/);
+    assert.ok(result.stderr.includes(`npx ${readJson(join(REPOSITORY_ROOT, "package.json")).name} init`));
   }
 });
 
@@ -192,6 +193,7 @@ test("prints installer-only help without modifying the project", (testContext) =
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /installs or refreshes ForgeFlow project files only/);
   assert.match(result.stdout, /Python 'forge' CLI/);
+  assert.ok(result.stdout.includes(`npx ${readJson(join(REPOSITORY_ROOT, "package.json")).name} init`));
   assert.equal(runInstaller(project, "--version").stdout.trim(), "0.1.0");
 });
 

@@ -46,7 +46,7 @@ forge init --adapter copilot
 When the npm package is published, the equivalent public installation command is:
 
 ```bash
-npx @idairen/forgeflow@latest init --adapter copilot
+npx @dairen/forgeflow@next init --adapter copilot
 ```
 
 Use `--adapter codex` for the Codex launcher set.

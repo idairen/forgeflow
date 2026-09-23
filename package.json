@@ -1,5 +1,5 @@
 {
-  "name": "@idairen/forgeflow",
+  "name": "@dairen/forgeflow",
   "version": "0.1.0",
   "description": "npx installer for the ForgeFlow Markdown framework; workflow execution remains in the Python CLI",
   "license": "MIT",

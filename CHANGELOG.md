@@ -8,7 +8,9 @@ history and retired presentation assets are not included.
 
 ## [Unreleased]
 
-No changes recorded yet.
+- Correct the npm package scope to `@dairen/forgeflow` to match the npm publisher.
+  GitHub remains `idairen/forgeflow`. Update installer guidance and tarball names;
+  the earlier GitHub v0.1.0 attachments retain their original package identity.
 
 ## [0.1.0] - 2026-09-23
 

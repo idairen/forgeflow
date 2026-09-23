@@ -87,7 +87,7 @@ package without depending on registry publication:
 ```bash
 npm pack --pack-destination /tmp
 # In a disposable target directory; use the actual tarball emitted above:
-npm exec --yes --package /absolute/path/to/idairen-forgeflow-0.1.0.tgz -- forgeflow init --adapter codex
+npm exec --yes --package /absolute/path/to/dairen-forgeflow-0.1.0.tgz -- forgeflow init --adapter codex
 ```
 
 This does not install Python or the agent executables. Registry publication is a
