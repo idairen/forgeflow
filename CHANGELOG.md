@@ -1,11 +1,19 @@
 # Changelog
 
-Changes below describe the current unreleased implementation. Package versions remain
-0.1.0; this file does not assert registry publication or real-host acceptance.
+Version 0.1.0 is a Technical Preview distributed through a GitHub pre-release.
+Package versions remain 0.1.0; this file does not assert npm/PyPI publication or
+current-version real-host acceptance.
 This public repository starts from a source snapshot. Earlier private development
 history and retired presentation assets are not included.
 
 ## [Unreleased]
+
+No changes recorded yet.
+
+## [0.1.0] - 2026-09-23
+
+Initial public Technical Preview. GitHub release assets provide local installation
+packages; npm/PyPI registry installation is not claimed.
 
 ### Framework and execution alignment
 
