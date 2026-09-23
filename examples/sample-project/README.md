@@ -43,10 +43,10 @@ To use the Python installer instead, install ForgeFlow from the checkout and run
 forge init --adapter copilot
 ```
 
-When the npm package is published, the equivalent public installation command is:
+The public npm preview can initialize the same project:
 
 ```bash
-npx @dairen/forgeflow@next init --adapter copilot
+npx --yes @dairen/forgeflow@0.1.0 init --adapter copilot
 ```
 
 Use `--adapter codex` for the Codex launcher set.

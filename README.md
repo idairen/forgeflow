@@ -81,8 +81,23 @@ The selected agent executable must be installed and authenticated separately.
 Initialization installs repository launchers; IDE discovery/registration depends on
 the host. Generic Markdown participants can read the core directly.
 
-The npm package is an **installer only**, requiring Node 18+. To test a local
-package without depending on registry publication:
+## Install the npm Technical Preview
+
+The public npm package is [`@dairen/forgeflow`](https://www.npmjs.com/package/@dairen/forgeflow),
+an **installer only** requiring Node 18+. In your application directory:
+
+```bash
+npx --yes @dairen/forgeflow@0.1.0 init --adapter codex
+# Or use the Copilot adapter:
+npx --yes @dairen/forgeflow@0.1.0 init --adapter copilot
+```
+
+Use `@next` instead of `@0.1.0` to follow the moving preview tag. Both commands
+install framework files; neither installs Python, an agent executable or an IDE
+extension. Follow the [host entry instructions](docs/quickstart.md#ide-entry-and-verification)
+after initialization. The Python CLI is optional for IDE use.
+
+To test a local package from a source checkout:
 
 ```bash
 npm pack --pack-destination /tmp
@@ -90,8 +105,9 @@ npm pack --pack-destination /tmp
 npm exec --yes --package /absolute/path/to/dairen-forgeflow-0.1.0.tgz -- forgeflow init --adapter codex
 ```
 
-This does not install Python or the agent executables. Registry publication is a
-separate maintainer action; these instructions do not claim a published release.
+GitHub Release v0.1.0 retains its original `@idairen/forgeflow` tarball as historical
+release content. The npm registry package uses `@dairen/forgeflow` after the scope
+correction; these are distinct package identities. PyPI publication is not claimed.
 
 ## CLI
 

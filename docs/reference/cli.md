@@ -114,8 +114,10 @@ Logs and captured responses can contain project context; redact before sharing.
 
 ## npm installer
 
-Use the local-tarball installation command in the [README](../../README.md#install-from-a-checkout)
-until a registry release has been verified. The executable supports `init` with
+Use `npx --yes @dairen/forgeflow@0.1.0 init --adapter codex` for a pinned preview,
+or replace `@0.1.0` with `@next` to follow the moving preview tag. Local-tarball
+installation remains available in the [README](../../README.md#install-the-npm-technical-preview).
+The executable supports `init` with
 `--adapter` / `-a` and `--force`, plus `--help` / `-h` and `--version` / `-v`.
 Its default adapter is `copilot`. Successful invocation returns `0`; rejected
 arguments or installation failures return `1`. It does not implement the Python

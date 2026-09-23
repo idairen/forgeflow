@@ -1,7 +1,11 @@
-# First run from a source checkout
+# First run
 
-This path uses local source, so it does not depend on a published package or registry
-ownership. Shell examples below use macOS/Linux. Windows host behavior is not claimed
+For IDE-only use, install the npm preview in your application directory with
+`npx --yes @dairen/forgeflow@0.1.0 init --adapter codex` (or `copilot`), then follow
+[host entry and verification](#ide-entry-and-verification). Python is not needed
+for this installer path; `forge status` requires the separate Python CLI.
+
+The steps below install the optional Python CLI from source. Shell examples use macOS/Linux. Windows host behavior is not claimed
 without corresponding evidence; see [compatibility](testing/compatibility.md).
 
 ## 1. Install the Python CLI
