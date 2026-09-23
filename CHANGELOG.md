@@ -26,6 +26,8 @@ Earlier development notes remain available in Git history.
 
 ### Release preparation
 
+- Record the maintainer-reported local Python/npm installation checks, with
+  checkout attribution and explicit limits on raw evidence and host coverage.
 - Add CLI/configuration reference, troubleshooting and existing-project adoption
   guidance, introductory terms, and maintainer-confirmed host invocation forms.
 - Add a usage-question issue form and Python package project links.

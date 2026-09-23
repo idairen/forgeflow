@@ -66,6 +66,11 @@ service. Preserve these limits when announcing a release.
 
 ## Reproduce local checks
 
+The [2026-09-23 local installation report](evidence/local-install-2026-09-23.md)
+records the maintainer's successful wheel/npm installation walkthrough, its
+associated checkout baseline, observed environment and missing raw-run evidence.
+This is separate from real-host acceptance and remote CI.
+
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py'
 node --test .forgeflow/tests/*.test.cjs

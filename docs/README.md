@@ -37,6 +37,8 @@ examples or host claims are semantically correct; those require review.
 
 ## Tests and execution evidence
 
+- [Local Python/npm installation report](testing/evidence/local-install-2026-09-23.md):
+  maintainer-reported package installation checks and their associated baseline.
 - [Real task-manager case](testing/evidence/task-manager/README.md): historical
   FAIL/rework/PASS and recovery evidence with provenance and baseline limits.
 - [Current IDE plan](testing/ide-test-plan.zh-CN.md) and
