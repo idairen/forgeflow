@@ -1,12 +1,16 @@
 # Changelog
 
 Version 0.1.0 is a Technical Preview distributed through a GitHub pre-release.
-Package versions remain 0.1.0; this file does not assert npm/PyPI publication or
-current-version real-host acceptance.
+Package versions remain 0.1.0. The npm installer is now published as
+`@dairen/forgeflow`; PyPI publication and current-version real-host acceptance
+are not claimed.
 This public repository starts from a source snapshot. Earlier private development
 history and retired presentation assets are not included.
 
 ## [Unreleased]
+
+- Document npm registry installation using `@dairen/forgeflow@0.1.0` and the
+  moving `next` preview tag. Earlier GitHub Release attachments remain unchanged.
 
 - Correct the npm package scope to `@dairen/forgeflow` to match the npm publisher.
   GitHub remains `idairen/forgeflow`. Update installer guidance and tarball names;
@@ -82,4 +86,4 @@ truthfulness, coverage and correctness. Host-provided exclusion and protected
 transactions remain necessary. Automated checks do not prove real IDE compliance.
 
 Follow the [release process](docs/maintainers/releasing.md) before tagging or
-publishing. No current real-host PASS or registry availability is implied here.
+publishing. npm availability does not establish current real-host PASS or PyPI availability.

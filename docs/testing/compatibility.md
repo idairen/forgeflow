@@ -64,6 +64,12 @@ separate checks. Core-required atomic claims and protected multi-file publicatio
 also depend on host capabilities; ForgeFlow does not supply a universal transaction
 service. Preserve these limits when announcing a release.
 
+## npm registry installation
+
+The [2026-09-23 registry installation report](evidence/npm-install-2026-09-23.md)
+records anonymous cold-cache installation for both adapters and archive integrity.
+This validates installer availability, not IDE or agent behavior.
+
 ## Reproduce local checks
 
 The [2026-09-23 local installation report](evidence/local-install-2026-09-23.md)
