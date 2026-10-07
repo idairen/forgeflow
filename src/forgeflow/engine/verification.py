@@ -11,6 +11,9 @@ STRATEGIES = (
     "DOCUMENTATION_VALIDATION", "MANUAL_ACCEPTANCE",
 )
 HEADERS = {
+    "Verification Alternatives": ("Slice ID", "Obligation", "Strategies", "Condition"),
+    "Verification Alternative Evidence": ("Obligation", "Strategies", "Condition", "Evidence Reference"),
+    "Verification Coverage": ("Required Check", "Evidence Check"),
     "Verification Selection": ("Strategy", "Rationale", "Governing Obligation"),
     "Verification Evidence": ("Strategy", "Obligation or Check", "Source",
                               "Command or Procedure", "Target and Environment",
@@ -67,6 +70,8 @@ def parse_verification(text, metadata, kind):
         if "## Verification Plan" not in text:
             return {"verification_plan": [], "verification_actionable": False}
         rows = table(text, "Verification Plan")
+        if "Slice IDs" not in metadata:
+            raise ValueError("missing metadata: Slice IDs in order")
         ids = metadata["Slice IDs"].split("; ")
         for row in rows:
             if row["Slice ID"] not in ids:
@@ -74,7 +79,21 @@ def parse_verification(text, metadata, kind):
             strategy_list(row["Strategies"])
         if set(ids) != {row["Slice ID"] for row in rows}:
             raise ValueError("Verification Plan must cover every Slice")
-        return {"verification_plan": rows, "verification_actionable": True}
+        alternatives = table(text, "Verification Alternatives") if "## Verification Alternatives" in text else []
+        groups = set()
+        for alternative in alternatives:
+            key = (alternative["Slice ID"], alternative["Obligation"])
+            governing = [r for r in rows if (r["Slice ID"], r["Obligation"]) == key]
+            choices = strategy_list(alternative["Strategies"])
+            if len(governing) != 1 or len(choices) < 2 or not set(choices) <= set(strategy_list(governing[0]["Strategies"])):
+                raise ValueError("Verification Alternatives must reference one declared obligation and its strategies")
+            for choice in choices:
+                identity = (*key, choice)
+                if identity in groups:
+                    raise ValueError("overlapping Verification Alternatives")
+                groups.add(identity)
+        return {"verification_plan": rows, "verification_actionable": True,
+                "verification_alternatives": alternatives}
     if kind == "Solution Plan":
         rows = table(text, "Verification Requirements") if "## Verification Requirements" in text else []
         if "## Verification Requirements" in text and not rows:
@@ -116,7 +135,23 @@ def parse_verification(text, metadata, kind):
             red = [i for i, e in enumerate(evidence) if e["Strategy"] == "TDD" and e["Result"] == "FAILED" and e["Source"] == "TOOL_EXECUTION"]
             green = [i for i, e in enumerate(evidence) if e["Strategy"] == "TDD" and e["Result"] == "SUCCEEDED" and e["Source"] == "TOOL_EXECUTION"]
             if not red or not green or min(red) >= max(green):
+                if any(e["Strategy"] == "TDD" and e["Result"] == "SUCCEEDED"
+                       and re.search(r"\bRED\b", e["Obligation or Check"])
+                       and re.search(r"\bexit(?:\s+status)?\s*[=:]?\s*1\b", e["Evidence Reference"])
+                       for e in evidence):
+                    raise ValueError("TDD RED result conflicts with recorded exit status; "
+                                     "expected failing test must be recorded as FAILED")
                 raise ValueError("TDD requires recorded RED before GREEN execution evidence")
         # Whether a failed supplementary check is blocking is a Review judgment;
         # required check coverage is compared with the Slice plan by the graph layer.
-    return {"verification_selection": selection, "verification_evidence": evidence}
+    coverage = table(text, "Verification Coverage") if "## Verification Coverage" in text else []
+    for mapping in coverage:
+        if mapping["Evidence Check"] not in {e["Obligation or Check"] for e in evidence}:
+            raise ValueError("Verification Coverage references missing evidence")
+    if len({tuple(row.values()) for row in coverage}) != len(coverage):
+        raise ValueError("duplicate Verification Coverage mapping")
+    alternatives = table(text, "Verification Alternative Evidence") if "## Verification Alternative Evidence" in text else []
+    for alternative in alternatives:
+        strategy_list(alternative["Strategies"])
+    return {"verification_selection": selection, "verification_evidence": evidence,
+            "verification_coverage": coverage, "verification_alternative_evidence": alternatives}
