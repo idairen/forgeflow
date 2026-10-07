@@ -234,7 +234,7 @@ class ArtifactParser:
                 continue
             artifacts[path.name] = parsed
 
-        if root_entries and "planning.md" not in artifacts:
+        if root_entries and not (root / "planning.md").exists():
             errors.append("non_empty_artifact_root_without_valid_planning")
             diagnostics.append(
                 {
@@ -265,7 +265,7 @@ class ArtifactParser:
                 cls._validate_required_verification(artifact, artifacts)
             except (ValueError, OSError, UnicodeError) as error:
                 errors.append(f"{artifact['filename']}: {error}")
-                diagnostics.append({"code": "artifact_invalid", "artifacts": [cls._artifact_evidence(root / artifact['filename'])]})
+                diagnostics.append({"code": cls._diagnostic_code(str(error)), "artifacts": [cls._artifact_evidence(root / artifact['filename'])]})
 
         status = "invalid" if errors else ("active" if artifacts else "empty")
         logger.debug(
@@ -292,24 +292,52 @@ class ArtifactParser:
             return
         selected = {r["Strategy"] for r in record.get("verification_selection", [])}
         evidence = record.get("verification_evidence", [])
+        coverage = record.get("verification_coverage", [])
+        current_checks = {check for row in plan.get("verification_plan", [])
+                          if row["Slice ID"] == meta["Slice ID"]
+                          for check in row["Required Checks"].split("; ")}
+        if any(mapping["Required Check"] not in current_checks for mapping in coverage):
+            raise ValueError("Verification Coverage references undeclared required check")
+        applicable_alternatives = [row for row in plan.get("verification_alternatives", [])
+                                   if row["Slice ID"] == meta["Slice ID"]]
+        for row in record.get("verification_alternative_evidence", []):
+            if not any(all(row[k] == approved[k] for k in ("Obligation", "Strategies", "Condition"))
+                       for approved in applicable_alternatives):
+                raise ValueError("conditional strategy alternative lacks matching condition evidence")
         for obligation in plan.get("verification_plan", []):
             if obligation["Slice ID"] != meta["Slice ID"]:
                 continue
             required = set(obligation["Strategies"].split("; "))
+            for alternative in applicable_alternatives:
+                if alternative["Obligation"] != obligation["Obligation"]:
+                    continue
+                choices = set(alternative["Strategies"].split("; "))
+                if len(choices & selected) != 1:
+                    raise ValueError("conditional strategy alternative requires exactly one selected strategy")
+                matching = [row for row in record.get("verification_alternative_evidence", [])
+                            if all(row[k] == alternative[k] for k in ("Obligation", "Strategies", "Condition"))]
+                if len(matching) != 1:
+                    raise ValueError("conditional strategy alternative lacks matching condition evidence")
+                required -= choices
             if not required <= selected:
-                # Conditions remain normative prose evaluated by the participant;
-                # the CLI never infers an unstated alternative from convenience.
-                if "alternative" not in obligation["Rationale"].lower():
-                    raise ValueError("READY_FOR_REVIEW omits mandatory Slice strategy")
-                choices = [s for s in record.get("verification_selection", []) if s["Governing Obligation"] == obligation["Obligation"]]
-                if not choices:
-                    raise ValueError("missing permitted alternative rationale")
+                # Prose is not a machine-readable permission to omit a strategy.
+                # In particular, one English keyword cannot authorize a waiver.
+                raise ValueError("READY_FOR_REVIEW omits mandatory Slice strategy; "
+                                 "conditional alternatives require explicit verification mapping")
             for check in obligation["Required Checks"].split("; "):
-                rows = [e for e in evidence if e["Obligation or Check"] == check]
-                if not rows or rows[-1]["Result"] not in {"SUCCEEDED", "NOT_APPLICABLE"}:
-                    raise ValueError(f"READY_FOR_REVIEW missing or pending required check: {check}")
-                if rows[-1]["Result"] == "NOT_APPLICABLE" and "applicab" not in obligation["Rationale"].lower():
-                    raise ValueError("NOT_APPLICABLE lacks an explicit plan condition")
+                labels = [mapping["Evidence Check"] for mapping in coverage if mapping["Required Check"] == check]
+                labels = labels or [check]
+                rows = [e for e in evidence if e["Obligation or Check"] in labels]
+                if not rows:
+                    raise ValueError(f"required check has no explicit evidence mapping: {check}")
+                for label in labels:
+                    results = [e for e in rows if e["Obligation or Check"] == label]
+                    if not results or results[-1]["Result"] not in {"SUCCEEDED", "NOT_APPLICABLE"}:
+                        raise ValueError(f"READY_FOR_REVIEW missing or pending required check: {check}")
+                    if results[-1]["Strategy"] not in required | selected.intersection(set(obligation["Strategies"].split("; "))):
+                        raise ValueError("required check evidence uses unrelated strategy")
+                    if results[-1]["Result"] == "NOT_APPLICABLE" and "applicab" not in obligation["Rationale"].lower():
+                        raise ValueError("NOT_APPLICABLE lacks an explicit plan condition")
 
     @classmethod
     def _artifact_evidence(cls, path):
@@ -372,6 +400,7 @@ class ArtifactParser:
         missing = [field for field in required if field not in metadata]
         if missing:
             errors.append("missing metadata: " + ", ".join(missing))
+            return None, errors
         if metadata.get("Artifact Type") != expected_type:
             errors.append("Artifact Type does not match canonical filename")
         if metadata.get("Owner Workflow") != expected_owner:
@@ -474,6 +503,15 @@ class ArtifactParser:
             else:
                 metadata[field] = value
             index += 1
+        # The Markdown contracts name these ordered lists explicitly. Retain
+        # their source keys, and project aliases for existing graph consumers.
+        for canonical, internal in (("Feature IDs in order", "Feature IDs"),
+                                    ("Slice IDs in order", "Slice IDs")):
+            if canonical in metadata:
+                if internal in metadata and metadata[internal] != metadata[canonical]:
+                    errors.append(f"conflicting metadata aliases: {canonical} / {internal}")
+                else:
+                    metadata[internal] = metadata[canonical]
         return metadata, errors
 
     @classmethod
@@ -588,12 +626,42 @@ class ArtifactParser:
             while index < len(lines) and not lines[index].strip():
                 index += 1
             header, separator = cls._STRUCTURE_TABLES[name]
+            if name == "File Placement Conformance":
+                end = next((i for i in range(index, len(lines))
+                            if lines[i].startswith("## ")), len(lines))
+                body = "\n".join(lines[index:end]).strip()
+                # The contract requires the table for implementation file
+                # changes, not for a verification-only Attempt. A malformed
+                # table or a contradictory Changed Files list still fails.
+                if cls._no_implementation_changes(text, body):
+                    continue
             if (
                 index + 1 >= len(lines)
                 or lines[index] != header
                 or lines[index + 1] != separator
             ):
                 errors.append(f"invalid {name} table header")
+
+    @staticmethod
+    def _no_implementation_changes(text, placement):
+        declarations = (
+            "No product path is added, moved or modified.",
+            "No application source, test or configuration change.",
+            "No application files changed.",
+        )
+        if not placement.startswith(declarations) or "|" in placement:
+            return False
+        changed = re.search(r"(?ms)^## Changed Files\s*\n(.*?)(?=^## |\Z)", text)
+        if changed:
+            for line in changed.group(1).splitlines():
+                if not line.startswith("- "):
+                    continue
+                path = line[2:].split(":", 1)[0].strip().strip("`")
+                if not path.startswith((".forgeflow/", "docs/")):
+                    return False
+                if ".." in path.split("/"):
+                    return False
+        return True
 
     @classmethod
     def _validate_planning_sections(cls, text, metadata, artifact_type, errors):

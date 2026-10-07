@@ -6,6 +6,20 @@ Earlier development notes remain available in Git history.
 
 ## [Unreleased]
 
+### CLI artifact compatibility
+
+- Parse the protocol's ordered Feature/Slice metadata keys while retaining legacy
+  CLI aliases; reject conflicting aliases and avoid dependent missing-key errors.
+- Accept explicit verification-only placement declarations when the Changed Files
+  list contains only framework/evidence bookkeeping; malformed tables and
+  contradictory implementation changes remain errors.
+- Diagnose a RED row marked successful despite a recorded failing test exit.
+  Original execution evidence is never rewritten or automatically reinterpreted.
+- Support explicit conditional-strategy and check-to-evidence mappings. Remove
+  English-keyword-based strategy waivers and keep unmapped obligations blocked.
+- Add an opt-in read-only regression against the maintainer's completed project.
+  These checks validate recorded structure, not a fresh IDE or application run.
+
 ### Framework and execution alignment
 
 - Align public documentation and the optional CLI with Framework 3.8, Artifact 2.19,

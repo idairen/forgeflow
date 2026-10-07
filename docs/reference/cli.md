@@ -105,6 +105,10 @@ Logs and captured responses can contain project context; redact before sharing.
 
 ## Exit codes
 
+For ordered metadata, verification-only attempts, RED result semantics and explicit
+verification mappings, see [artifact compatibility](../maintainers/cli-artifact-compatibility.md).
+Structural validation does not establish the truth or coverage of execution claims.
+
 | Code | Meaning |
 | --- | --- |
 | `0` | Command completed successfully; for queries, this describes the query, not project readiness. |
