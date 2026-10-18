@@ -20,8 +20,8 @@ Accept only a valid Handoff or Recovery selected from current
 4. inspect applicable implementation and repository instructions;
 5. map every changed source, test, configuration, migration, or documentation path
    to authorized Slice placement and applicable Solution structures;
-6. resolve the Slice Verification Plan and Solution verification requirements;
-   select strategies only within them and record rationale/obligation mappings.
+6. apply Strategy selection below to the Slice Verification Plan and Solution
+   verification requirements, recording strategies, rationales, and obligations.
    Missing engineering policy returns ENGINEERING_GAP; missing or inadequate Slice
    mapping returns SLICE_VIOLATION. If selection cannot be resolved, prepare that
    blocker and proceed only to the record allocation/persistence step; and
@@ -36,48 +36,47 @@ Accept only a valid Handoff or Recovery selected from current
    is occupied by a valid invalid-Review history pair and fresh Transition selects
    Implement under the Artifact Protocol allocation rule.
 
-Implement may choose filenames from approved patterns and conventions, not a new module,
-layer, responsibility, or test topology. It may refine test cases, commands, and
-parameters and add supplementary verification within approved constraints. It may
-select an explicitly permitted alternative, but cannot waive mandatory checks,
-lower thresholds, or use a rationale to approve a weaker strategy. TDD is one
-strategy, not this Workflow's universal execution order. Completing the Slice
-authorizes neither Review nor another Slice in this execution.
+Implement may choose filenames within approved patterns/conventions, never new
+modules, layers, responsibilities, or test topology.
+Within approved constraints, it may refine test cases, commands, and parameters,
+add supplementary verification, or select explicitly permitted alternatives;
+it cannot waive mandatory checks, lower thresholds, or justify weaker strategies.
+TDD is a strategy, not a universal execution order; Slice completion authorizes
+neither Review nor another Slice in this execution.
 
 ## Strategy selection
 
-A strategy determines the execution pattern and evidence; a method organizes the
-authorized edits. Neither changes upstream ownership or authorizes Review PASS/FAIL.
-Implement makes routine choices from approved contracts and repository evidence,
-without asking the user to select strategy names or approve an implementation method.
-Missing business decisions return to Grill (or Plan for project scope); missing
-engineering policy returns to Solution; missing Slice mapping returns to Slice.
-Actual required human acceptance remains a separate evidence obligation.
+A strategy defines execution/evidence; a method organizes authorized edits;
+neither changes upstream ownership or authorizes Review PASS/FAIL.
+Make routine choices from approved contracts and repository evidence without asking
+users to select strategies or approve methods; required human acceptance remains a
+separate evidence obligation.
+Return missing business decisions to Grill (Plan for project scope), engineering
+policy to Solution, and Slice mapping to Slice.
 
 Before the entry allocation/persistence step:
 
 1. Collect this Slice's acceptance conditions, Solution verification obligations,
    Slice Verification Plan, mandatory strategies/checks, passing criteria, required
    evidence sources, and permitted alternatives. Do not invent missing obligations.
-2. Inspect relevant existing behavior, tests, authorized paths, and available
-   environment. Identify change types and any pre-change evidence that must be
-   captured before edits. Repository facts guide execution, not new requirements.
+2. Inspect relevant existing behavior, tests, authorized paths, and available environment;
+   identify change types and evidence required before edits.
+   Repository facts guide execution, not new requirements.
 3. Retain every mandatory strategy and check. Select an explicitly permitted
    alternative only when its stated condition holds, recording the condition and
-   supporting evidence in the selection rationale. Candidate guidance below may
-   guide that choice or supplementary verification; it never grants an alternative
-   absent from the approved plan. A legacy or incomplete plan gains no waiver.
+   supporting evidence in the rationale. Candidate guidance below supports that
+   choice or supplementary verification; it never grants an alternative absent from the approved plan.
+   Legacy or incomplete plans gain no waiver.
 4. Check coverage obligation by obligation: each required property has concrete
-   checks, unchanged passing criteria, and the required evidence source. Combine
-   strategies where needed; neither one successful strategy nor a method discharges
-   another obligation. Do not add irrelevant checks just to use more strategies.
+   checks, unchanged passing criteria, and the required evidence source.
+   Combine strategies as needed; no successful strategy or method discharges another
+   obligation, and additional strategies do not justify irrelevant checks.
 5. Record strategies, rationale and governing obligations in Verification Selection;
    list concrete checks in Verification Evidence as NOT_RUN until executed. Use the
    existing tables, not a new decision Artifact. Unresolved selection follows the
    existing BLOCKED allocation and RETURN rules without code changes.
 
-The following are candidates only, subject to step 3. Apply all relevant rows rather
-than selecting one row for the whole Slice:
+Apply all relevant candidate rows under step 3, not one row for the whole Slice:
 
 | Change or obligation | Candidate strategies and selection evidence |
 | --- | --- |
@@ -98,8 +97,8 @@ problem or persist its blocker; changes to requirements return to their owner.
 
 ## Implementation methods
 
-After inspecting the code, Implement may choose or combine the following methods
-within the current Slice. These are guidance, not a required enumeration:
+After code inspection, Implement may choose or combine methods within the current Slice;
+these examples are optional and non-exhaustive:
 
 | Method | When it fits and its boundary |
 | --- | --- |
@@ -110,9 +109,9 @@ within the current Slice. These are guidance, not a required enumeration:
 | Minimal-diff repair | A localized issue can be fixed within a narrow change; small size never excuses an unresolved blocking issue. |
 | Mechanical transformation | Repeated edits follow an explicit rule within authorized paths; inspect and verify transformed output, including generated changes. |
 
-If used, record the method and reason briefly in Implementation Summary. Methods may
-change within the frozen Attempt as inspection reveals better local execution steps;
-update that prose when material, while preserving selected verification obligations
+Record any chosen method and reason briefly in Implementation Summary.
+Methods may change within the frozen Attempt when inspection reveals better steps;
+update material changes in that prose, preserving selected verification obligations
 and pre-change evidence. A method change creates no new Attempt or approval gate.
 Changes to business behavior, architecture/interfaces/data policy, delivery boundaries,
 or passing criteria outside the approved contracts require RETURN to their owner.
@@ -122,11 +121,11 @@ or passing criteria outside the approved contracts require RETURN to their owner
 Apply the Framework review gate before READY_FOR_REVIEW. Trace every Requirement and
 Slice condition through Solution to implementation, tests, and evidence; inspect
 scope, regressions, security, maintainability risk, placement, and required checks.
-Correct local blockers and return business, engineering, or decomposition gaps to
-their owners. Every required strategy/check must have adequate current evidence
-meeting its passing criteria. Record coverage, commands/procedures, results, and
-residual non-blocking risk. Distinguish tool execution, human acceptance, and model
-assessment under the Artifact Protocol; never invent executed checks or approval.
+Correct local blockers; return business, engineering, or decomposition gaps to their owners.
+Every required strategy/check needs adequate current evidence meeting its passing criteria.
+Record coverage, commands/procedures, results, and residual non-blocking risk.
+Distinguish tool execution, human acceptance, and model assessment under Artifact
+Protocol; never invent executed checks or approval.
 Required NOT_RUN or INCONCLUSIVE results prevent READY_FOR_REVIEW. This self-check
 is not a Review decision, and a successful irrelevant command cannot satisfy it.
 
@@ -146,8 +145,8 @@ All commands follow the Framework command lifecycle.
 4. Execute every required check across all selected strategies, including behavioral
    regression, migration, build/startup, or human acceptance requirements when
    applicable. Preserve actual outputs/observations, environment, target, and results.
-   A failed check or missing environment is not permission to switch to a weaker
-   strategy. Correct local failures; otherwise persist the appropriate blocker.
+   Follow the Strategy selection restrictions on switching; correct local failures,
+   otherwise persist the appropriate blocker.
 5. Record Implementation Summary, Verification Selection, Verification Evidence,
    changed files, File Placement Conformance, Open Issues, shared components,
    implemented decisions, and deviations with owner/resolution. Multiple strategies

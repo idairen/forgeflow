@@ -24,7 +24,9 @@ Rule 2 contradictions are halted, not repaired implicitly.
 
 ### Clarification Gate
 
-Before Planning, classify every material decision by owner and state.
+Before defining or revising Planning, Plan MUST classify every currently discoverable
+material decision by owner and every Plan-owned decision as resolved or open;
+classification is invocation-local and creates no Artifact status.
 
 A decision is Plan-owned only when different answers change:
 
@@ -32,6 +34,11 @@ A decision is Plan-owned only when different answers change:
 - Feature set, boundary, Outcome, order, or dependency; or
 - a project-wide or cross-Feature business contract recorded as a Feature Outcome
   or Project Constraint.
+
+Coverage includes project/cross-Feature behavior; Feature exclusions; project-wide
+roles, access, visibility, journey, and user experience; shared data meaning,
+identity, ownership, lifecycle, and reporting; and success measures and
+evidence-backed assumptions.
 
 Before asking, identify the exact Planning field affected. No exact field means
 Plan MUST NOT ask.
@@ -47,50 +54,22 @@ Solution-owned. Cost, complexity, or technical impact never changes ownership.
 For a mixed decision, ask only the Plan-owned portion. Options and explanations
 MUST NOT contain or imply Grill-owned or Solution-owned choices.
 
-A Plan-owned decision is resolved only by current User Intent, unchanged approved
-Planning, or an explicit user answer. Repository evidence proves current facts,
-not approval. Silence, convention, convenience, and likely intent are not approval.
-Two compatible but materially different Planning outcomes mean the decision is open.
+A Plan-owned decision is resolved only by explicit current User Intent, an unchanged
+decision in current approved Planning, or an explicit user answer to a Plan clarification.
+Two or more materially different Planning outcomes compatible with current User
+Intent and approved Planning mean the decision is open.
 
-Complete ownership and coverage classification before asking. Ask every currently
-discoverable open Plan-owned question and wait at Project Scope. While waiting,
-MUST NOT create or modify Planning, emit a Handoff, or encode an open answer as an
-Assumption, Exclusion, Measure, or Outcome. Reapply this gate after every answer.
+Repository evidence may establish current facts and support clarification options,
+but MUST NOT authorize new or changed Plan-owned decisions; silence, convention,
+implementation convenience, and likely intent are not approval.
 
-### Project Decision Gate
-
-Before defining or revising Planning, Plan MUST classify every currently
-discoverable material Plan-owned decision as resolved or open. This classification
-is invocation-local and does not create an Artifact status. A decision is open when
-two or more materially different Planning outcomes remain compatible with current
-User Intent and approved Planning, even if one outcome appears conventional or more
-likely.
-
-The gate covers decisions that could change:
-
-- project or cross-Feature behavior;
-- Feature set, boundary, dependency, order, or exclusion;
-- project-wide roles, access, visibility, journey, or user experience;
-- shared data meaning, identity, ownership, lifecycle, or reporting; or
-- goals, success measures, constraints, or evidence-backed assumptions.
-
-A decision is resolved only by explicit current User Intent, an unchanged decision
-in current approved Planning, or an explicit user answer to a Plan clarification.
-Repository evidence may establish current-state facts and support clarification
-options, but MUST NOT authorize new or changed project scope, Feature topology,
-cross-Feature behavior, shared-data policy, roles, access, constraints, exclusions,
-or success measures. Convention, likely intent, implementation convenience, and
-silence are not approval.
-
-If any decision is open, Plan MUST ask every currently discoverable open question
-under the Framework clarification policy and wait at Project Scope. It MUST NOT
-create or modify Planning, emit a Handoff, or encode an open answer as an Assumption,
-Exclusion, Success Measure, or Outcome. A user answer resolves only the decisions it
-explicitly addresses; reapply the gate before continuing.
-
-Feature-local rules, validation, states, edge cases, and acceptance criteria remain
-Grill-owned. For mixed uncertainty, Plan applies the gate only to the project or
-cross-Feature portion and leaves the detailed portion to Grill.
+Complete ownership and coverage classification before asking; if any Plan-owned
+decision is open, Plan MUST ask every currently discoverable open Plan-owned question
+under the Framework clarification policy and wait at Project Scope.
+While waiting, Plan MUST NOT create or modify Planning, emit a Handoff, or encode an
+open answer as an Assumption, Exclusion, Measure, Success Measure, or Outcome.
+A user answer resolves only the decisions it explicitly addresses; reapply this gate
+after every answer before continuing.
 
 ## Process
 
@@ -128,7 +107,7 @@ cross-Feature portion and leaves the detailed portion to Grill.
 
 Planning is READY only when every approved objective maps to a Feature; dependencies,
 exclusions, constraints, Change Set, and Feature Contract Versions are exact; and
-every material Plan-owned decision covered by the Project Decision Gate has explicit
+every material Plan-owned decision covered by the Clarification Gate has explicit
 resolution evidence. Absence of a detected uncertainty is not resolution evidence.
 
 Empty Planning requires exact `NONE` metadata and approval. Reordering preserves
