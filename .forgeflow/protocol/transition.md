@@ -12,21 +12,22 @@ repository evidence and entry authorization MUST produce the same result.
 
 Build the graph only from valid Canonical Artifact Paths under the Artifact Root.
 History, backups, logs, runtime steps, and supplemental reports never join the graph.
-The Artifact Protocol permits bounded history reads for lineage, archival, and
-counter validation only; those reads supply no readiness or completion evidence.
+Artifact Protocol permits bounded history reads only for lineage, archival, and
+counter validation, never as readiness or completion evidence.
 A contract Artifact is usable only with READY Status (READY_FOR_REVIEW for Implement),
 matching active upstream versions, Feature/Slice identifiers resolved through current
 Planning/Slice Plan, and no duplicate active Artifact or Review attempt.
 
-Check an Artifact's own structure before currentness. Apply Artifact Protocol
-Solution baseline validity and currentness to distinguish a valid-but-stale Solution
-after authorized Planning changes from malformed or unexplained references. Such a
-Solution remains a comparison/update baseline only. It cannot make downstream
-evidence usable, route a current blocker, or establish completion.
+Validate Artifact structure before currentness; apply Artifact Protocol Solution
+baseline validity and currentness to distinguish a valid-but-stale Solution after
+authorized Planning changes from malformed or unexplained references.
+A valid-but-stale Solution is only a comparison/update baseline; it cannot make
+downstream evidence usable, route a current blocker, or establish completion.
 
-A stale READY_FOR_REVIEW record is ignored and Implement reruns at that Scope. A PASS
-without a matching current Implement Record is ignored. A lower FAIL remains immutable
-history after Implement advances Attempt but cannot route the newer attempt.
+A stale READY_FOR_REVIEW record is ignored and Implement reruns at that Scope;
+PASS without a matching current Implement Record is ignored.
+After Implement advances Attempt, a lower FAIL remains immutable history and cannot
+route the newer attempt.
 
 When resolving a current Implement's Review state, check only its exact Attempt's
 invalid Review history pair under Artifact Protocol. A valid pair makes that
@@ -42,8 +43,8 @@ READY_FOR_REVIEW gate under the Artifact Protocol. Required checks cannot be
 deferred merely to obtain Rule 9. Legacy implementation evidence is history only;
 old active TDD paths or routing require the explicit migration described there.
 
-All ordering comes from Feature position in Planning and Slice position in its Slice
-Plan—not identifiers, filenames, filesystem order, timestamps, or conversation.
+Order by Feature position in Planning and Slice position in its Slice Plan, never
+by identifiers, filenames, filesystem order, timestamps, or conversation.
 
 ### Persisted blocker currentness
 
@@ -58,10 +59,10 @@ upstream chain:
 | Slice Plan | Current Planning and Requirements; READY Solution; matching Feature Engineering Version |
 | Implement Record | Current Planning, Requirements, Solution, and Slice Plan; matching engineering and Slice Plan versions |
 
-A direct version match cannot repair an earlier unusable barrier. A stale blocker
-cannot authorize RETURN or Recovery. A current blocker persists until its owner
-replaces the canonical Artifact with a higher valid version or attempt whose Status
-is no longer BLOCKED.
+Direct version matches cannot repair earlier unusable barriers; stale blockers
+authorize neither RETURN nor Recovery.
+A current blocker persists until its owner replaces the canonical Artifact with a
+higher valid version or attempt whose Status is no longer BLOCKED.
 
 A BLOCKED Requirement whose Lane was transactionally released remains actionable
 when its Planning and Feature Contract Version are current. No canonical Lane is
@@ -398,17 +399,18 @@ Stale ACTIVE, malformed, or half-completed evidence remains outside this excepti
 
 ## Invocation boundary
 
-Every Entry obeys the Framework Invocation Boundary and freezes one Workflow/Target
+Every Entry follows Framework Invocation Boundary and freezes one Workflow/Target
 Scope: one Project for Plan, at most one Feature for Grill/Slice, or one Slice attempt
-for Implement/Review. Distinct concurrent Grill Lanes share no command session or mutable
-Artifact. Declared future work grants no authority.
+for Implement/Review.
+Concurrent Grill Lanes share neither command sessions nor mutable Artifacts;
+declared future work grants no authority.
 
-Implement entry may allocate this execution's Attempt under the Artifact Protocol after
-validating authorization. Freeze and persist IN_PROGRESS before code changes; a
-selection gap instead persists the same frozen Attempt as BLOCKED and returns to
-its upstream owner without implementation. A later upstream change or another
-required Attempt ends this authorization rather
-than advancing it again. Review always consumes the frozen current Implement Attempt.
+After validating authorization, Implement entry may allocate this execution's Attempt
+under Artifact Protocol; freeze and persist IN_PROGRESS before code changes.
+A selection gap instead persists that frozen Attempt as BLOCKED and returns to its
+upstream owner without implementation.
+A later upstream change or another required Attempt ends this authorization rather
+than advancing the Attempt again; Review consumes the frozen current Implement Attempt.
 
 When resolution selects another Workflow or Scope, emit its Handoff and stop without
 analyzing, questioning, inspecting, changing, commanding, implementing, reviewing, or

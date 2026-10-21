@@ -4,15 +4,14 @@ Version: 2.15
 
 ## Purpose
 
-A Handoff is the canonical message between two distinct ForgeFlow Workflow
-executions. It records a resolved transition, its evidence, and the exact next or
-terminal scope. It transfers no artifact ownership and never replaces the Artifact
-Graph. The Transition Protocol determines the result and its exact ordered Input
-Artifact projection; this protocol only defines how they are represented and
-validated.
+A Handoff is the canonical message between two distinct ForgeFlow Workflow executions,
+recording a resolved transition, evidence, and exact next or terminal scope;
+it transfers no artifact ownership and never replaces the Artifact Graph.
+Transition determines the result and exact ordered Input Artifact projection;
+this protocol defines only their representation and validation.
 
-Transition's read-only routing correction may also emit a Handoff without executing
-a Workflow. It follows the same variants, projection, rendering, and stop rules.
+Transition's read-only routing correction may emit a Handoff without Workflow
+execution, under the same variant, projection, rendering, and stop rules.
 
 ## Canonical variants
 
@@ -42,11 +41,10 @@ A Handoff-producing Workflow MUST render exactly one block that:
 6. is the final non-whitespace content of the response; and
 7. contains no duplicate Input Artifact filename.
 
-For read-only routing correction, Source Scope is exactly `Project`, identifying
-the routing operation rather than impersonating a prior Workflow. The operation
-has no emitting Workflow, so RETURN's same-Workflow prohibition does not turn a
-Project-scoped target into a same-authorization wait. Ordinary emitters retain
-their authorized Source Scope.
+Read-only routing correction uses exactly Source Scope `Project` for the routing operation,
+never a prior Workflow; it has no emitting Workflow, so RETURN's same-Workflow
+prohibition cannot turn a Project-scoped target into a same-authorization wait.
+Ordinary emitters retain their authorized Source Scope.
 
 `Input Artifacts` MUST reproduce the selected Transition Rule's exact ordered
 projection without choosing, omitting, adding, or reordering evidence. Render each
@@ -56,15 +54,15 @@ empty projection or `INVALID_VERSION` under that Rule's version requirement.
 Rule 2's explicit legacy-path diagnostic may name the exact retired TDD filename
 selected by Transition; it is never a non-terminal input or implementation authority.
 
-Rendering the block terminates the current Workflow execution. The emitter MUST NOT
-consume its own Handoff, start the target Workflow, perform target-scope work, or
-create target-owned evidence. An external orchestrator may start a distinct
-execution after validating the completed Handoff and fresh Artifact Graph, or start
-one eligible Grill Feature through Transition Lane Entry and its atomic claim.
+Rendering the block terminates the current Workflow execution; the emitter MUST NOT consume its own
+Handoff, start the target Workflow, perform target-scope work, or create target-owned evidence.
+An external orchestrator may start a distinct execution after validating the completed
+Handoff and fresh Artifact Graph, or one eligible Grill Feature through Transition
+Lane Entry and its atomic claim.
 
 Lane Entry, Rule 5 join-pending, and same-authorization waiting emit no Handoff and
-MUST NOT synthesize an empty block. Feature Lane changes authorization, not the four
-canonical Handoff variants or their rendering.
+MUST NOT synthesize an empty block; Feature Lane changes authorization, not
+the four canonical variants or their rendering.
 
 ## FORWARD template
 

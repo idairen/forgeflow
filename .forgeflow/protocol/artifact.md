@@ -546,8 +546,8 @@ invalid; missing upstream engineering decisions route to Solution.
 
 ### Verification strategies and evidence
 
-Strategies are execution/evidence patterns inside Implement, not Workflows, Artifact
-types, independent Attempts, or Review decisions. The supported identifiers are:
+Strategies define execution/evidence patterns within Implement, never Workflows,
+Artifact types, independent Attempts, or Review decisions; supported identifiers:
 
 | Strategy | Required execution pattern and evidence |
 | --- | --- |
@@ -571,19 +571,20 @@ acceptance, or switch strategy because a check failed or its environment is abse
 Changed engineering requirements return to Solution; an inadequate Slice mapping
 returns to Slice. Multiple strategy runs remain in the same frozen Attempt.
 
-Implement's selection procedure and candidate guidance live in its Workflow, not
-in upstream readiness rules. Existing Slice strategy commitments remain mandatory
-unless their approved alternative conditions apply; adding a supported identifier
-does not rewrite those commitments. Regression is a verification purpose; unit,
-integration, contract, and end-to-end are test levels, not additional strategies.
-Record applicable levels and regression checks under the governing obligations.
+Selection procedure and candidate guidance belong in Implement's Workflow, not in
+upstream readiness rules. Slice strategy commitments remain mandatory unless approved alternative
+conditions apply; new strategy identifiers do not change them.
+Regression is a verification purpose; unit, integration, contract, and end-to-end
+are test levels, not strategies; record applicable levels and regression checks
+under their governing obligations.
 
-An implementation method describes how Implement organizes authorized changes,
-not what behavior, architecture, Slice boundary, or passing criteria to choose.
-Methods are optional free-form prose in Implementation Summary, with a brief reason
-when used; they are not Verification Strategies and require no metadata field,
-separate table, Artifact, Status, Attempt, or approval gate. A method supplies no
-verification evidence by itself. Existing records without method prose remain valid.
+An implementation method describes how to organize authorized changes, never selects
+behavior, architecture, Slice boundaries, or passing criteria.
+Methods are optional free-form prose in Implementation Summary with a brief reason,
+not Verification Strategies; they require no metadata field, separate table,
+Artifact, Status, Attempt, or approval gate.
+A method supplies no verification evidence by itself.
+Existing records without method prose remain valid.
 
 Each Implement Record contains `## Verification Selection` with:
 
@@ -592,14 +593,13 @@ Each Implement Record contains `## Verification Selection` with:
 | --- | --- | --- |
 ```
 
-Metadata `Verification Strategies` is the ordered unique union of selected strategies,
-separated by `; `, matching this table exactly. Selection records every mandatory
-strategy or explicitly authorized alternative and any supplementary strategies.
-Every rationale is non-empty and maps to a Slice/Solution obligation. One valid
-strategy plus rationale does not by itself make the record READY_FOR_REVIEW.
-Only a BLOCKED record unable to resolve strategy selection may use `NONE`, with an
-empty selection table and the concrete upstream blocker; NONE is forbidden for
-IN_PROGRESS and READY_FOR_REVIEW.
+The selection table records every mandatory strategy or explicitly authorized
+alternative and selected supplementary strategies; metadata `Verification Strategies`
+must exactly match its ordered unique union of strategies, separated by `; `.
+Every rationale is non-empty and maps to a Slice/Solution obligation; strategy and
+rationale alone do not establish READY_FOR_REVIEW.
+Only unresolved-selection BLOCKED records may use `NONE`, with an empty selection
+table and concrete upstream blocker; NONE is forbidden for IN_PROGRESS and READY_FOR_REVIEW.
 
 Each record also contains `## Verification Evidence` with:
 
@@ -611,29 +611,28 @@ Each record also contains `## Verification Evidence` with:
 Strategies resolve to the selection table. Source is TOOL_EXECUTION,
 HUMAN_ACCEPTANCE, or MODEL_ASSESSMENT. Result is SUCCEEDED, FAILED, NOT_RUN,
 INCONCLUSIVE, or NOT_APPLICABLE; these are check results, never Review Decisions or
-another overall Status. Record not-yet-run selected checks as NOT_RUN, never success.
-For an unresolved-selection BLOCKED record the evidence table may be empty, while
-Blocker Evidence records the gap.
+overall Status. Unexecuted selected checks are NOT_RUN, never success.
+Unresolved-selection BLOCKED records may leave this table empty but must record
+the gap in Blocker Evidence.
 
-TOOL_EXECUTION preserves the actual command, target/version or file state, relevant
-environment/configuration, exit status, and available output or a retrievable
-reference. HUMAN_ACCEPTANCE records who accepted, the actual steps/observations,
-target, and result when human acceptance is required. MODEL_ASSESSMENT records its
-inspected sources and reasoning separately; it cannot manufacture tool output,
-historical RED, benchmark measurements, or a person's approval. If a required
-source/result is unavailable, report NOT_RUN or INCONCLUSIVE and do not pass the gate.
-Evidence references must resolve to available records; an unexecuted command listed
-as a plan is not execution evidence. Tool success still requires relevant coverage
-and sufficient results for the obligation. Findings about missing/unreliable
-required evidence follow the shared review gate.
+- TOOL_EXECUTION preserves the actual command, target/version or file state,
+  relevant environment/configuration, exit status, and available output or retrievable reference.
+- When human acceptance is required, HUMAN_ACCEPTANCE records the acceptor, actual
+  steps/observations, target, and result.
+- MODEL_ASSESSMENT separately records inspected sources and reasoning; it cannot
+  manufacture tool output, historical RED, benchmark measurements, or a person's approval.
+- If a required source/result is unavailable, report NOT_RUN or INCONCLUSIVE and do not pass the gate.
+- Evidence references must resolve to available records; unexecuted commands are not execution evidence.
+- Tool success requires relevant coverage and sufficient results for the obligation.
+- Missing/unreliable required evidence is assessed under the shared review gate.
 
 READY_FOR_REVIEW requires evidence for every required check meeting its passing
 criteria under the current upstream versions and Attempt. NOT_APPLICABLE needs an
 explicit applicability condition and supporting evidence; it cannot waive a required
-obligation. An optional failed check is still evaluated for blocking impact. Pending
-work stays IN_PROGRESS while progress remains possible, or BLOCKED with the correct
-owner when it cannot proceed. Neither a strategy rationale nor residual-risk prose
-can defer a mandatory check to Review.
+obligation. Assess optional failed checks for blocking impact.
+Pending work stays IN_PROGRESS if progress is possible, otherwise BLOCKED with the
+correct owner; neither strategy rationale nor residual-risk prose can defer a
+mandatory check to Review.
 
 ### Implement Record
 

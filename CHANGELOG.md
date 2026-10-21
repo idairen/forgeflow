@@ -9,6 +9,14 @@ history and retired presentation assets are not included.
 
 ## [Unreleased]
 
+### Markdown contract clarity
+
+- Merge overlapping Plan clarification gates and shorten framework, workflow,
+  launcher, and review-plugin wording while preserving contract conditions,
+  schemas, routing, and recovery rules.
+- Reduce canonical Markdown by 2,472 bytes (1.51%); automated checks do not
+  establish equivalent model behavior in Codex or Copilot.
+
 ### CLI artifact compatibility
 
 - Parse the protocol's ordered Feature/Slice metadata keys while retaining legacy
