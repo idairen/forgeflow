@@ -1,8 +1,7 @@
 # Review Plugin Registry
 
-This is the single authority for Review plugins, their execution, severity mapping,
-and supplemental reports. Each plugin lives under
-`.forgeflow/rules/reviews/<name>/`.
+This registry alone governs Review plugins, execution, severity mapping, and
+supplemental reports; plugins live under `.forgeflow/rules/reviews/<name>/`.
 
 ## Plugins
 
@@ -28,10 +27,9 @@ and supplemental reports. Each plugin lives under
 | Formats | comma-separated `md`, `html`, and/or `csv`; generate all, first is primary |
 | Blocking Threshold | severities that turn VIOLATION into BLOCKING |
 
-An inapplicable plugin or rule is N/A, never PASS or VIOLATION. Absence of optional
-technology is not failure. Record observable evidence for N/A and UNKNOWN. UNKNOWN
-is non-blocking unless separate evidence independently meets the Framework blocking
-definition.
+Inapplicable plugins/rules are N/A, never PASS or VIOLATION; absent optional technology
+is not failure. N/A and UNKNOWN require observable evidence; UNKNOWN is non-blocking
+unless separate evidence independently meets the Framework blocking definition.
 
 ## Severity and disposition
 
@@ -73,9 +71,9 @@ Write reports to:
 .forgeflow/reports/<name>/report-feature-<FeatureNumber>-slice-<SliceNumber>-attempt-<AttemptNumber>.<format>
 ```
 
-Markdown and HTML contain rules version, Review date, aggregate status/counts, a
-summary table, and details for VIOLATION/UNKNOWN. CSV carries equivalent structured
-fields. The canonical summary is:
+Markdown and HTML require rules version, Review date, aggregate status/counts, a summary
+table, and VIOLATION/UNKNOWN details; CSV carries equivalent structured fields.
+Canonical summary:
 
 ```markdown
 | # | Rule ID | Description | Severity | Verdict | Disposition | Finding |

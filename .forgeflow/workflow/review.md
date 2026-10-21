@@ -10,43 +10,44 @@ Version: 2.12
 | Owns | Review Report; immutable independent disposition |
 | Inputs | valid Handoff; current Requirement, Solution, Slice Plan, Implement, and implementation |
 
-Review is read-only for code, tests, upstream plans, and Implement. It accepts only Handoff
-Entry—never Recovery—then validates Transition/Handoff, freezes the exact Slice and
-positive current Attempt, and verifies the complete upstream chain. Stale or
-mismatched evidence is not current review work.
+Review is read-only for code, tests, upstream plans, and Implement.
+Accept only Handoff Entry—never Recovery—then validate Transition/Handoff, freeze
+the exact Slice and positive current Attempt, and verify the complete upstream chain.
+Stale or mismatched evidence is not current review work.
 
 ## Decision
 
-Independently apply the Framework review gate. Unsupported preference is
-non-blocking. Build the one canonical Findings table first, then derive counts,
-Decision, Return Workflow, and Return Scope:
+Independently apply the Framework review gate; unsupported preferences are non-blocking.
+Build one canonical Findings table, then derive counts, Decision, Return Workflow,
+and Return Scope:
 
 - PASS has zero blocking rows and no return metadata.
 - FAIL has blocking rows and one disposition: the Framework's highest-precedence
   blocking owner and one of that owner's blocking Scopes.
 
-Every finding and return identifier resolves in the active graph. Plugin reports are
-supplemental and never determine or replace the canonical Review Report.
+Resolve every finding and return identifier in the active graph; supplemental plugin
+reports never determine or replace the canonical Review Report.
 
 ## Process
 
 All commands follow the Framework command lifecycle.
 
 1. Read and freeze Attempt and exact upstream versions from current READY_FOR_REVIEW
-   Implement. Reject an Attempt already occupied by a PASS or FAIL Review, even if its
-   upstream versions are stale. Only Implement allocates the next Attempt; Review never
-   changes the counter or overwrites an old report.
+   Implement. Reject Attempts occupied by a PASS or FAIL Review even with stale upstream versions;
+   only Implement allocates the next Attempt, and Review never changes counters or
+   overwrites old reports.
 2. Trace every Slice condition to tests, implementation, and evidence.
    Independently check the Verification Plan against Solution obligations and the
    selected strategies/rationales against that plan. Verify all required checks,
-   current target/environment, passing criteria, and evidence references. Review
-   source distinctions: tool success must be relevant and sufficient, model
+   current target/environment, passing criteria, and evidence references.
+   Tool success must be relevant and sufficient; model
    assessment cannot substitute for required execution, and required human acceptance
-   needs the actual acceptor's result. Missing, invented, inconclusive, or unreliable
-   required evidence is evaluated under the shared blocking gate. TDD-specific
-   RED/GREEN/refactor applies only when TDD was selected; other strategies have their
-   own evidence requirements. Report unauthorized strategy substitution to the
-   responsible owner without rewriting the Implement Record or upstream plan.
+   needs the actual acceptor's result.
+   Assess missing, invented, inconclusive, or unreliable required evidence under the
+   shared blocking gate; RED/GREEN/refactor applies only when TDD was selected; other
+   strategies follow their own evidence requirements.
+   Report unauthorized strategy substitution to its responsible owner; never rewrite
+   the Implement Record or upstream plan.
 3. Execute every enabled plugin from `.forgeflow/rules/reviews/_index.md`, including
    dependency order, applicability, rules, thresholds, archival, and report formats.
 4. Inspect correctness, regression, Scope, security, maintainability, Solution
@@ -77,6 +78,7 @@ All commands follow the Framework command lifecycle.
    attempt. A changed baseline ends this review without a report for the new attempt.
 10. Resolve Transition, emit its exact Handoff as final content, and stop.
 
-Supplemental replacement follows Reports History. Historical evidence may explain
-evolution but cannot satisfy a current gate. Review never repairs implementation,
-edits tests/Implement, changes upstream Artifacts, or begins returned work.
+Supplemental report replacement follows Reports History; historical evidence may explain
+evolution, never satisfy current gates.
+Review never repairs implementation, edits tests/Implement, changes upstream Artifacts,
+or begins returned work.

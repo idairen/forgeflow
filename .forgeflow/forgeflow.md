@@ -2,9 +2,9 @@
 
 Version: 3.8
 
-ForgeFlow is an Artifact-driven delivery framework for humans and AI agents. The
-versioned Artifact Graph is the sole persistent source of truth; conversation,
-launchers, logs, and derived views are never authoritative.
+ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
+The versioned Artifact Graph is the sole persistent source of truth;
+conversation, launchers, logs, and derived views have no authority.
 
 ## Project index
 
@@ -31,20 +31,19 @@ Framework → Artifact Protocol → Transition Protocol → Handoff Protocol →
 adapter → conversation. Stop and report a conflict rather than follow lower
 precedence.
 
-ForgeFlow follows these invariants:
+Invariants:
 
-- Artifacts before conversations; progress requires evidence, not claims.
-- Plan and Grill alone create business decisions; Solution and Slice alone create
-  engineering decisions.
-- Existing behavior is inspected before engineering design.
-- Upstream contracts are frozen before execution and versioned when changed.
-- Compatible changes preserve unaffected Feature evidence.
-- One invocation executes one resolver-authorized Workflow and Scope.
-- Independent Grill Feature Lanes may execute concurrently while remaining isolated.
-- Knowledge and impact views are disposable projections without authority.
+- Artifacts precede conversations; progress requires evidence, not claims.
+- Only Plan/Grill create business decisions; only Solution/Slice create engineering decisions.
+- Inspect existing behavior before engineering design.
+- Freeze upstream contracts before execution; version them when changed.
+- Preserve unaffected Feature evidence across compatible changes.
+- Execute one resolver-authorized Workflow and Scope per invocation.
+- Independent Grill Feature Lanes may run concurrently in isolation.
+- Knowledge and impact views are disposable, non-authoritative projections.
 
-ForgeFlow core is Markdown. Executable tooling, schema engines, plugins, model APIs,
-and platform state may automate it but are not part of or superior to the core.
+The Markdown core may be automated by tooling, schema engines, plugins, model APIs,
+or platform state; none belongs to or overrides the core.
 
 ## Ownership
 
@@ -204,8 +203,7 @@ Approval, and Planning as the sole active Artifact.
 
 ## Artifact compatibility
 
-The Artifact Protocol owns paths, metadata, versions, history, and views. The active
-chain is:
+Artifact Protocol owns paths, metadata, versions, history, and views; the active chain is:
 
 ```text
 Planning
@@ -216,26 +214,26 @@ Planning
   -> Review[matching versions and Attempt]
 ```
 
-Feature Lane Records coordinate parallel Requirement creation but do not become a
-business or engineering contract link in this chain.
+Feature Lane Records coordinate parallel Requirement creation outside this contract chain.
 
-Planning advances only added or business-affected Feature Contract Versions;
-Solution advances only new or engineering-affected Feature Engineering Versions.
-Invalidation is transitive within each affected Feature. A valid-but-stale Solution
-may remain at its canonical path for comparison and update under the Artifact
-Protocol; it cannot satisfy an engineering or delivery barrier. History never joins
-the active graph, but bounded lineage, archival, and counter checks may read it.
-Other stale evidence cannot authorize work or completion. No mutable Project State,
-phase, or cursor is authoritative.
+- Planning advances only added or business-affected Feature Contract Versions;
+  Solution advances only new or engineering-affected Feature Engineering Versions.
+- Invalidation is transitive within each affected Feature.
+- Under Artifact Protocol, a valid-but-stale Solution may remain at its canonical
+  path for comparison/update, never to satisfy engineering or delivery barriers.
+- History never joins the active graph; bounded lineage, archival, and counter
+  checks may read it.
+- Other stale evidence authorizes neither work nor completion.
+- Mutable Project State, phase, and cursor have no authority.
 
 ## Conformance
 
-A conforming implementation recognizes exactly the six Workflows; enforces
-ownership, paths, metadata, versions, barriers, entry, transition, and typed
-Handoffs; preserves immutable attempts and required history; isolates each
-invocation; atomically claims each Feature Lane; releases claims before upstream
-RETURN; recovers interrupted claims only under the Transition Protocol and fences
-superseded executions; prevents duplicate or dependent Lane execution; joins all
-READY Requirements before Solution; retains compatible Feature evidence; excludes
-history, backups, logs, and supplemental reports from
-progression; and derives views without creating authority.
+Conformance requires the six indexed Workflows only and enforcement of the ownership,
+Artifact compatibility, invocation isolation, barriers, and view-authority rules above,
+plus protocol-defined paths, metadata, versions, entry, transition, and typed Handoffs.
+
+- Preserve immutable attempts, required history, and compatible Feature evidence.
+- Claim each Feature Lane atomically; release claims before upstream RETURN.
+- Recover interrupted claims only under Transition Protocol; fence superseded executions.
+- Prevent duplicate or dependent Lane execution; join all READY Requirements before Solution.
+- Exclude history, backups, logs, and supplemental reports from progression.
