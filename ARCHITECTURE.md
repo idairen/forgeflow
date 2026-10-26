@@ -1,6 +1,6 @@
 # ForgeFlow Architecture
 
-Technical Preview aligned to Framework 3.8 / Artifact 2.19 / Transition 1.8.
+Technical Preview aligned to Framework 3.9 / Artifact 2.20 / Transition 1.8.
 
 ## Authority and components
 
@@ -37,6 +37,19 @@ These are introductory summaries. Exact definitions and validity rules remain in
 the normative contracts; this glossary introduces no new state or field.
 
 ## Flow and concurrency
+
+Planning persists the initial user intent's communication language in Project Intent.
+All Workflows inherit it for questions and prose while retaining canonical protocol
+syntax. Older Planning falls back to its intent language until its next revision.
+
+Implement asks whether to repair/retry, temporarily defer named verification checks,
+or pause when a check cannot pass after routine correction. A deferral records user
+approval, risk, and a retry checkpoint in Open Issues; actual check results remain.
+Independent current-Slice work can continue. Moving mandatory verification to a
+later Slice requires a versioned upstream revision with concrete successor coverage,
+then fresh routing. Outstanding successor checks still prevent project completion.
+These are participant obligations; the CLI does not infer approval from prose or
+relax its required-check gates.
 
 Plan → dependency-ready Grill Lanes → all Requirements READY → Solution → every
 Feature's Slice Plan READY → declared-order Implement/Review → Project Complete.

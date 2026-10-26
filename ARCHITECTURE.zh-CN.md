@@ -1,6 +1,6 @@
 # ForgeFlow 架构
 
-本页对应 Framework 3.8 / Artifact 2.19 / Transition 1.8，发布状态仍为 Technical Preview。
+本页对应 Framework 3.9 / Artifact 2.20 / Transition 1.8，发布状态仍为 Technical Preview。
 
 规范优先级：[Framework](./.forgeflow/forgeflow.md) → [Artifact](./.forgeflow/protocol/artifact.md)
 → [Transition](./.forgeflow/protocol/transition.md) → [Handoff](./.forgeflow/protocol/handoff.md)
@@ -23,6 +23,16 @@ Handoff 不会让 Artifact 自动变为真实，真实 IDE Acceptance 必须独�
 以上是入门摘要。精确定义和有效性规则仍以权威契约为准，不新增状态或字段。
 
 ## 执行链
+
+Planning 在 Project Intent 中记录初始用户意图所用的沟通语言。后续 Workflow 的提问、
+产物正文和解释沿用该语言，协议字段、标题和状态值保留规范格式。旧 Planning 未记录
+语言时使用其意图正文的语言，由 Plan 在下次修订时补充。
+
+Implement 在常规修正后仍无法通过验证时，让用户选择修复重试、暂缓指定验证或暂停。
+暂缓决定、风险和补验节点记录在 Open Issues，验证结果保持真实。当前 Slice 内不依赖
+这些验证的工作可以继续；若需将必需验证后移到其他 Slice，则通过上游版本修订明确
+补验义务，并重新解析路由。未完成的补验仍阻止项目完成。这些是执行参与者的义务；
+CLI 不会从自由文本推断批准，也不会放宽必需验证门槛。
 
 Plan → 按 Planning 依赖并行 Grill → 全部 Requirement READY → Solution → 全部 Feature
 Slice Plan READY → 按声明顺序 Implement / Review → 全部当前 Slice PASS。

@@ -1,6 +1,6 @@
 # Plan Workflow
 
-Version: 2.12
+Version: 2.13
 
 ## Contract
 
@@ -21,6 +21,13 @@ rotation. Subsequent Plan and rework preserve and version current evidence. Proj
 Evidence Rotation requires an explicit reset/archive request and the Artifact
 Protocol transaction; semantic similarity never implies rotation or another project.
 Rule 2 contradictions are halted, not repaired implicitly.
+
+Resolve the Framework communication language from the initial user planning intent
+before asking clarifications. Use that language for questions and Planning prose,
+and persist `Communication Language` inside Project Intent when Planning is ready.
+On subsequent entry, inherit the stored choice unless the user explicitly changes
+it. The language choice does not authorize writing Planning while business
+clarifications are pending and creates no Feature-level business decision.
 
 ### Clarification Gate
 

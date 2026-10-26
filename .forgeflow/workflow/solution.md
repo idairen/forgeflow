@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.13
+Version: 2.14
 
 ## Contract
 
@@ -27,6 +27,15 @@ Solution owns properties verification must establish, required checks/test level
 evidence sources, and permitted alternative strategies; Slice maps them to delivery units.
 Implement chooses and refines execution within these constraints, never replaces them by rationale;
 routine test cases/commands require no new engineering decision.
+
+For a user-approved verification deferral returned by Implement, read its recorded
+decision and follow Artifact Protocol's deferral procedure. Reuse that approval
+for its exact scope; ask only about unresolved or materially changed decisions.
+If feasible, revise verification scheduling with explicit successor obligations,
+unchanged passing criteria/evidence sources, and dependencies that still satisfy
+Requirements. Preserve the deferral decision and risks in the revised plan so Slice
+can map them after old Implement evidence becomes stale. Do not waive a known
+business failure or drop verification to make the current Slice appear complete.
 
 Enumerate decisions supported by Requirements, prior Solution, and system evidence.
 Under Framework clarification policy, ask and wait if an owned decision lacks usable

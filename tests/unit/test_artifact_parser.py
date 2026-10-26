@@ -97,6 +97,26 @@ class ArtifactParserTests(unittest.TestCase):
 
         self.assertEqual(state["status"], "active")
 
+    def test_planning_language_preserves_protocol_shape_and_routing(self):
+        fixture = Path(__file__).resolve().parents[2] / "examples/sample-project/expected-artifacts"
+        from forgeflow.engine.state_resolver import StateResolver
+
+        for source in fixture.glob("*.md"):
+            self.write(source.name, source.read_text(encoding="utf-8"))
+        baseline = ArtifactParser.detect_artifact_state(self.root)
+        resolution = StateResolver.resolve(baseline)
+        original = (self.root / "planning.md").read_text(encoding="utf-8")
+        for language, prose in (("zh-CN", "交付任务管理系统。"),
+                                ("en", "Deliver task management.")):
+            with self.subTest(language=language):
+                self.write("planning.md", original.replace(
+                    "## Project Intent\n", "## Project Intent\n\n"
+                    f"Communication Language: {language}\n\n{prose}\n", 1))
+                state = ArtifactParser.detect_artifact_state(self.root)
+                self.assertEqual(state["status"], "active")
+                self.assertEqual(state["errors"], [])
+                self.assertEqual(StateResolver.resolve(state), resolution)
+
     def test_rejects_incomplete_protocol_211_planning_structure(self):
         self.write(
             "planning.md",

@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.8
+Version: 3.9
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
 The versioned Artifact Graph is the sole persistent source of truth;
@@ -10,8 +10,8 @@ conversation, launchers, logs, and derived views have no authority.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.8 | `forgeflow.md` |
-| Artifact Protocol | 2.19 | `protocol/artifact.md` |
+| Framework | 3.9 | `forgeflow.md` |
+| Artifact Protocol | 2.20 | `protocol/artifact.md` |
 | Transition Protocol | 1.8 | `protocol/transition.md` |
 | Handoff Protocol | 2.15 | `protocol/handoff.md` |
 
@@ -74,6 +74,32 @@ owner. Plan and Grill do not acquire engineering verification responsibilities.
 
 ## Clarification
 
+### Communication language
+
+Plan MUST use the language of the user's initial substantive planning intent:
+Chinese intent selects Chinese; English intent selects English. An explicit user
+language preference takes precedence. Ignore quoted documents, code, paths, and
+the language of framework templates when determining that language. For genuinely
+ambiguous mixed-language intent, ask one language question before drafting Planning.
+Persist the choice in Planning's Project Intent as specified by Artifact Protocol.
+
+All Workflows MUST read that choice from current Planning and use it for questions,
+options, explanations, progress updates, Artifact prose, review findings, supplemental
+reports, and Handoff Reason. A new session, English framework instructions, or a
+short reply in another language does not reset it. Change it only at the user's
+explicit request; Plan persists the change at its next authorized revision, without
+rewriting historical evidence or advancing unaffected Feature Contract Versions.
+Before persistence, the explicit request governs the current conversation.
+
+Keep canonical headings, field/table labels, Workflow/Status/Decision values,
+identifiers, paths, commands, and literal evidence unchanged. Translate their
+human-readable content, not the protocol syntax. For older Planning without a
+stored choice, use its substantive Project Intent language; if ambiguous, ask
+instead of inferring from English headings. Only Plan backfills the choice on its
+next authorized revision; other Workflows do not edit Planning.
+
+### Decisions and verification deferral
+
 Plan, Grill, and Solution ask only within their ownership. When an owned material
 decision cannot be inferred from approved Artifacts and observable repository
 evidence, they ask and wait rather than invent policy, assumptions, exclusions, or
@@ -83,6 +109,15 @@ Offer only evidence-supported or established domain options, explain the relevan
 effect, use no more than three to five without filler, and end with `Other`. Do not
 offer conflicting choices or steer the user. Waiting remains in the same
 Workflow/Scope, emits no Handoff, and grants no future authority.
+
+Implement MUST also ask when a required verification check fails, cannot run, or
+remains inconclusive and cannot be resolved by a routine local correction. Offer
+repair/retry, temporarily defer named checks and continue permitted work, or pause.
+Explain concrete failures, risks, and the scope that can continue. Explicit user
+deferral is a scheduling decision, never passing evidence or an implicit waiver.
+Implement records it under Artifact Protocol and follows its verification-deferral
+procedure. Do not ask again for an unchanged, recorded decision within its approved
+scope; new checks, changed versions, or an expired retry condition need a new decision.
 
 ## Platform and loading boundary
 

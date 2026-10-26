@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.12
+Version: 2.13
 
 ## Contract
 
@@ -30,6 +30,14 @@ rationale, required checks, passing criteria, and evidence requirements under Ar
 Strategies may combine; none cancels other obligations.
 Implement may select only explicitly permitted alternatives or refine execution details;
 missing engineering criteria return to Solution, never to Implement discretion.
+
+Map user-approved verification deferrals only within Solution's current policy.
+Retain the recorded decision and map every deferred check to a concrete successor
+Slice's Verification Plan, preserving criteria and evidence sources. Ensure the
+successor is included before project completion and that intervening Slices do not
+depend on the missing evidence. A deferral without a feasible successor blocks
+READY; changed verification policy returns to Solution. Apply ordinary versioning
+and fresh routing, never patch the old Implement record or reuse its PASS evidence.
 
 ## Process
 

@@ -135,6 +135,19 @@ stderr before treating `2` as a workflow wait. Runtime logs under
 
 ## Upgrading existing projects
 
+ForgeFlow follows the language of the user's initial Plan intent for subsequent
+questions, Artifact prose, findings, and Handoff explanations. Planning persists
+that choice in Project Intent; protocol headings, keys, identifiers, and status
+values keep their canonical spelling. An explicit language-change request overrides
+the choice; short replies or English templates do not.
+
+When required verification cannot pass, Implement offers repair/retry, temporary
+deferral of named checks, or pause. Approved deferrals retain actual failed or
+unexecuted results and a retry checkpoint. Independent work may continue within the
+current Slice; moving a mandatory check to a later Slice requires a versioned
+Solution/Slice revision and fresh routing. Deferral never means a passed check or
+permission to declare the project complete with outstanding verification.
+
 Read [migration notes](docs/maintainers/implement-migration.md) before refreshing.
 `init --force` preserves artifacts, reports and history. Active `tdd-feature-*.md`
 files or TDD routing require a separately authorized evidence migration and HALT

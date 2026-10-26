@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.12
+Version: 2.13
 
 ## Contract
 
@@ -48,6 +48,11 @@ All commands follow the Framework command lifecycle.
    strategies follow their own evidence requirements.
    Report unauthorized strategy substitution to its responsible owner; never rewrite
    the Implement Record or upstream plan.
+   For recorded temporary deferrals, verify explicit user approval, current upstream
+   scheduling and concrete successor coverage. An Open Issues entry alone cannot
+   waive a required current check; a failed result remains failed. Evaluate known
+   correctness defects independently of verification scheduling. Outstanding checks
+   at a successor gate still block that gate and project completion.
 3. Execute every enabled plugin from `.forgeflow/rules/reviews/_index.md`, including
    dependency order, applicability, rules, thresholds, archival, and report formats.
 4. Inspect correctness, regression, Scope, security, maintainability, Solution

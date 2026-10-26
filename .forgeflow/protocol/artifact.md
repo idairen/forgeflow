@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.19
+Version: 2.20
 
 ## Purpose
 
@@ -349,6 +349,15 @@ Protocol 2.11 records `Artifact Protocol Version = 2.11` and contains exactly:
 Each section has a non-placeholder value. When no constraint, assumption, or
 exclusion applies, record `NONE` with a reason.
 
+New or revised Planning records `Communication Language: zh-CN` (Chinese) or
+`Communication Language: en` (English), or another explicit user-selected language
+tag, as a standalone line inside `## Project Intent`. This is a prose convention,
+not a new metadata field, section, or change to the 2.11 structure marker. Follow
+the Framework language policy for all human-readable values. Older Planning remains
+readable without this line; use its intent language until Plan's next revision.
+Language-only changes preserve Feature Contract Versions when business contracts
+are unchanged. Historical Artifacts retain their original language.
+
 `Features` uses:
 
 ```markdown
@@ -633,6 +642,39 @@ obligation. Assess optional failed checks for blocking impact.
 Pending work stays IN_PROGRESS if progress is possible, otherwise BLOCKED with the
 correct owner; neither strategy rationale nor residual-risk prose can defer a
 mandatory check to Review.
+
+### User-approved verification deferral
+
+Record each explicit temporary-deferral decision as prose under the current
+Implement Record's `## Open Issues`: exact checks and governing obligations,
+actual result and evidence reference, reason, known impact/risk, user's answer,
+Feature/Slice, Attempt and upstream versions, permitted continuation scope,
+responsible owner, and concrete retry trigger or later delivery checkpoint.
+Preserve FAILED, NOT_RUN, or INCONCLUSIVE in Verification Evidence; deferral adds
+no Result or Status and is never SUCCEEDED or NOT_APPLICABLE. Missing user approval
+cannot be supplied by silence, timeout, a generic request to continue, or the model.
+Existing records without deferrals require no migration.
+
+With approval, Implement may continue independent work inside its authorized Slice
+and frozen Attempt, leaving the record IN_PROGRESS. It cannot pass an unchanged
+mandatory gate. If continuation requires moving verification to a later Slice,
+persist BLOCKED with the responsible owner and route through the existing RETURN:
+ENGINEERING_GAP to Solution for verification policy, SLICE_VIOLATION to Slice for
+mapping within existing policy, or the business owner if acceptance must change.
+The decision is a concrete revision request, not authority for Implement to edit
+upstream plans, start another Workflow, or manufacture a Review Handoff.
+
+The receiving owner uses the recorded user decision without requesting the same
+approval again. Preserve each deferred obligation, passing criteria, evidence source,
+and risk; specify a concrete successor verification checkpoint in the revised
+Solution/Slice chain. A temporary deferral cannot remove an obligation or move it
+beyond project completion. If the proposed successor cannot satisfy dependencies
+or required acceptance, explain the conflict and request a viable decision.
+Apply normal versioning, archival, invalidation, and fresh Transition resolution;
+old failed evidence never becomes current success. Only the revised current
+contracts can make a check no longer required at the original Slice's gate.
+All remaining required checks and correctness gates still apply, and completion
+requires current passing evidence for the successor obligations.
 
 ### Implement Record
 

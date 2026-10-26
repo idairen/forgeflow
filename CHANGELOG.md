@@ -6,6 +6,19 @@ Earlier development notes remain available in Git history.
 
 ## [Unreleased]
 
+### Planning language and verification deferral
+
+- Persist the initial Plan language in Project Intent and inherit it across all
+  Workflow questions and Artifact prose, preserving canonical protocol syntax.
+- Ask users whether to repair/retry, temporarily defer specific failed/unavailable
+  checks, or pause. Record explicit decisions, risks, and retry checkpoints without
+  relabeling evidence or repeating an unchanged approval request.
+- Allow independent current-Slice work after deferral; route changes to mandatory
+  verification scheduling through versioned Solution/Slice revisions with concrete
+  successor checks before completion. Existing readiness and PASS gates remain.
+- Update Framework to 3.9, Artifact Protocol to 2.20, Plan/Slice/Review to 2.13,
+  and Solution/Implement to 2.14. No Artifact status or result enum changes.
+
 ### CLI artifact compatibility
 
 - Parse the protocol's ordered Feature/Slice metadata keys while retaining legacy

@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.13
+Version: 2.14
 
 ## Contract
 
@@ -93,7 +93,38 @@ Apply all relevant candidate rows under step 3, not one row for the whole Slice:
 Mandatory TDD remains mandatory even when another candidate is more convenient.
 A failed check, unavailable environment, or missed pre-change baseline is not
 permission to switch to a weaker strategy or manufacture evidence. Correct a local
-problem or persist its blocker; changes to requirements return to their owner.
+problem or apply the Verification failure choice below before persisting its
+blocker; changes to requirements return to their owner.
+
+## Verification failure choice
+
+When a required check fails, cannot execute, or remains inconclusive after a
+bounded routine correction, MUST present the user with a choice in Planning's
+communication language. Do not retry indefinitely or silently stop at BLOCKED.
+Expected TDD RED followed by normal implementation is not a failure requiring this
+choice. Report the exact checks, results, cause, affected obligations, known risk,
+and which work can proceed independently. Offer:
+
+1. Repair the problem or provide the missing environment, then retry.
+2. Temporarily defer the named checks and continue the permitted work, with an
+   explicit retry trigger/checkpoint and the required upstream revision if needed.
+3. Pause and retain the blocker.
+
+Allow another user-proposed resolution under the Framework clarification policy.
+Wait for an explicit answer before deferring checks; independent already-authorized
+work may continue. While waiting, emit no Handoff and grant no future Scope.
+An existing recorded answer covering the same checks, versions, and continuation
+scope is sufficient; do not ask again merely because a new session starts.
+
+On deferral, persist the Artifact Protocol verification-deferral details in Open
+Issues and preserve the actual Verification Evidence results. Continue independent
+work in the current Slice as IN_PROGRESS. When an unchanged required gate prevents
+further progress, use the recorded decision to request the concrete upstream
+revision via BLOCKED/RETURN. Explain that entering later Slices requires that
+revision and fresh routing. Never reinterpret user approval as passing evidence,
+edit another owner's plans, or claim that a known correctness defect is resolved.
+If retry is chosen, execute it and record the actual outcome; if pause is chosen,
+persist the appropriate blocker. Revisit an expired deferral at its recorded trigger.
 
 ## Implementation methods
 
@@ -146,7 +177,8 @@ All commands follow the Framework command lifecycle.
    regression, migration, build/startup, or human acceptance requirements when
    applicable. Preserve actual outputs/observations, environment, target, and results.
    Follow the Strategy selection restrictions on switching; correct local failures,
-   otherwise persist the appropriate blocker.
+   otherwise apply Verification failure choice and record the user's decision
+   before continuing permitted work or persisting the appropriate blocker.
 5. Record Implementation Summary, Verification Selection, Verification Evidence,
    changed files, File Placement Conformance, Open Issues, shared components,
    implemented decisions, and deviations with owner/resolution. Multiple strategies
