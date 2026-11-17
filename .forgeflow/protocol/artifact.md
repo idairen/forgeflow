@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.19
+Version: 2.22
 
 ## Purpose
 
@@ -47,6 +47,30 @@ advancing Attempt or replacing READY_FOR_REVIEW or BLOCKED evidence. Grill archi
 before advancing Lane Attempt or replacing its Record for a new Feature Contract
 Version. Historical files are immutable. Identical content at a required history
 path satisfies archival; different content blocks replacement.
+
+The only same-Attempt format-repair exception is the explicitly authorized
+`protocol/implement-recovery.md` procedure below. Do not copy an invalid pre-repair
+snapshot into the standard Implement Attempt archive and then rewrite its canonical
+record at that same Attempt; that creates conflicting counter evidence.
+
+### Invalid Implement originals
+
+Implement format recovery preserves original bytes at
+`history/invalid-implement/<SHA256>/<canonical-implement-filename>`, where SHA256 is
+the lowercase digest of those bytes. This immutable diagnostic copy is not an
+Artifact, Attempt archive, counter source, or readiness evidence. Only the exact
+repair's original may be read for recovery verification; do not scan this directory
+for progression or counter allocation. Identical bytes at the exact destination
+may be reused; conflicting bytes block the repair.
+
+The repaired canonical Implement retains its identity, Attempt and upstream version
+references. Its existing Open Issues section records the original path/digest,
+explicit authorization and actual formatting corrections. The canonical record
+remains the counter source; later authorized reimplementation archives the repaired
+record at the ordinary Attempt history path before allocating NewAttempt.
+No revision-suffixed standard Attempt archives are introduced. Existing conflicting
+standard archives require separate evidence-preserving reconciliation; this
+procedure never overwrites or silently moves them.
 
 ### Invalid Review history
 
@@ -330,6 +354,17 @@ Handoff text never replace blocker metadata.
 
 ## Type contracts
 
+### Candidate structure validation
+
+`Artifact Protocol Version = 2.11` in Planning and Solution is the supported
+structure marker. It is independent of this specification's `Version` header;
+upgrading the framework never replaces that marker with the document version.
+Before publication, each Artifact owner validates the complete candidate's title,
+Metadata, required sections, enums, references and type-specific structure using
+the loaded schema and direct inputs. Do not publish a malformed draft as canonical
+and rely on the next Workflow to repair it. Preserve actual evidence and decisions
+when correcting presentation.
+
 ### Planning
 
 Planning contains approved intent, constraints, exclusions, success measures, and
@@ -348,6 +383,15 @@ Protocol 2.11 records `Artifact Protocol Version = 2.11` and contains exactly:
 
 Each section has a non-placeholder value. When no constraint, assumption, or
 exclusion applies, record `NONE` with a reason.
+
+New or revised Planning records `Communication Language: zh-CN` (Chinese) or
+`Communication Language: en` (English), or another explicit user-selected language
+tag, as a standalone line inside `## Project Intent`. This is a prose convention,
+not a new metadata field, section, or change to the 2.11 structure marker. Follow
+the Framework language policy for all human-readable values. Older Planning remains
+readable without this line; use its intent language until Plan's next revision.
+Language-only changes preserve Feature Contract Versions when business contracts
+are unchanged. Historical Artifacts retain their original language.
 
 `Features` uses:
 
@@ -562,17 +606,56 @@ Artifact types, independent Attempts, or Review decisions; supported identifiers
 | DOCUMENTATION_VALIDATION | Verify the changed links, examples, commands, structure, or rendering as required; record exactly what was checked and by which evidence source. |
 | MANUAL_ACCEPTANCE | Execute declared steps against the identified version/environment and record actual observations and the required acceptor's result; never infer a person's approval. |
 
-TDD is the default candidate for behavioral code changes with executable acceptance
-criteria, not a universal requirement. Slice may choose other justified strategies
-within Solution requirements. Implement can choose explicitly permitted alternatives,
+### TDD applicability and exceptions
+
+TDD is required by default for new or changed executable behavior, including bug
+fixes. In Solution Verification Requirements, record the affected behavior,
+required TDD coverage, and the passing criteria/evidence. Slice Verification Plan
+maps each behavioral change to TDD unless a Solution-authorized exception applies.
+Mixed Slices retain TDD for their behavioral portion; unrelated documentation does
+not make that portion exempt.
+
+For work that does not add or change executable behavior, record why TDD is not
+applicable and which checks verify the work. No special user approval is required
+for that factual classification. Configuration that changes runtime behavior and
+migrations that implement new data behavior are not automatically exempt.
+Behavior-preserving refactoring needs preservation/regression evidence, not an
+invented failure; if it also fixes behavior, that portion follows the TDD default.
+
+For an applicable behavioral change that cannot establish a meaningful pre-change
+RED, Solution MUST describe the concrete constraint, affected scope, residual risk,
+equivalent behavioral coverage, passing criteria and evidence sources, and obtain
+explicit user approval before making a non-TDD exception READY. Record the answer
+and its scope with the obligation in Verification Requirements; Slice references
+that decision in Verification Plan Rationale. Use existing tables/prose, not a new
+Artifact, Status, or strategy identifier. A generic permission to continue is not
+approval. Reuse an existing explicit approval within its recorded scope.
+
+BEHAVIORAL_TEST may supply approved exception coverage, preservation/regression
+checks, or supplementary tests; it cannot replace mandatory TDD or required human
+acceptance. Convenience, test difficulty, environment failure, or discovering that
+implementation is already written does not itself approve an exception. Never
+fabricate or backdate RED. If a required pre-change baseline was missed, report it
+and return for an explicit policy decision; do not silently switch strategies.
+
+Existing Artifacts remain readable and history is not rewritten. New or revised
+Solution/Slice plans apply this policy. Before new behavioral implementation under
+an older plan, Implement checks for required TDD or a sufficient recorded exception;
+missing policy returns to Solution, and missing mapping under an adequate policy
+returns to Slice. Do not retrospectively invent RED for already completed work.
+
+For each supplementary strategy, state its governing obligation, evidence and why
+the existing checks are insufficient. Multiple strategies are selected for actual
+risks, not to fill a checklist. Implement can choose explicitly permitted alternatives,
 refine routine cases/commands, and add supplementary verification. It cannot drop a
 mandatory check, narrow its coverage, lower a threshold, replace required human
 acceptance, or switch strategy because a check failed or its environment is absent.
 Changed engineering requirements return to Solution; an inadequate Slice mapping
 returns to Slice. Multiple strategy runs remain in the same frozen Attempt.
 
-Selection procedure and candidate guidance belong in Implement's Workflow, not in
-upstream readiness rules. Slice strategy commitments remain mandatory unless approved alternative
+Execution selection procedure and candidate guidance belong in Implement's Workflow;
+TDD applicability and exception approval also govern upstream readiness.
+Slice strategy commitments remain mandatory unless approved alternative
 conditions apply; new strategy identifiers do not change them.
 Regression is a verification purpose; unit, integration, contract, and end-to-end
 are test levels, not strategies; record applicable levels and regression checks
@@ -612,6 +695,11 @@ Strategies resolve to the selection table. Source is TOOL_EXECUTION,
 HUMAN_ACCEPTANCE, or MODEL_ASSESSMENT. Result is SUCCEEDED, FAILED, NOT_RUN,
 INCONCLUSIVE, or NOT_APPLICABLE; these are check results, never Review Decisions or
 overall Status. Unexecuted selected checks are NOT_RUN, never success.
+Each Selection row and Evidence row has exactly one Strategy identifier. Each
+Evidence row has exactly one Source and one Result; semicolon lists belong only
+in explicitly plural fields such as metadata Verification Strategies. Split a
+multi-strategy or multi-source observation into separately supported rows, retaining
+the original execution reference rather than claiming extra executions.
 Unresolved-selection BLOCKED records may leave this table empty but must record
 the gap in Blocker Evidence.
 
@@ -633,6 +721,39 @@ obligation. Assess optional failed checks for blocking impact.
 Pending work stays IN_PROGRESS if progress is possible, otherwise BLOCKED with the
 correct owner; neither strategy rationale nor residual-risk prose can defer a
 mandatory check to Review.
+
+### User-approved verification deferral
+
+Record each explicit temporary-deferral decision as prose under the current
+Implement Record's `## Open Issues`: exact checks and governing obligations,
+actual result and evidence reference, reason, known impact/risk, user's answer,
+Feature/Slice, Attempt and upstream versions, permitted continuation scope,
+responsible owner, and concrete retry trigger or later delivery checkpoint.
+Preserve FAILED, NOT_RUN, or INCONCLUSIVE in Verification Evidence; deferral adds
+no Result or Status and is never SUCCEEDED or NOT_APPLICABLE. Missing user approval
+cannot be supplied by silence, timeout, a generic request to continue, or the model.
+Existing records without deferrals require no migration.
+
+With approval, Implement may continue independent work inside its authorized Slice
+and frozen Attempt, leaving the record IN_PROGRESS. It cannot pass an unchanged
+mandatory gate. If continuation requires moving verification to a later Slice,
+persist BLOCKED with the responsible owner and route through the existing RETURN:
+ENGINEERING_GAP to Solution for verification policy, SLICE_VIOLATION to Slice for
+mapping within existing policy, or the business owner if acceptance must change.
+The decision is a concrete revision request, not authority for Implement to edit
+upstream plans, start another Workflow, or manufacture a Review Handoff.
+
+The receiving owner uses the recorded user decision without requesting the same
+approval again. Preserve each deferred obligation, passing criteria, evidence source,
+and risk; specify a concrete successor verification checkpoint in the revised
+Solution/Slice chain. A temporary deferral cannot remove an obligation or move it
+beyond project completion. If the proposed successor cannot satisfy dependencies
+or required acceptance, explain the conflict and request a viable decision.
+Apply normal versioning, archival, invalidation, and fresh Transition resolution;
+old failed evidence never becomes current success. Only the revised current
+contracts can make a check no longer required at the original Slice's gate.
+All remaining required checks and correctness gates still apply, and completion
+requires current passing evidence for the successor obligations.
 
 ### Implement Record
 

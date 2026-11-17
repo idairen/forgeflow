@@ -109,15 +109,33 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.assertIsNotNone(HandoffParser.parse(HandoffParser.render_resolution(result)))
 
     def test_fail_rework_pass_preserves_prior_attempt_evidence(self):
+        initialize_project(self.project, "codex", force=True)
         self.delivery()
         self.implement(attempt=1)
         self.review(decision="FAIL", attempt=1)
         original_record = (self.root / "implement-feature-01-slice-01.md").read_text()
         original_review = (self.root / "review-feature-01-slice-01-attempt-01.md").read_bytes()
-        self.assertEqual(self.graph()[1]["resolution_rule"], "rule_8_review_failure")
-        # Synthetic graph transition, not an actual Agent or independent Review.
-        self.write("history/implement-feature-01-slice-01-attempt-01.md", original_record)
-        self.implement(attempt=2)
+        resolution = self.graph()[1]
+        self.assertEqual(resolution["resolution_rule"], "rule_8_review_failure")
+        incoming = HandoffParser.render_resolution(resolution, "Slice: F-01/S-01")
+
+        async def rework(name, user_input=None, entry_context=None):
+            # Real runner/graph entry, mocked Agent writes; not live IDE acceptance.
+            self.assertEqual(name, "implement")
+            self.assertEqual(entry_context["entry_mode"], "handoff")
+            received = HandoffParser.parse(entry_context["handoff"])
+            self.assertEqual(received["transition"], "RETURN")
+            self.assertEqual(received["blocker_category"], "REVIEW_BLOCKER")
+            self.assertEqual(received["target_scope"], "Slice: F-01/S-01")
+            self.write("history/implement-feature-01-slice-01-attempt-01.md", original_record)
+            self.implement(attempt=2)
+            return HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01")
+
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock(side_effect=rework)
+        output = asyncio.run(runner.execute_single("implement", handoff_text=incoming))
+        self.assertEqual(runner._execute_llm.await_count, 1)
+        self.assertEqual(HandoffParser.parse(output)["next_workflow"], "review")
         state, result = self.graph()
         self.assertEqual(state["errors"], [])
         self.assertEqual(result["current_workflow"], "review")
@@ -139,6 +157,77 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.implement(result="NOT_RUN", status="IN_PROGRESS")
         self.assertEqual(self.graph()[1]["current_workflow"], "implement")
 
+    def test_observed_malformed_implement_candidates_are_rejected(self):
+        self.delivery()
+        self.implement()
+        name = "implement-feature-01-slice-01.md"
+        original = (self.root / name).read_text()
+        cases = [
+            ("Stray summary\n\n" + original, "artifact must begin with a level-one title"),
+            (original.replace("| SUCCEEDED |", "| PASS |"), "invalid evidence result"),
+            (original.replace("| TOOL_EXECUTION |", "| TOOL_EXECUTION; MODEL_ASSESSMENT |"), "invalid evidence source"),
+            (original.replace("| BEHAVIORAL_TEST | acceptance |", "| BEHAVIORAL_TEST; STATIC_VALIDATION | acceptance |"), "evidence strategy is not selected"),
+        ]
+        for content, error in cases:
+            with self.subTest(error=error):
+                self.write(name, content)
+                state, result = self.graph()
+                self.assertIn(f"{name}: {error}", state["errors"])
+                self.assertEqual(result["pipeline_status"], "HALTED")
+
+    def test_format_repair_original_does_not_conflict_with_later_attempt_archive(self):
+        self.delivery()
+        self.implement()
+        self.review(decision="FAIL")
+        failed_review = (self.root / "review-feature-01-slice-01-attempt-01.md").read_bytes()
+        name = "implement-feature-01-slice-01.md"
+        corrected = (self.root / name).read_text()
+        malformed = "Stray summary\n\n" + corrected
+        self.write(name, malformed)
+        self.assertEqual(self.graph()[1]["pipeline_status"], "HALTED")
+        digest = hashlib.sha256(malformed.encode()).hexdigest()
+        original_path = f"history/invalid-implement/{digest}/{name}"
+        # Simulate an explicitly authorized format-only repair, not a recovery engine.
+        self.write(original_path, malformed)
+        corrected = corrected.replace("## Open Issues\n\nNONE", "## Open Issues\n\n"
+            f"User authorized moving stray prose; original: {original_path}; SHA256 {digest}.")
+        self.write(name, corrected)
+        state, result = self.graph()
+        self.assertEqual(state["errors"], [])
+        self.assertEqual(state["artifacts"][name]["next_attempt"], 2)
+        self.assertEqual(result["resolution_rule"], "rule_8_review_failure")
+        self.write("history/implement-feature-01-slice-01-attempt-01.md", corrected)
+        self.implement(attempt=2)
+        state, result = self.graph()
+        self.assertEqual(state["errors"], [])
+        self.assertEqual(state["artifacts"][name]["used_attempts"], [1, 2])
+        self.assertEqual(result["current_workflow"], "review")
+        self.assertEqual((self.root / original_path).read_bytes(), malformed.encode())
+        self.assertEqual((self.root / "review-feature-01-slice-01-attempt-01.md").read_bytes(), failed_review)
+
+    def test_conflicting_standard_attempt_archive_still_blocks(self):
+        self.delivery()
+        self.implement(status="IN_PROGRESS")
+        name = "implement-feature-01-slice-01.md"
+        self.write("history/implement-feature-01-slice-01-attempt-01.md", (self.root / name).read_text())
+        self.implement()
+        state, result = self.graph()
+        self.assertTrue(any("conflicting Attempt history" in e for e in state["errors"]))
+        self.assertEqual(result["pipeline_status"], "HALTED")
+
+    def test_wrong_scope_review_return_does_not_launch_implement(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery(("S-01", "S-02"))
+        self.implement()
+        self.review(decision="FAIL")
+        incoming = HandoffParser.render_resolution(self.graph()[1]).replace(
+            "| Target Scope | Slice: F-01/S-01 |", "| Target Scope | Slice: F-01/S-02 |")
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock()
+        output = asyncio.run(runner.execute_single("implement", handoff_text=incoming))
+        runner._execute_llm.assert_not_called()
+        self.assertEqual(HandoffParser.parse(output)["target_scope"], "Slice: F-01/S-01")
+
     def test_method_cannot_replace_strategy_or_human_evidence(self):
         self.delivery(strategy="MANUAL_ACCEPTANCE")
         self.implement(strategy="MANUAL_ACCEPTANCE", source="MODEL_ASSESSMENT")
@@ -150,6 +239,26 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.delivery(strategy="TDD")
         self.implement()
         self.assertIn("omits mandatory Slice strategy", " ".join(self.graph()[0]["errors"]))
+
+    def test_tdd_readiness_requires_recorded_red_before_green(self):
+        self.delivery(strategy="TDD")
+        self.implement(strategy="TDD")
+        name = "implement-feature-01-slice-01.md"
+        green_only = (self.root / name).read_text()
+        state, result = self.graph()
+        self.assertIn("TDD requires recorded RED before GREEN", " ".join(state["errors"]))
+        self.assertEqual(result["pipeline_status"], "HALTED")
+        red = "| TDD | acceptance RED | TOOL_EXECUTION | python -m unittest | pre-change worktree; Python | FAILED | exit=1; expected approved behavior missing |\n"
+        # Synthetic execution records test the evidence gate, not actual TDD execution.
+        self.write(name, green_only.replace("| TDD | acceptance |", red + "| TDD | acceptance |"))
+        state, result = self.graph()
+        self.assertEqual(state["errors"], [])
+        self.assertEqual(result["current_workflow"], "review")
+        green_row = next(line for line in green_only.splitlines() if line.startswith("| TDD | acceptance |"))
+        self.write(name, green_only.replace(green_row, green_row + "\n" + red.rstrip()))
+        state, result = self.graph()
+        self.assertIn("TDD requires recorded RED before GREEN", " ".join(state["errors"]))
+        self.assertEqual(result["pipeline_status"], "HALTED")
 
     def test_current_fail_precedes_earlier_missing_implementation(self):
         self.delivery(("S-01", "S-02"))

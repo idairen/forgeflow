@@ -49,7 +49,7 @@ test('original and receipt preserve identity and consumed Attempt without PASS c
 test('current READY_FOR_REVIEW with disposed Review reroutes to new Attempt', () => {
   assert.match(transition, /Attempt ineligible for Review or completion, even if READY_FOR_REVIEW/);
   assert.match(transition, /Rule 10 may select it for a new Implement Attempt after the ordinary earlier barriers/);
-  assert.match(implement, /except when its Attempt is occupied by a valid invalid-Review history pair/);
+  assert.match(implement, /valid invalid-Review history pair likewise permits a new Attempt when fresh Transition selects Implement/);
   assert.match(artifact, /Current Attempt occupied by a valid invalid-Review history pair/);
   assert.match(recovery, /Only a later valid Implement Entry allocates above all used Attempts/);
 });

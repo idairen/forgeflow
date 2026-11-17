@@ -1,6 +1,6 @@
 # ForgeFlow Architecture
 
-Technical Preview aligned to Framework 3.8 / Artifact 2.19 / Transition 1.8.
+Technical Preview aligned to Framework 3.11 / Artifact 2.22 / Transition 1.9.
 
 ## Authority and components
 
@@ -38,6 +38,31 @@ the normative contracts; this glossary introduces no new state or field.
 
 ## Flow and concurrency
 
+A current FAIL's Rule 8 RETURN is a valid Handoff to its recorded owner and scope.
+Implement consumes it directly, archives the failed Attempt and allocates a new
+one; it does not first wait for Rule 10 or rewrite the Review. Solution and Slice
+also accept their Review returns independently of no-Handoff gap Recovery.
+
+Owners validate candidates before publication. Optional
+[Implement format recovery](./.forgeflow/protocol/implement-recovery.md) repairs an
+already malformed record only under explicit authorization and preserves its
+original under digest-addressed diagnostic history. Identity and counters remain
+in the canonical record; ordinary rework archives the corrected record. The CLI
+already rejects these structural errors and does not perform maintenance writes.
+
+Planning persists the initial user intent's communication language in Project Intent.
+All Workflows inherit it for questions and prose while retaining canonical protocol
+syntax. Older Planning falls back to its intent language until its next revision.
+
+Implement asks whether to repair/retry, temporarily defer named verification checks,
+or pause when a check cannot pass after routine correction. A deferral records user
+approval, risk, and a retry checkpoint in Open Issues; actual check results remain.
+Independent current-Slice work can continue. Moving mandatory verification to a
+later Slice requires a versioned upstream revision with concrete successor coverage,
+then fresh routing. Outstanding successor checks still prevent project completion.
+These are participant obligations; the CLI does not infer approval from prose or
+relax its required-check gates.
+
 Plan → dependency-ready Grill Lanes → all Requirements READY → Solution → every
 Feature's Slice Plan READY → declared-order Implement/Review → Project Complete.
 The barriers are BUSINESS_READY, ENGINEERING_READY, DELIVERY_READY and PROJECT_COMPLETE.
@@ -72,6 +97,15 @@ seventh Workflow. The CLI diagnoses and routes; it does not automatically dispos
 project evidence.
 
 ## Strategy and method selection
+
+New or changed executable behavior, including bug fixes, requires TDD by default.
+Solution records factual non-applicability for non-behavioral work, or obtains
+explicit user approval for a scoped behavioral exception with equivalent coverage.
+Slice maps that decision; Implement cannot waive it. Mixed Slices retain TDD for
+their behavioral portion. Other strategies supply evidence for specific uncovered
+obligations, not a fixed checklist. Review independently checks applicability and
+exception evidence. The CLI validates recorded mappings and results; semantic
+classification and approval assessment remain participant responsibilities.
 
 The [Implement workflow](.forgeflow/workflow/implement.md) owns the selection
 procedure. Solution defines obligations, passing criteria and evidence sources;
