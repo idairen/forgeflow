@@ -1,6 +1,6 @@
 # Transition Protocol
 
-Version: 1.8
+Version: 1.9
 
 ## Purpose
 
@@ -222,6 +222,13 @@ remains forbidden until every Feature has a usable Slice Plan. Target Scope is
 When at least one Feature exists, RETURN the first current Implement attempt with a valid
 matching FAIL as `REVIEW_BLOCKER` to that report's valid recorded Workflow and Scope.
 
+The receiving execution consumes this valid RETURN as Handoff Entry while Rule 8
+still selects it. It need not first reach Rule 10 or create a persisted gap blocker.
+When the target is Implement, its authorized entry allocates a new Attempt under
+Artifact Protocol, preserving the failed Attempt and Review. Only after that write
+does the old FAIL cease routing the current Attempt. Upstream owners instead revise
+their owned contracts under ordinary versioning and fresh resolution.
+
 ### Rule 9 — Review required
 
 When at least one Feature exists, FORWARD the first incomplete Slice in declared
@@ -233,7 +240,7 @@ valid Review exists for that attempt and current upstream versions. Target Scope
 
 When at least one Feature exists and all delivery barriers hold, FORWARD to Implement for
 the first incomplete Slice not awaiting Review. This includes missing or stale Implement
-evidence and a correction required after Rule 8 returned to Implement. Target Scope is
+evidence and an incomplete new Attempt already allocated after Rule 8 entry. Target Scope is
 `Slice: F-<FeatureNumber>/S-<SliceNumber>`.
 
 ### Rule 11 — Project complete
@@ -316,6 +323,11 @@ Only Plan uses Bootstrap or Subsequent Plan; only Grill uses Lane. Plan, Grill,
 Solution, Slice, and Implement may recover only their own blocker; Grill may additionally
 recover one interrupted Lane under the conditions below. Review cannot recover.
 Without one valid mode, no productive work is authorized.
+
+Invalid Implement formatting has a separate, explicitly authorized maintenance
+procedure in `protocol/implement-recovery.md`. It is not an Entry or permission to
+execute a halted Workflow. Normal graph validation still precedes productive work;
+maintenance cannot consume its own routing result.
 
 ### Read-only routing correction
 

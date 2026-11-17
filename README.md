@@ -49,12 +49,17 @@ Identifiers use `01` through `09`, then ordinary decimal notation (`10`, `100`).
 | Implement | One Slice's changes, verification execution and evidence |
 | Review | Independent findings and immutable PASS/FAIL disposition |
 
-TDD is a verification strategy inside Implement. Other supported strategies include
+TDD is required by default inside Implement for new or changed executable behavior,
+including bug fixes. Non-behavioral work records why TDD is inapplicable; a behavioral
+exception requires explicit user approval recorded in Solution and mapped by Slice.
+Implement cannot switch merely because tests are difficult, the environment fails,
+or code was already written. Other supported strategies include
 `BEHAVIORAL_TEST`, `CHARACTERIZATION_TEST`, `MIGRATION_REHEARSAL`, `STATIC_VALIDATION`,
 `CONFIGURATION_VALIDATION`, `SECURITY_SCAN`, `BENCHMARK`, `DOCUMENTATION_VALIDATION`
 and `MANUAL_ACCEPTANCE`. A method such as direct implementation or small-step repair
 is optional prose, not a workflow or an approval gate. Mandatory checks cannot be
-replaced by a more convenient strategy.
+replaced by a more convenient strategy. Add strategies for specific risks and explain
+what evidence existing checks cannot supply; there is no mandatory all-strategy bundle.
 
 ## Install from a checkout
 
@@ -150,6 +155,28 @@ stderr before treating `2` as a workflow wait. Runtime logs under
 `.forgeflow/runtime/` are disposable diagnostics, never workflow authority.
 
 ## Upgrading existing projects
+
+A Review FAIL returns directly to its recorded Workflow and scope through Rule 8.
+Implement accepts that valid RETURN, preserves the FAIL, and starts a new Attempt;
+no gap relabeling or intermediate Rule 10 transition is needed. Every Implement
+candidate is checked before canonical publication. If a record is already malformed,
+use the explicitly authorized [Implement format-recovery procedure](.forgeflow/protocol/implement-recovery.md).
+It preserves the original separately from normal Attempt archives and grants no
+passing evidence or automatic continuation. Existing conflicting archives require
+their own evidence-preserving reconciliation; a framework refresh never rewrites them.
+
+ForgeFlow follows the language of the user's initial Plan intent for subsequent
+questions, Artifact prose, findings, and Handoff explanations. Planning persists
+that choice in Project Intent; protocol headings, keys, identifiers, and status
+values keep their canonical spelling. An explicit language-change request overrides
+the choice; short replies or English templates do not.
+
+When required verification cannot pass, Implement offers repair/retry, temporary
+deferral of named checks, or pause. Approved deferrals retain actual failed or
+unexecuted results and a retry checkpoint. Independent work may continue within the
+current Slice; moving a mandatory check to a later Slice requires a versioned
+Solution/Slice revision and fresh routing. Deferral never means a passed check or
+permission to declare the project complete with outstanding verification.
 
 Read [migration notes](docs/maintainers/implement-migration.md) before refreshing.
 `init --force` preserves artifacts, reports and history. Active `tdd-feature-*.md`

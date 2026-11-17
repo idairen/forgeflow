@@ -1,6 +1,6 @@
 # ForgeFlow 架构
 
-本页对应 Framework 3.8 / Artifact 2.19 / Transition 1.8，发布状态仍为 Technical Preview。
+本页对应 Framework 3.11 / Artifact 2.22 / Transition 1.9，发布状态仍为 Technical Preview。
 
 规范优先级：[Framework](./.forgeflow/forgeflow.md) → [Artifact](./.forgeflow/protocol/artifact.md)
 → [Transition](./.forgeflow/protocol/transition.md) → [Handoff](./.forgeflow/protocol/handoff.md)
@@ -24,6 +24,25 @@ Handoff 不会让 Artifact 自动变为真实，真实 IDE Acceptance 必须独�
 
 ## 执行链
 
+当前 FAIL 经 Rule 8 返回指定 owner/scope 后，接收者可直接使用有效 Handoff 进入工作。
+Implement 归档失败 Attempt 并分配新 Attempt，不必先等到 Rule 10，也不改写 Review。
+Solution、Slice 同样接收 Review 退回；这与无需 Handoff 的 gap Recovery 分开定义。
+
+产物所有者在发布前验证完整候选记录。已经写坏的 Implement 记录使用可选的
+[格式恢复流程](./.forgeflow/protocol/implement-recovery.md)，在明确授权下保留原件到按摘要
+命名的诊断历史目录，再修复格式。标识和计数仍由 canonical 记录保留，后续正常返工归档
+修复后的记录，避免占用同一个 Attempt 归档路径。CLI 已有结构拒绝机制，不自动执行维护写入。
+
+Planning 在 Project Intent 中记录初始用户意图所用的沟通语言。后续 Workflow 的提问、
+产物正文和解释沿用该语言，协议字段、标题和状态值保留规范格式。旧 Planning 未记录
+语言时使用其意图正文的语言，由 Plan 在下次修订时补充。
+
+Implement 在常规修正后仍无法通过验证时，让用户选择修复重试、暂缓指定验证或暂停。
+暂缓决定、风险和补验节点记录在 Open Issues，验证结果保持真实。当前 Slice 内不依赖
+这些验证的工作可以继续；若需将必需验证后移到其他 Slice，则通过上游版本修订明确
+补验义务，并重新解析路由。未完成的补验仍阻止项目完成。这些是执行参与者的义务；
+CLI 不会从自由文本推断批准，也不会放宽必需验证门槛。
+
 Plan → 按 Planning 依赖并行 Grill → 全部 Requirement READY → Solution → 全部 Feature
 Slice Plan READY → 按声明顺序 Implement / Review → 全部当前 Slice PASS。
 
@@ -45,6 +64,12 @@ TDD 是十种验证策略之一，Method 是可选说明，不新增状态或审
 引用和结果，不能证明模型声称的执行真实，也不能代替 Review 判断业务正确性和覆盖充分性。
 
 ## 策略与方法的选择
+
+新增或修改可执行行为（包括修 Bug）默认必须 TDD。无行为变化的工作记录不适用原因；
+行为改动需要例外时，由 Solution 明确范围、约束、风险和等效验证并取得用户批准，
+Slice 映射该决定，Implement 不得自行豁免。混合 Slice 的行为部分仍需 TDD。
+其他策略按未覆盖的具体义务补充，不要求固定组合。Review 独立检查适用性及例外证据；
+CLI 校验已记录的映射与结果，行为分类和批准是否充分仍由执行参与者判断。
 
 [Implement Workflow](.forgeflow/workflow/implement.md) 拥有具体选择步骤。
 Solution 定义验证义务、通过标准与证据来源；Slice 映射到每个交付单元。

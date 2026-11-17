@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.12
+Version: 2.14
 
 ## Contract
 
@@ -40,6 +40,13 @@ All commands follow the Framework command lifecycle.
    Independently check the Verification Plan against Solution obligations and the
    selected strategies/rationales against that plan. Verify all required checks,
    current target/environment, passing criteria, and evidence references.
+   Check actual behavioral changes against the TDD default. Any omission needs
+   factual non-applicability or a scoped, explicitly user-approved Solution
+   exception traced through Slice and Implement; a strategy name or convenience
+   rationale is insufficient. Assess supplementary strategies by the additional
+   obligation/evidence they cover, not by their count. Missing exception policy
+   belongs to Solution, lost mapping to Slice, and violating an adequate approved
+   plan to Implement. Preserve the shared gate's owner precedence.
    Tool success must be relevant and sufficient; model
    assessment cannot substitute for required execution, and required human acceptance
    needs the actual acceptor's result.
@@ -48,6 +55,11 @@ All commands follow the Framework command lifecycle.
    strategies follow their own evidence requirements.
    Report unauthorized strategy substitution to its responsible owner; never rewrite
    the Implement Record or upstream plan.
+   For recorded temporary deferrals, verify explicit user approval, current upstream
+   scheduling and concrete successor coverage. An Open Issues entry alone cannot
+   waive a required current check; a failed result remains failed. Evaluate known
+   correctness defects independently of verification scheduling. Outstanding checks
+   at a successor gate still block that gate and project completion.
 3. Execute every enabled plugin from `.forgeflow/rules/reviews/_index.md`, including
    dependency order, applicability, rules, thresholds, archival, and report formats.
 4. Inspect correctness, regression, Scope, security, maintainability, Solution

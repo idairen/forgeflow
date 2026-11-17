@@ -126,14 +126,14 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual({name.lower() for name in HandoffParser._WORKFLOW_SCOPES}, WORKFLOWS)
         self.assertEqual({owner.lower() for _, _, owner in ArtifactParser._FILE_RULES}, WORKFLOWS)
         contract = (ROOT / ".forgeflow/protocol/artifact.md").read_text()
-        registry = contract.split("| Strategy | Required execution pattern and evidence |", 1)[1].split("TDD is the default candidate", 1)[0]
+        registry = contract.split("| Strategy | Required execution pattern and evidence |", 1)[1].split("### TDD applicability and exceptions", 1)[0]
         names = re.findall(r"^\| ([A-Z_]+) \|", registry, re.M)
         self.assertEqual(list(STRATEGIES), names)
 
     def test_current_protocols_are_packaged(self):
         from forgeflow.scaffold import FRAMEWORK_ENTRIES
         self.assertIn("protocol", FRAMEWORK_ENTRIES)
-        for name in ("artifact", "transition", "handoff", "review-recovery"):
+        for name in ("artifact", "transition", "handoff", "review-recovery", "implement-recovery"):
             self.assertTrue((ROOT / f".forgeflow/protocol/{name}.md").is_file())
         self.assertFalse((ROOT / ".forgeflow/workflow/tdd.md").exists())
         self.assertTrue((ROOT / ".forgeflow/workflow/implement.md").is_file())

@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.13
+Version: 2.16
 
 ## Contract
 
@@ -10,7 +10,10 @@ Version: 2.13
 | Owns | Solution Plan; project engineering baseline |
 | Inputs | READY Planning and every current READY Requirement |
 
-Accept only a valid Handoff or Recovery selected from current `ENGINEERING_GAP`.
+Accept a valid Handoff selected by fresh Transition for Solution/Project:
+Rule 6 FORWARD, Rule 3 RETURN for `ENGINEERING_GAP`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose current FAIL names Solution/Project. Alternatively, accept
+no-Handoff Recovery only from Rule 3's current `ENGINEERING_GAP`.
 Validate Transition and Handoff and require `BUSINESS_READY`; partial Requirement sets
 never authorize Solution, and historical/retired Requirements are inactive.
 
@@ -27,6 +30,15 @@ Solution owns properties verification must establish, required checks/test level
 evidence sources, and permitted alternative strategies; Slice maps them to delivery units.
 Implement chooses and refines execution within these constraints, never replaces them by rationale;
 routine test cases/commands require no new engineering decision.
+
+For a user-approved verification deferral returned by Implement, read its recorded
+decision and follow Artifact Protocol's deferral procedure. Reuse that approval
+for its exact scope; ask only about unresolved or materially changed decisions.
+If feasible, revise verification scheduling with explicit successor obligations,
+unchanged passing criteria/evidence sources, and dependencies that still satisfy
+Requirements. Preserve the deferral decision and risks in the revised plan so Slice
+can map them after old Implement evidence becomes stale. Do not waive a known
+business failure or drop verification to make the current Slice appear complete.
 
 Enumerate decisions supported by Requirements, prior Solution, and system evidence.
 Under Framework clarification policy, ask and wait if an owned decision lacks usable
@@ -58,13 +70,20 @@ business outcome returns to Grill. Neither is deferred implicitly downstream.
 4. In canonical `solution-plan.md`, write `Artifact Protocol Version = 2.11` and
    one Solution Summary covering baseline, material cross-Feature effects, and
    verification; never create a separate summary.
+   The 2.11 value is the Artifact structure marker, not the loaded protocol's
+   document version. Check it in the candidate before persistence.
 5. Define boundaries, interfaces, data/migration, security, technical errors,
    operations, risks, and verification.
    In the Artifact Protocol Verification Requirements table, trace applicable
    obligations to Features, required checks/strategies, passing criteria, and evidence.
    Alternatives require explicit conditions and equivalent required coverage.
-   TDD may be the default candidate for behavioral changes, not a requirement for
-   every Slice; benchmarks, scans, and static checks do not replace correctness/regression requirements.
+   Require TDD by default for new or changed executable behavior, including bug fixes.
+   Classify actual behavior and risk before choosing strategies; record concrete
+   non-applicability for work without behavior changes. For a behavioral exception,
+   follow Artifact Protocol: obtain explicit user approval of the scoped constraint,
+   risk and equivalent verification before READY. BEHAVIORAL_TEST alone is not an
+   automatic substitute. Explain the additional evidence supplied by each other
+   strategy; benchmarks, scans and static checks do not replace behavioral coverage.
 6. Define the Artifact Protocol Implementation and Test Structures using
    repository-relative paths and coherent observable conventions. Choose
    package-by-Feature, package-by-layer, or a justified hybrid from evidence.

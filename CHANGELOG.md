@@ -9,6 +9,53 @@ history and retired presentation assets are not included.
 
 ## [Unreleased]
 
+### TDD required by default for behavioral changes
+
+- Require TDD for new or changed executable behavior, including bug fixes and the
+  behavioral portion of mixed Slices. Non-behavioral work records non-applicability.
+- Require explicitly user-approved, scoped Solution exceptions with equivalent
+  coverage before replacing TDD with BEHAVIORAL_TEST. Slice maps the decision;
+  Implement checks it before changes and Review independently verifies it.
+- Retain risk-specific supplementary strategies, with an explanation of the
+  additional evidence they supply. Preserve old evidence without inventing RED;
+  older plans missing policy return to their owner before new behavioral work.
+- Framework 3.11, Artifact 2.22, Solution/Implement 2.16, Slice 2.15, Review 2.14.
+  Existing schemas and strategy identifiers are unchanged; semantic applicability
+  is a participant obligation, not an automatic CLI code classifier.
+
+### Review rework and Implement format recovery
+
+- Accept fresh FORWARD and REVIEW_BLOCKER RETURN Handoffs explicitly in Implement,
+  Solution and Slice, separately from no-Handoff gap Recovery. Rule 8 authorizes
+  its receiving execution directly; Implement archives the failed Attempt and
+  allocates a new one without changing the immutable Review.
+- Require candidate validation before Implement publication, including entry writes,
+  single-valued evidence cells, title/Metadata placement, file conformance and
+  check-specific coverage. Clarify that the Planning/Solution structure marker
+  stays 2.11 independently of the protocol document version.
+- Add an explicitly authorized Implement format-repair procedure. Preserve invalid
+  originals outside standard Attempt archives; retain identity and evidence, and
+  keep conflicting archives and Review decisions protected.
+- Add runner-entry, malformed-record and repair-to-rework regressions. Tests use
+  synthetic artifacts and mocked Agent writes; they do not establish live IDE
+  compliance or repair any existing project's evidence.
+- Framework 3.10, Artifact 2.21, Transition 1.9, Implement/Solution 2.15 and Slice
+  2.14; no new Workflow, Entry mode, status enum or package release.
+
+### Planning language and verification deferral
+
+- Persist the initial Plan language in Project Intent and inherit it across all
+  Workflow questions and Artifact prose, preserving canonical protocol syntax.
+- Ask users whether to repair/retry, temporarily defer specific failed/unavailable
+  checks, or pause. Record explicit decisions, risks, and retry checkpoints without
+  relabeling evidence or repeating an unchanged approval request.
+- Allow independent current-Slice work after deferral; route changes to mandatory
+  verification scheduling through versioned Solution/Slice revisions with concrete
+  successor checks before completion. Existing readiness and PASS gates remain.
+- Update Framework to 3.9, Artifact Protocol to 2.20, Plan/Slice/Review to 2.13,
+  and Solution/Implement to 2.14. No Artifact status or result enum changes.
+
+
 ### Markdown contract clarity
 
 - Merge overlapping Plan clarification gates and shorten framework, workflow,

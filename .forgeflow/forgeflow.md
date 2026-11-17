@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.8
+Version: 3.11
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
 The versioned Artifact Graph is the sole persistent source of truth;
@@ -10,9 +10,9 @@ conversation, launchers, logs, and derived views have no authority.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.8 | `forgeflow.md` |
-| Artifact Protocol | 2.19 | `protocol/artifact.md` |
-| Transition Protocol | 1.8 | `protocol/transition.md` |
+| Framework | 3.11 | `forgeflow.md` |
+| Artifact Protocol | 2.22 | `protocol/artifact.md` |
+| Transition Protocol | 1.9 | `protocol/transition.md` |
 | Handoff Protocol | 2.15 | `protocol/handoff.md` |
 
 | Workflow | Artifact | Scope | Specification |
@@ -67,12 +67,52 @@ plan. Implement selects and refines strategies within that plan, executes them, 
 records evidence; a rationale cannot weaken or replace mandatory verification.
 Review independently evaluates coverage, execution evidence, and correctness.
 
+TDD is required by default for new or changed executable behavior, including bug
+fixes. Solution establishes applicability and any explicitly user-approved exception;
+Slice preserves that decision in its Verification Plan. Pure documentation,
+behavior-preserving refactoring, verification-only work, or configuration with no
+behavior change may omit TDD with a concrete non-applicability rationale and suitable
+verification. Classify actual behavior and risk, not filenames or task labels.
+An applicable behavioral change may omit TDD only under the recorded exception
+procedure in Artifact Protocol; BEHAVIORAL_TEST is not a free alternative.
+
+Add other strategies only for a concrete obligation or risk; explain what evidence
+they supply that the existing checks do not. No default bundle or all-strategy
+checklist is required, and TDD does not replace migration, security, performance,
+configuration, documentation, or human evidence when those obligations apply.
+
 One Slice may require multiple strategies. A successful check does not discharge
 another required check. Routine test cases, commands, and parameters within approved
 constraints are Implement decisions; changes to those constraints return to their
 owner. Plan and Grill do not acquire engineering verification responsibilities.
 
 ## Clarification
+
+### Communication language
+
+Plan MUST use the language of the user's initial substantive planning intent:
+Chinese intent selects Chinese; English intent selects English. An explicit user
+language preference takes precedence. Ignore quoted documents, code, paths, and
+the language of framework templates when determining that language. For genuinely
+ambiguous mixed-language intent, ask one language question before drafting Planning.
+Persist the choice in Planning's Project Intent as specified by Artifact Protocol.
+
+All Workflows MUST read that choice from current Planning and use it for questions,
+options, explanations, progress updates, Artifact prose, review findings, supplemental
+reports, and Handoff Reason. A new session, English framework instructions, or a
+short reply in another language does not reset it. Change it only at the user's
+explicit request; Plan persists the change at its next authorized revision, without
+rewriting historical evidence or advancing unaffected Feature Contract Versions.
+Before persistence, the explicit request governs the current conversation.
+
+Keep canonical headings, field/table labels, Workflow/Status/Decision values,
+identifiers, paths, commands, and literal evidence unchanged. Translate their
+human-readable content, not the protocol syntax. For older Planning without a
+stored choice, use its substantive Project Intent language; if ambiguous, ask
+instead of inferring from English headings. Only Plan backfills the choice on its
+next authorized revision; other Workflows do not edit Planning.
+
+### Decisions and verification deferral
 
 Plan, Grill, and Solution ask only within their ownership. When an owned material
 decision cannot be inferred from approved Artifacts and observable repository
@@ -83,6 +123,15 @@ Offer only evidence-supported or established domain options, explain the relevan
 effect, use no more than three to five without filler, and end with `Other`. Do not
 offer conflicting choices or steer the user. Waiting remains in the same
 Workflow/Scope, emits no Handoff, and grants no future authority.
+
+Implement MUST also ask when a required verification check fails, cannot run, or
+remains inconclusive and cannot be resolved by a routine local correction. Offer
+repair/retry, temporarily defer named checks and continue permitted work, or pause.
+Explain concrete failures, risks, and the scope that can continue. Explicit user
+deferral is a scheduling decision, never passing evidence or an implicit waiver.
+Implement records it under Artifact Protocol and follows its verification-deferral
+procedure. Do not ask again for an unchanged, recorded decision within its approved
+scope; new checks, changed versions, or an expired retry condition need a new decision.
 
 ## Platform and loading boundary
 
@@ -95,6 +144,12 @@ Only when explicitly requested to recover an invalid Review, additionally read
 operation is not Review execution or a seventh Workflow. It requires authorization
 for the concrete file disposition; ordinary Workflow commands never authorize it.
 Normal Workflows do not load this optional procedure.
+
+For an explicit request to repair an invalid Implement Record's format, instead
+load `protocol/implement-recovery.md` after the four core contracts. This is bounded
+maintenance, not Implement Entry or authority to repair code or change verification
+policy. Reuse explicit authorization covering the concrete repair and original
+preservation; normal Workflow invocations never authorize it implicitly.
 
 A new dedicated adapter is compatible only when each workspace-root-relative
 launcher reads the five canonical files below in order without copying or overriding

@@ -17,7 +17,7 @@ python3 tests/acceptance/ide/manage.py list --priority P0
 python3 tests/acceptance/ide/manage.py show IDE-PLAN-101
 ```
 
-The current plan contains 25 cases (24 P0, 1 P1) and covers 12 adapter launchers.
+The current plan contains 28 cases (27 P0, 1 P1) and covers 12 adapter launchers.
 Use `verify` and `list` for the current counts, not historical reports. The CSV is
 an exported view; regenerate it with `manage.py export` after changing the plan.
 Identifiers containing `TDD` are retained case IDs, not a TDD Workflow declaration.

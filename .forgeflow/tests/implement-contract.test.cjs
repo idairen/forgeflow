@@ -86,7 +86,7 @@ test('static: workflow/type/path schema rejects TDD as a current implementation 
 });
 
 test('static: TDD and nine non-TDD strategies are supported, without extra workflows', () => {
-  const registry=rows(section(artifact,'| Strategy | Required execution pattern and evidence |','TDD is the default candidate')).slice(2);
+  const registry=rows(section(artifact,'| Strategy | Required execution pattern and evidence |','### TDD applicability and exceptions')).slice(2);
   assert.deepEqual(registry.map(r=>r[0]),strategyIds);
   assert.equal(workflows.includes('TDD'),false);
   assert.match(registry[0][1],/RED.*GREEN.*refactor/);
@@ -180,7 +180,7 @@ test('static: no strategy grants unplanned configuration, migration or documenta
 
 test('static: behavioral testing is executable evidence, not fabricated TDD or human approval', () => {
   const strategies = rows(section(artifact,
-    '| Strategy | Required execution pattern and evidence |', 'TDD is the default candidate')).slice(2);
+    '| Strategy | Required execution pattern and evidence |', '### TDD applicability and exceptions')).slice(2);
   const behavioral = strategies.find(row => row[0] === 'BEHAVIORAL_TEST')[1];
   assert.match(behavioral, /Execute tests against approved observable behavior/);
   assert.match(behavioral, /expected and actual results/);

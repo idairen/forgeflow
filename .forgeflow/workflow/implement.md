@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.13
+Version: 2.16
 
 ## Contract
 
@@ -10,8 +10,16 @@ Version: 2.13
 | Owns | Implement Record; one Slice's authorized changes, verification execution, and evidence |
 | Inputs | valid Handoff or Recovery; current Requirement, Solution, and Slice Plan |
 
-Accept only a valid Handoff or Recovery selected from current
-`IMPLEMENTATION_GAP`. Before changing implementation files:
+Accept a valid Handoff selected by fresh Transition for this exact Slice:
+Rule 10 FORWARD, Rule 3 RETURN for `IMPLEMENTATION_GAP`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose matching current FAIL names Implement and this Slice as
+Return Workflow/Scope. Alternatively, accept no-Handoff Recovery only when Rule 3
+selects this Slice's current `IMPLEMENTATION_GAP`.
+
+A Rule 8 Handoff authorizes a new Implement execution directly; do not wait for
+Rule 10, re-emit the same RETURN, or relabel the FAIL as `IMPLEMENTATION_GAP`.
+Fresh resolution must still select the incoming Workflow/Scope and exact inputs.
+Before changing implementation files:
 
 1. validate Transition/Handoff and freeze one
    `Slice: F-<FeatureNumber>/S-<SliceNumber>`;
@@ -32,16 +40,19 @@ Accept only a valid Handoff or Recovery selected from current
    NONE when necessary), resolve the upstream RETURN, and stop without implementation.
    Archive and replace prior evidence in one protected transaction when allocating;
    conflict or failure authorizes no implementation. Current READY_FOR_REVIEW
-   awaits Review and cannot be restarted as implementation, except when its Attempt
-   is occupied by a valid invalid-Review history pair and fresh Transition selects
-   Implement under the Artifact Protocol allocation rule.
+   without Review awaits Review. A matching current FAIL returned by Rule 8 to
+   this Implement/Slice permits a new Attempt; archive the prior Implement and
+   retain the immutable FAIL. A valid invalid-Review history pair likewise permits
+   a new Attempt when fresh Transition selects Implement. Neither case reuses the
+   occupied Attempt, edits its Review, or grants another Slice's authority.
 
 Implement may choose filenames within approved patterns/conventions, never new
 modules, layers, responsibilities, or test topology.
 Within approved constraints, it may refine test cases, commands, and parameters,
 add supplementary verification, or select explicitly permitted alternatives;
 it cannot waive mandatory checks, lower thresholds, or justify weaker strategies.
-TDD is a strategy, not a universal execution order; Slice completion authorizes
+TDD is the required default for behavioral changes, with applicability and exceptions
+governed upstream; Slice completion authorizes
 neither Review nor another Slice in this execution.
 
 ## Strategy selection
@@ -59,6 +70,11 @@ Before the entry allocation/persistence step:
 1. Collect this Slice's acceptance conditions, Solution verification obligations,
    Slice Verification Plan, mandatory strategies/checks, passing criteria, required
    evidence sources, and permitted alternatives. Do not invent missing obligations.
+   Apply Artifact Protocol TDD applicability and exceptions, including for older
+   plans. For each new or changed behavior require TDD or a recorded, applicable,
+   explicitly user-approved Solution exception. Non-behavioral work needs a concrete
+   non-applicability rationale. Missing policy returns ENGINEERING_GAP; inadequate
+   mapping returns SLICE_VIOLATION before implementation, using entry persistence.
 2. Inspect relevant existing behavior, tests, authorized paths, and available environment;
    identify change types and evidence required before edits.
    Repository facts guide execution, not new requirements.
@@ -80,8 +96,8 @@ Apply all relevant candidate rows under step 3, not one row for the whole Slice:
 
 | Change or obligation | Candidate strategies and selection evidence |
 | --- | --- |
-| New or changed executable behavior | TDD when a meaningful behavior-related failing test can be established before edits with a practical feedback cycle. BEHAVIORAL_TEST when permitted and tests are built during/after implementation; record why and preserve the same required behavioral coverage. |
-| Existing behavior without reliable coverage | CHARACTERIZATION_TEST captures the relevant baseline before modification; TDD or BEHAVIORAL_TEST verifies approved changed behavior. Existing behavior alone is not an acceptance policy. |
+| New or changed executable behavior | TDD is required by default: establish meaningful behavioral RED before edits, then GREEN and refactor/regression evidence. BEHAVIORAL_TEST replaces it only for the exact scope/condition of an explicitly user-approved Solution exception; preserve required coverage and evidence. |
+| Existing behavior without reliable coverage | CHARACTERIZATION_TEST captures the baseline before modification; preservation/regression checks verify unchanged behavior. Any new or changed behavior still requires TDD or an approved exception. Existing behavior alone is not an acceptance policy. |
 | Data/schema migration | MIGRATION_REHEARSAL against the declared data/environment, plus required behavior, integrity and recovery checks. Do not design migration policy here. |
 | Configuration, build or startup settings | CONFIGURATION_VALIDATION for parsing and effective behavior; STATIC_VALIDATION supplements it where applicable. Syntax alone cannot establish runtime effect. |
 | Performance changes | BENCHMARK with the required comparable baseline, workload and thresholds, while retaining correctness/regression verification. |
@@ -93,7 +109,38 @@ Apply all relevant candidate rows under step 3, not one row for the whole Slice:
 Mandatory TDD remains mandatory even when another candidate is more convenient.
 A failed check, unavailable environment, or missed pre-change baseline is not
 permission to switch to a weaker strategy or manufacture evidence. Correct a local
-problem or persist its blocker; changes to requirements return to their owner.
+problem or apply the Verification failure choice below before persisting its
+blocker; changes to requirements return to their owner.
+
+## Verification failure choice
+
+When a required check fails, cannot execute, or remains inconclusive after a
+bounded routine correction, MUST present the user with a choice in Planning's
+communication language. Do not retry indefinitely or silently stop at BLOCKED.
+Expected TDD RED followed by normal implementation is not a failure requiring this
+choice. Report the exact checks, results, cause, affected obligations, known risk,
+and which work can proceed independently. Offer:
+
+1. Repair the problem or provide the missing environment, then retry.
+2. Temporarily defer the named checks and continue the permitted work, with an
+   explicit retry trigger/checkpoint and the required upstream revision if needed.
+3. Pause and retain the blocker.
+
+Allow another user-proposed resolution under the Framework clarification policy.
+Wait for an explicit answer before deferring checks; independent already-authorized
+work may continue. While waiting, emit no Handoff and grant no future Scope.
+An existing recorded answer covering the same checks, versions, and continuation
+scope is sufficient; do not ask again merely because a new session starts.
+
+On deferral, persist the Artifact Protocol verification-deferral details in Open
+Issues and preserve the actual Verification Evidence results. Continue independent
+work in the current Slice as IN_PROGRESS. When an unchanged required gate prevents
+further progress, use the recorded decision to request the concrete upstream
+revision via BLOCKED/RETURN. Explain that entering later Slices requires that
+revision and fresh routing. Never reinterpret user approval as passing evidence,
+edit another owner's plans, or claim that a known correctness defect is resolved.
+If retry is chosen, execute it and record the actual outcome; if pause is chosen,
+persist the appropriate blocker. Revisit an expired deferral at its recorded trigger.
 
 ## Implementation methods
 
@@ -132,6 +179,9 @@ is not a Review decision, and a successful irrelevant command cannot satisfy it.
 ## Process
 
 All commands follow the Framework command lifecycle.
+Before every canonical write, including entry allocation, apply the candidate
+validation below. A malformed candidate is corrected before publication, not handed
+to the next Workflow for repair.
 
 1. Confirm path/obligation mappings and persist the selected strategies and their
    rationales in the single Implement Record for the frozen Attempt.
@@ -146,12 +196,13 @@ All commands follow the Framework command lifecycle.
    regression, migration, build/startup, or human acceptance requirements when
    applicable. Preserve actual outputs/observations, environment, target, and results.
    Follow the Strategy selection restrictions on switching; correct local failures,
-   otherwise persist the appropriate blocker.
+   otherwise apply Verification failure choice and record the user's decision
+   before continuing permitted work or persisting the appropriate blocker.
 5. Record Implementation Summary, Verification Selection, Verification Evidence,
    changed files, File Placement Conformance, Open Issues, shared components,
    implemented decisions, and deviations with owner/resolution. Multiple strategies
    or rerunning checks do not create another Attempt or another Artifact.
-6. Perform and record the Review-ready self-check.
+6. Perform and record the Review-ready self-check and validate the complete candidate.
 7. Recheck the canonical record against the Attempt and upstream versions frozen at
    entry. Never allocate another Attempt at this step. If the record was replaced
    or the version chain changed, stop without overwriting evidence; any further
@@ -172,3 +223,28 @@ Absent/ambiguous required engineering structure is `ENGINEERING_GAP`; absent,
 overlapping, or inconsistent Planned File Placement is `SLICE_VIOLATION`; local
 path, implementation, test, or evidence failure is corrected before READY or
 persisted as `IMPLEMENTATION_GAP` when blocked across invocations.
+
+## Candidate validation
+
+Validate the complete candidate Implement Record against the loaded Artifact schema
+and frozen direct inputs before publication:
+
+- The first line is its level-one title, followed by exactly one Metadata section
+  and its table. No prose or Changed Files/placement tables precede the title.
+- Identity, Status, Attempt, upstream versions and required sections match the
+  canonical path and frozen entry. Metadata strategy lists match Selection; each
+  Selection/Evidence row has exactly one Strategy, and each Evidence row exactly
+  one Source and Result. `PASS`/`FAIL` are Review decisions, never execution results.
+- Changed Files and File Placement Conformance describe actual changes, including
+  build outputs when changed. An unplanned path is a deviation, never automatically
+  CONFORMS because it already exists or tests pass.
+- Trace each required check to concrete evidence and its passing criteria. A total
+  test count, successful suite, or generic coverage claim cannot establish an
+  untested scenario. Missing required evidence remains NOT_RUN/INCONCLUSIVE and
+  prevents READY_FOR_REVIEW; apply Verification failure choice when appropriate.
+
+This is local candidate validation, not another full-graph scan or test rerun.
+Correct formatting without changing observed outcomes, inventing coverage, or
+allocating another Attempt. If a previously published record is already malformed,
+ordinary execution follows Rule 2; the separately authorized Implement format
+recovery procedure is described in `protocol/implement-recovery.md`.

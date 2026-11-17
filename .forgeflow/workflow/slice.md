@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.12
+Version: 2.15
 
 ## Contract
 
@@ -10,7 +10,10 @@ Version: 2.12
 | Owns | Slice Plan; delivery decomposition and placement |
 | Inputs | current READY Planning, Requirement, and Solution; one Feature Target Scope |
 
-Accept only a valid Handoff or Recovery selected from current `SLICE_VIOLATION`.
+Accept a valid Handoff selected by fresh Transition for this exact Feature:
+Rule 7 FORWARD, Rule 3 RETURN for `SLICE_VIOLATION`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose current FAIL names Slice and this Feature. Alternatively,
+accept no-Handoff Recovery only from Rule 3's current `SLICE_VIOLATION`.
 Validate Transition and Handoff; resolve and freeze one planned Feature as the sole
 productive and Slice Plan mutation Scope; another Feature requires another execution.
 Declaring Slices does not authorize their execution.
@@ -31,6 +34,14 @@ Strategies may combine; none cancels other obligations.
 Implement may select only explicitly permitted alternatives or refine execution details;
 missing engineering criteria return to Solution, never to Implement discretion.
 
+Map user-approved verification deferrals only within Solution's current policy.
+Retain the recorded decision and map every deferred check to a concrete successor
+Slice's Verification Plan, preserving criteria and evidence sources. Ensure the
+successor is included before project completion and that intervening Slices do not
+depend on the missing evidence. A deferral without a feasible successor blocks
+READY; changed verification policy returns to Solution. Apply ordinary versioning
+and fresh routing, never patch the old Implement record or reuse its PASS evidence.
+
 ## Process
 
 1. Validate entry, the Feature's Requirement, and its current Engineering Version.
@@ -42,8 +53,13 @@ missing engineering criteria return to Solution, never to Implement discretion.
    tests, risks, completion, engineering decisions, and shared components.
    Add Verification Plan rows with justified strategies and checks mapped to current
    Solution requirements; preserve mandatory checks and thresholds and state conditions
-   for any Solution-permitted alternative. TDD is a candidate for behavioral changes,
-   not a requirement for configuration, migration, documentation, or every other Slice.
+   for any Solution-permitted alternative. Include TDD for each new or changed
+   executable behavior, including the behavioral portion of a mixed Slice. If TDD
+   is omitted, Rationale must explain factual non-applicability or reference the
+   Solution exception's explicit user approval and show that its scope/condition
+   applies. Missing exception policy returns to Solution before READY; Slice never
+   grants its own waiver. For every supplementary strategy identify the obligation
+   and evidence not already established by other checks; avoid a fixed bundle.
    Implement may refine routine commands.
 5. Add every Planned File Placement row with paths/patterns resolving to current
    Implementation and Test Structures, preserving distinct responsibilities.
