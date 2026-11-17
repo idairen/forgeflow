@@ -49,12 +49,17 @@ Identifiers use `01` through `09`, then ordinary decimal notation (`10`, `100`).
 | Implement | One Slice's changes, verification execution and evidence |
 | Review | Independent findings and immutable PASS/FAIL disposition |
 
-TDD is a verification strategy inside Implement. Other supported strategies include
+TDD is required by default inside Implement for new or changed executable behavior,
+including bug fixes. Non-behavioral work records why TDD is inapplicable; a behavioral
+exception requires explicit user approval recorded in Solution and mapped by Slice.
+Implement cannot switch merely because tests are difficult, the environment fails,
+or code was already written. Other supported strategies include
 `BEHAVIORAL_TEST`, `CHARACTERIZATION_TEST`, `MIGRATION_REHEARSAL`, `STATIC_VALIDATION`,
 `CONFIGURATION_VALIDATION`, `SECURITY_SCAN`, `BENCHMARK`, `DOCUMENTATION_VALIDATION`
 and `MANUAL_ACCEPTANCE`. A method such as direct implementation or small-step repair
 is optional prose, not a workflow or an approval gate. Mandatory checks cannot be
-replaced by a more convenient strategy.
+replaced by a more convenient strategy. Add strategies for specific risks and explain
+what evidence existing checks cannot supply; there is no mandatory all-strategy bundle.
 
 ## Install from a checkout
 

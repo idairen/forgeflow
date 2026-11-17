@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.21
+Version: 2.22
 
 ## Purpose
 
@@ -606,17 +606,56 @@ Artifact types, independent Attempts, or Review decisions; supported identifiers
 | DOCUMENTATION_VALIDATION | Verify the changed links, examples, commands, structure, or rendering as required; record exactly what was checked and by which evidence source. |
 | MANUAL_ACCEPTANCE | Execute declared steps against the identified version/environment and record actual observations and the required acceptor's result; never infer a person's approval. |
 
-TDD is the default candidate for behavioral code changes with executable acceptance
-criteria, not a universal requirement. Slice may choose other justified strategies
-within Solution requirements. Implement can choose explicitly permitted alternatives,
+### TDD applicability and exceptions
+
+TDD is required by default for new or changed executable behavior, including bug
+fixes. In Solution Verification Requirements, record the affected behavior,
+required TDD coverage, and the passing criteria/evidence. Slice Verification Plan
+maps each behavioral change to TDD unless a Solution-authorized exception applies.
+Mixed Slices retain TDD for their behavioral portion; unrelated documentation does
+not make that portion exempt.
+
+For work that does not add or change executable behavior, record why TDD is not
+applicable and which checks verify the work. No special user approval is required
+for that factual classification. Configuration that changes runtime behavior and
+migrations that implement new data behavior are not automatically exempt.
+Behavior-preserving refactoring needs preservation/regression evidence, not an
+invented failure; if it also fixes behavior, that portion follows the TDD default.
+
+For an applicable behavioral change that cannot establish a meaningful pre-change
+RED, Solution MUST describe the concrete constraint, affected scope, residual risk,
+equivalent behavioral coverage, passing criteria and evidence sources, and obtain
+explicit user approval before making a non-TDD exception READY. Record the answer
+and its scope with the obligation in Verification Requirements; Slice references
+that decision in Verification Plan Rationale. Use existing tables/prose, not a new
+Artifact, Status, or strategy identifier. A generic permission to continue is not
+approval. Reuse an existing explicit approval within its recorded scope.
+
+BEHAVIORAL_TEST may supply approved exception coverage, preservation/regression
+checks, or supplementary tests; it cannot replace mandatory TDD or required human
+acceptance. Convenience, test difficulty, environment failure, or discovering that
+implementation is already written does not itself approve an exception. Never
+fabricate or backdate RED. If a required pre-change baseline was missed, report it
+and return for an explicit policy decision; do not silently switch strategies.
+
+Existing Artifacts remain readable and history is not rewritten. New or revised
+Solution/Slice plans apply this policy. Before new behavioral implementation under
+an older plan, Implement checks for required TDD or a sufficient recorded exception;
+missing policy returns to Solution, and missing mapping under an adequate policy
+returns to Slice. Do not retrospectively invent RED for already completed work.
+
+For each supplementary strategy, state its governing obligation, evidence and why
+the existing checks are insufficient. Multiple strategies are selected for actual
+risks, not to fill a checklist. Implement can choose explicitly permitted alternatives,
 refine routine cases/commands, and add supplementary verification. It cannot drop a
 mandatory check, narrow its coverage, lower a threshold, replace required human
 acceptance, or switch strategy because a check failed or its environment is absent.
 Changed engineering requirements return to Solution; an inadequate Slice mapping
 returns to Slice. Multiple strategy runs remain in the same frozen Attempt.
 
-Selection procedure and candidate guidance belong in Implement's Workflow, not in
-upstream readiness rules. Slice strategy commitments remain mandatory unless approved alternative
+Execution selection procedure and candidate guidance belong in Implement's Workflow;
+TDD applicability and exception approval also govern upstream readiness.
+Slice strategy commitments remain mandatory unless approved alternative
 conditions apply; new strategy identifiers do not change them.
 Regression is a verification purpose; unit, integration, contract, and end-to-end
 are test levels, not strategies; record applicable levels and regression checks

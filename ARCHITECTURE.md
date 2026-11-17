@@ -1,6 +1,6 @@
 # ForgeFlow Architecture
 
-Technical Preview aligned to Framework 3.10 / Artifact 2.21 / Transition 1.9.
+Technical Preview aligned to Framework 3.11 / Artifact 2.22 / Transition 1.9.
 
 ## Authority and components
 
@@ -97,6 +97,15 @@ seventh Workflow. The CLI diagnoses and routes; it does not automatically dispos
 project evidence.
 
 ## Strategy and method selection
+
+New or changed executable behavior, including bug fixes, requires TDD by default.
+Solution records factual non-applicability for non-behavioral work, or obtains
+explicit user approval for a scoped behavioral exception with equivalent coverage.
+Slice maps that decision; Implement cannot waive it. Mixed Slices retain TDD for
+their behavioral portion. Other strategies supply evidence for specific uncovered
+obligations, not a fixed checklist. Review independently checks applicability and
+exception evidence. The CLI validates recorded mappings and results; semantic
+classification and approval assessment remain participant responsibilities.
 
 The [Implement workflow](.forgeflow/workflow/implement.md) owns the selection
 procedure. Solution defines obligations, passing criteria and evidence sources;

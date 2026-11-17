@@ -6,6 +6,20 @@ Earlier development notes remain available in Git history.
 
 ## [Unreleased]
 
+### TDD required by default for behavioral changes
+
+- Require TDD for new or changed executable behavior, including bug fixes and the
+  behavioral portion of mixed Slices. Non-behavioral work records non-applicability.
+- Require explicitly user-approved, scoped Solution exceptions with equivalent
+  coverage before replacing TDD with BEHAVIORAL_TEST. Slice maps the decision;
+  Implement checks it before changes and Review independently verifies it.
+- Retain risk-specific supplementary strategies, with an explanation of the
+  additional evidence they supply. Preserve old evidence without inventing RED;
+  older plans missing policy return to their owner before new behavioral work.
+- Framework 3.11, Artifact 2.22, Solution/Implement 2.16, Slice 2.15, Review 2.14.
+  Existing schemas and strategy identifiers are unchanged; semantic applicability
+  is a participant obligation, not an automatic CLI code classifier.
+
 ### Review rework and Implement format recovery
 
 - Accept fresh FORWARD and REVIEW_BLOCKER RETURN Handoffs explicitly in Implement,

@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.15
+Version: 2.16
 
 ## Contract
 
@@ -51,7 +51,8 @@ modules, layers, responsibilities, or test topology.
 Within approved constraints, it may refine test cases, commands, and parameters,
 add supplementary verification, or select explicitly permitted alternatives;
 it cannot waive mandatory checks, lower thresholds, or justify weaker strategies.
-TDD is a strategy, not a universal execution order; Slice completion authorizes
+TDD is the required default for behavioral changes, with applicability and exceptions
+governed upstream; Slice completion authorizes
 neither Review nor another Slice in this execution.
 
 ## Strategy selection
@@ -69,6 +70,11 @@ Before the entry allocation/persistence step:
 1. Collect this Slice's acceptance conditions, Solution verification obligations,
    Slice Verification Plan, mandatory strategies/checks, passing criteria, required
    evidence sources, and permitted alternatives. Do not invent missing obligations.
+   Apply Artifact Protocol TDD applicability and exceptions, including for older
+   plans. For each new or changed behavior require TDD or a recorded, applicable,
+   explicitly user-approved Solution exception. Non-behavioral work needs a concrete
+   non-applicability rationale. Missing policy returns ENGINEERING_GAP; inadequate
+   mapping returns SLICE_VIOLATION before implementation, using entry persistence.
 2. Inspect relevant existing behavior, tests, authorized paths, and available environment;
    identify change types and evidence required before edits.
    Repository facts guide execution, not new requirements.
@@ -90,8 +96,8 @@ Apply all relevant candidate rows under step 3, not one row for the whole Slice:
 
 | Change or obligation | Candidate strategies and selection evidence |
 | --- | --- |
-| New or changed executable behavior | TDD when a meaningful behavior-related failing test can be established before edits with a practical feedback cycle. BEHAVIORAL_TEST when permitted and tests are built during/after implementation; record why and preserve the same required behavioral coverage. |
-| Existing behavior without reliable coverage | CHARACTERIZATION_TEST captures the relevant baseline before modification; TDD or BEHAVIORAL_TEST verifies approved changed behavior. Existing behavior alone is not an acceptance policy. |
+| New or changed executable behavior | TDD is required by default: establish meaningful behavioral RED before edits, then GREEN and refactor/regression evidence. BEHAVIORAL_TEST replaces it only for the exact scope/condition of an explicitly user-approved Solution exception; preserve required coverage and evidence. |
+| Existing behavior without reliable coverage | CHARACTERIZATION_TEST captures the baseline before modification; preservation/regression checks verify unchanged behavior. Any new or changed behavior still requires TDD or an approved exception. Existing behavior alone is not an acceptance policy. |
 | Data/schema migration | MIGRATION_REHEARSAL against the declared data/environment, plus required behavior, integrity and recovery checks. Do not design migration policy here. |
 | Configuration, build or startup settings | CONFIGURATION_VALIDATION for parsing and effective behavior; STATIC_VALIDATION supplements it where applicable. Syntax alone cannot establish runtime effect. |
 | Performance changes | BENCHMARK with the required comparable baseline, workload and thresholds, while retaining correctness/regression verification. |

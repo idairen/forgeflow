@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.14
+Version: 2.15
 
 ## Contract
 
@@ -53,8 +53,13 @@ and fresh routing, never patch the old Implement record or reuse its PASS eviden
    tests, risks, completion, engineering decisions, and shared components.
    Add Verification Plan rows with justified strategies and checks mapped to current
    Solution requirements; preserve mandatory checks and thresholds and state conditions
-   for any Solution-permitted alternative. TDD is a candidate for behavioral changes,
-   not a requirement for configuration, migration, documentation, or every other Slice.
+   for any Solution-permitted alternative. Include TDD for each new or changed
+   executable behavior, including the behavioral portion of a mixed Slice. If TDD
+   is omitted, Rationale must explain factual non-applicability or reference the
+   Solution exception's explicit user approval and show that its scope/condition
+   applies. Missing exception policy returns to Solution before READY; Slice never
+   grants its own waiver. For every supplementary strategy identify the obligation
+   and evidence not already established by other checks; avoid a fixed bundle.
    Implement may refine routine commands.
 5. Add every Planned File Placement row with paths/patterns resolving to current
    Implementation and Test Structures, preserving distinct responsibilities.

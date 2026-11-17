@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.13
+Version: 2.14
 
 ## Contract
 
@@ -40,6 +40,13 @@ All commands follow the Framework command lifecycle.
    Independently check the Verification Plan against Solution obligations and the
    selected strategies/rationales against that plan. Verify all required checks,
    current target/environment, passing criteria, and evidence references.
+   Check actual behavioral changes against the TDD default. Any omission needs
+   factual non-applicability or a scoped, explicitly user-approved Solution
+   exception traced through Slice and Implement; a strategy name or convenience
+   rationale is insufficient. Assess supplementary strategies by the additional
+   obligation/evidence they cover, not by their count. Missing exception policy
+   belongs to Solution, lost mapping to Slice, and violating an adequate approved
+   plan to Implement. Preserve the shared gate's owner precedence.
    Tool success must be relevant and sufficient; model
    assessment cannot substitute for required execution, and required human acceptance
    needs the actual acceptor's result.

@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.10
+Version: 3.11
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
 The versioned Artifact Graph is the sole persistent source of truth;
@@ -10,8 +10,8 @@ conversation, launchers, logs, and derived views have no authority.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.10 | `forgeflow.md` |
-| Artifact Protocol | 2.21 | `protocol/artifact.md` |
+| Framework | 3.11 | `forgeflow.md` |
+| Artifact Protocol | 2.22 | `protocol/artifact.md` |
 | Transition Protocol | 1.9 | `protocol/transition.md` |
 | Handoff Protocol | 2.15 | `protocol/handoff.md` |
 
@@ -66,6 +66,20 @@ mandatory checks, and passing criteria. Slice maps them to each Slice's verifica
 plan. Implement selects and refines strategies within that plan, executes them, and
 records evidence; a rationale cannot weaken or replace mandatory verification.
 Review independently evaluates coverage, execution evidence, and correctness.
+
+TDD is required by default for new or changed executable behavior, including bug
+fixes. Solution establishes applicability and any explicitly user-approved exception;
+Slice preserves that decision in its Verification Plan. Pure documentation,
+behavior-preserving refactoring, verification-only work, or configuration with no
+behavior change may omit TDD with a concrete non-applicability rationale and suitable
+verification. Classify actual behavior and risk, not filenames or task labels.
+An applicable behavioral change may omit TDD only under the recorded exception
+procedure in Artifact Protocol; BEHAVIORAL_TEST is not a free alternative.
+
+Add other strategies only for a concrete obligation or risk; explain what evidence
+they supply that the existing checks do not. No default bundle or all-strategy
+checklist is required, and TDD does not replace migration, security, performance,
+configuration, documentation, or human evidence when those obligations apply.
 
 One Slice may require multiple strategies. A successful check does not discharge
 another required check. Routine test cases, commands, and parameters within approved

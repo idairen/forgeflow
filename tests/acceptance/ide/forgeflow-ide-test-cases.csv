@@ -10,7 +10,7 @@ IDE-BLK-101,Blocker 与 Recovery,P0,"copilot,codex",case-specific blocker snapsh
 IDE-BLK-102,Blocker 与 Recovery,P0,"copilot,codex",case-specific blocker snapshot,场景与操作: 中断 ACTIVE Lane 或项目 blocker,无明确确认不恢复；release-only 不开展业务工作,NOT RUN,,,
 IDE-SOL-101,Solution,P0,"copilot,codex",S2-BUSINESS,场景与操作: 全部 Requirement READY 后设计 Solution,完整验证义务和通过标准，不替 Grill 决定业务规则,NOT RUN,,,
 IDE-SLICE-101,Slice,P0,"copilot,codex",S3-ENGINEERING,场景与操作: F-01 Slice READY、F-02 尚缺 Slice Plan,继续 Slice F-02，不提前执行 Implement,NOT RUN,,,
-IDE-TDD-101,Implement strategies,P0,"copilot,codex",S4-DELIVERY or case-specific,场景与操作: Implement 选择已允许的 TDD 或 BEHAVIORAL_TEST,保留必需策略和检查；TDD 有真实 RED；行为测试不伪造 RED,NOT RUN,,,
+IDE-TDD-101,Implement strategies,P0,"copilot,codex",S4-DELIVERY or case-specific,场景与操作: 新增行为及修 Bug 默认 TDD；对照纯文档、保持行为的重构、混合 Slice、已有代码缺 RED 和明确批准的行为例外,行为部分默认必选 TDD 且先有真实 RED；非行为工作记录不适用原因；例外须 Solution 中有明确用户批准及等效覆盖，Slice 映射；Implement 不自行换策略；Review 检查证据；其他策略逐项说明补充价值,NOT RUN,,,
 IDE-TDD-102,Implement strategies,P0,"copilot,codex",S4-DELIVERY or case-specific,场景与操作: Implement 采用直接实现或小步修改 Method,可选说明写在 Implementation Summary，不新增状态、Attempt 或审批,NOT RUN,,,
 IDE-TDD-103,Implement strategies,P0,"copilot,codex",S4-DELIVERY or case-specific,场景与操作: 必需检查 NOT_RUN、环境缺失或人工验收未取得,IN_PROGRESS 或 BLOCKED，不进入 READY_FOR_REVIEW,NOT RUN,,,
 IDE-TDD-104,Implement strategies,P0,"copilot,codex",S4-DELIVERY or case-specific,场景与操作: 上游修订或重试,有界读取历史，先持久化新 Attempt，再修改代码；不得重复推进,NOT RUN,,,

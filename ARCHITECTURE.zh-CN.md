@@ -1,6 +1,6 @@
 # ForgeFlow 架构
 
-本页对应 Framework 3.10 / Artifact 2.21 / Transition 1.9，发布状态仍为 Technical Preview。
+本页对应 Framework 3.11 / Artifact 2.22 / Transition 1.9，发布状态仍为 Technical Preview。
 
 规范优先级：[Framework](./.forgeflow/forgeflow.md) → [Artifact](./.forgeflow/protocol/artifact.md)
 → [Transition](./.forgeflow/protocol/transition.md) → [Handoff](./.forgeflow/protocol/handoff.md)
@@ -64,6 +64,12 @@ TDD 是十种验证策略之一，Method 是可选说明，不新增状态或审
 引用和结果，不能证明模型声称的执行真实，也不能代替 Review 判断业务正确性和覆盖充分性。
 
 ## 策略与方法的选择
+
+新增或修改可执行行为（包括修 Bug）默认必须 TDD。无行为变化的工作记录不适用原因；
+行为改动需要例外时，由 Solution 明确范围、约束、风险和等效验证并取得用户批准，
+Slice 映射该决定，Implement 不得自行豁免。混合 Slice 的行为部分仍需 TDD。
+其他策略按未覆盖的具体义务补充，不要求固定组合。Review 独立检查适用性及例外证据；
+CLI 校验已记录的映射与结果，行为分类和批准是否充分仍由执行参与者判断。
 
 [Implement Workflow](.forgeflow/workflow/implement.md) 拥有具体选择步骤。
 Solution 定义验证义务、通过标准与证据来源；Slice 映射到每个交付单元。

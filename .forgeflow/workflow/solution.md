@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.15
+Version: 2.16
 
 ## Contract
 
@@ -77,8 +77,13 @@ business outcome returns to Grill. Neither is deferred implicitly downstream.
    In the Artifact Protocol Verification Requirements table, trace applicable
    obligations to Features, required checks/strategies, passing criteria, and evidence.
    Alternatives require explicit conditions and equivalent required coverage.
-   TDD may be the default candidate for behavioral changes, not a requirement for
-   every Slice; benchmarks, scans, and static checks do not replace correctness/regression requirements.
+   Require TDD by default for new or changed executable behavior, including bug fixes.
+   Classify actual behavior and risk before choosing strategies; record concrete
+   non-applicability for work without behavior changes. For a behavioral exception,
+   follow Artifact Protocol: obtain explicit user approval of the scoped constraint,
+   risk and equivalent verification before READY. BEHAVIORAL_TEST alone is not an
+   automatic substitute. Explain the additional evidence supplied by each other
+   strategy; benchmarks, scans and static checks do not replace behavioral coverage.
 6. Define the Artifact Protocol Implementation and Test Structures using
    repository-relative paths and coherent observable conventions. Choose
    package-by-Feature, package-by-layer, or a justified hybrid from evidence.

@@ -240,6 +240,26 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.implement()
         self.assertIn("omits mandatory Slice strategy", " ".join(self.graph()[0]["errors"]))
 
+    def test_tdd_readiness_requires_recorded_red_before_green(self):
+        self.delivery(strategy="TDD")
+        self.implement(strategy="TDD")
+        name = "implement-feature-01-slice-01.md"
+        green_only = (self.root / name).read_text()
+        state, result = self.graph()
+        self.assertIn("TDD requires recorded RED before GREEN", " ".join(state["errors"]))
+        self.assertEqual(result["pipeline_status"], "HALTED")
+        red = "| TDD | acceptance RED | TOOL_EXECUTION | python -m unittest | pre-change worktree; Python | FAILED | exit=1; expected approved behavior missing |\n"
+        # Synthetic execution records test the evidence gate, not actual TDD execution.
+        self.write(name, green_only.replace("| TDD | acceptance |", red + "| TDD | acceptance |"))
+        state, result = self.graph()
+        self.assertEqual(state["errors"], [])
+        self.assertEqual(result["current_workflow"], "review")
+        green_row = next(line for line in green_only.splitlines() if line.startswith("| TDD | acceptance |"))
+        self.write(name, green_only.replace(green_row, green_row + "\n" + red.rstrip()))
+        state, result = self.graph()
+        self.assertIn("TDD requires recorded RED before GREEN", " ".join(state["errors"]))
+        self.assertEqual(result["pipeline_status"], "HALTED")
+
     def test_current_fail_precedes_earlier_missing_implementation(self):
         self.delivery(("S-01", "S-02"))
         self.implement("S-02")

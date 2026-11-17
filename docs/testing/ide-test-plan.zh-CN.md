@@ -1,6 +1,6 @@
 # ForgeFlow 当前 IDE 验收计划
 
-适用 Framework 3.10 / Artifact 2.21 / Transition 1.9 / Implement 2.15。
+适用 Framework 3.11 / Artifact 2.22 / Transition 1.9 / Implement 2.16。
 所有用例需要真实宿主调用，Python 或 Markdown 静态测试不能替代这些证据。
 旧计划见 [历史计划](ide-test-plan.legacy.zh-CN.md)；旧 results 保留不变。
 本版结果使用 `tests/acceptance/ide/results/current/`，初始全部 NOT RUN。
@@ -18,7 +18,7 @@
 | IDE-BLK-102 | 中断 ACTIVE Lane 或项目 blocker | 无明确确认不恢复；release-only 不开展业务工作 | P0 |
 | IDE-SOL-101 | 全部 Requirement READY 后设计 Solution | 完整验证义务和通过标准，不替 Grill 决定业务规则 | P0 |
 | IDE-SLICE-101 | F-01 Slice READY、F-02 尚缺 Slice Plan | 继续 Slice F-02，不提前执行 Implement | P0 |
-| IDE-TDD-101 | Implement 选择已允许的 TDD 或 BEHAVIORAL_TEST | 保留必需策略和检查；TDD 有真实 RED；行为测试不伪造 RED | P0 |
+| IDE-TDD-101 | 新增行为及修 Bug 默认 TDD；对照纯文档、保持行为的重构、混合 Slice、已有代码缺 RED 和明确批准的行为例外 | 行为部分默认必选 TDD 且先有真实 RED；非行为工作记录不适用原因；例外须 Solution 中有明确用户批准及等效覆盖，Slice 映射；Implement 不自行换策略；Review 检查证据；其他策略逐项说明补充价值 | P0 |
 | IDE-TDD-102 | Implement 采用直接实现或小步修改 Method | 可选说明写在 Implementation Summary，不新增状态、Attempt 或审批 | P0 |
 | IDE-TDD-103 | 必需检查 NOT_RUN、环境缺失或人工验收未取得 | IN_PROGRESS 或 BLOCKED，不进入 READY_FOR_REVIEW | P0 |
 | IDE-TDD-104 | 上游修订或重试 | 有界读取历史，先持久化新 Attempt，再修改代码；不得重复推进 | P0 |
