@@ -135,6 +135,15 @@ stderr before treating `2` as a workflow wait. Runtime logs under
 
 ## Upgrading existing projects
 
+A Review FAIL returns directly to its recorded Workflow and scope through Rule 8.
+Implement accepts that valid RETURN, preserves the FAIL, and starts a new Attempt;
+no gap relabeling or intermediate Rule 10 transition is needed. Every Implement
+candidate is checked before canonical publication. If a record is already malformed,
+use the explicitly authorized [Implement format-recovery procedure](.forgeflow/protocol/implement-recovery.md).
+It preserves the original separately from normal Attempt archives and grants no
+passing evidence or automatic continuation. Existing conflicting archives require
+their own evidence-preserving reconciliation; a framework refresh never rewrites them.
+
 ForgeFlow follows the language of the user's initial Plan intent for subsequent
 questions, Artifact prose, findings, and Handoff explanations. Planning persists
 that choice in Project Intent; protocol headings, keys, identifiers, and status

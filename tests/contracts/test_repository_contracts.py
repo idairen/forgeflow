@@ -133,7 +133,7 @@ class RepositoryContractTests(unittest.TestCase):
     def test_current_protocols_are_packaged(self):
         from forgeflow.scaffold import FRAMEWORK_ENTRIES
         self.assertIn("protocol", FRAMEWORK_ENTRIES)
-        for name in ("artifact", "transition", "handoff", "review-recovery"):
+        for name in ("artifact", "transition", "handoff", "review-recovery", "implement-recovery"):
             self.assertTrue((ROOT / f".forgeflow/protocol/{name}.md").is_file())
         self.assertFalse((ROOT / ".forgeflow/workflow/tdd.md").exists())
         self.assertTrue((ROOT / ".forgeflow/workflow/implement.md").is_file())

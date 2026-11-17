@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.13
+Version: 2.14
 
 ## Contract
 
@@ -10,7 +10,10 @@ Version: 2.13
 | Owns | Slice Plan; delivery decomposition and placement |
 | Inputs | current READY Planning, Requirement, and Solution; one Feature Target Scope |
 
-Accept only a valid Handoff or Recovery selected from current `SLICE_VIOLATION`.
+Accept a valid Handoff selected by fresh Transition for this exact Feature:
+Rule 7 FORWARD, Rule 3 RETURN for `SLICE_VIOLATION`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose current FAIL names Slice and this Feature. Alternatively,
+accept no-Handoff Recovery only from Rule 3's current `SLICE_VIOLATION`.
 Validate Transition and Handoff; resolve and freeze one planned Feature as the sole
 productive and Slice Plan mutation Scope; another Feature requires another execution.
 Declaring Slices does not authorize their execution.

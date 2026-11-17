@@ -1,6 +1,6 @@
 # ForgeFlow 架构
 
-本页对应 Framework 3.9 / Artifact 2.20 / Transition 1.8，发布状态仍为 Technical Preview。
+本页对应 Framework 3.10 / Artifact 2.21 / Transition 1.9，发布状态仍为 Technical Preview。
 
 规范优先级：[Framework](./.forgeflow/forgeflow.md) → [Artifact](./.forgeflow/protocol/artifact.md)
 → [Transition](./.forgeflow/protocol/transition.md) → [Handoff](./.forgeflow/protocol/handoff.md)
@@ -23,6 +23,15 @@ Handoff 不会让 Artifact 自动变为真实，真实 IDE Acceptance 必须独�
 以上是入门摘要。精确定义和有效性规则仍以权威契约为准，不新增状态或字段。
 
 ## 执行链
+
+当前 FAIL 经 Rule 8 返回指定 owner/scope 后，接收者可直接使用有效 Handoff 进入工作。
+Implement 归档失败 Attempt 并分配新 Attempt，不必先等到 Rule 10，也不改写 Review。
+Solution、Slice 同样接收 Review 退回；这与无需 Handoff 的 gap Recovery 分开定义。
+
+产物所有者在发布前验证完整候选记录。已经写坏的 Implement 记录使用可选的
+[格式恢复流程](./.forgeflow/protocol/implement-recovery.md)，在明确授权下保留原件到按摘要
+命名的诊断历史目录，再修复格式。标识和计数仍由 canonical 记录保留，后续正常返工归档
+修复后的记录，避免占用同一个 Attempt 归档路径。CLI 已有结构拒绝机制，不自动执行维护写入。
 
 Planning 在 Project Intent 中记录初始用户意图所用的沟通语言。后续 Workflow 的提问、
 产物正文和解释沿用该语言，协议字段、标题和状态值保留规范格式。旧 Planning 未记录

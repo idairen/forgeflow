@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.14
+Version: 2.15
 
 ## Contract
 
@@ -10,8 +10,16 @@ Version: 2.14
 | Owns | Implement Record; one Slice's authorized changes, verification execution, and evidence |
 | Inputs | valid Handoff or Recovery; current Requirement, Solution, and Slice Plan |
 
-Accept only a valid Handoff or Recovery selected from current
-`IMPLEMENTATION_GAP`. Before changing implementation files:
+Accept a valid Handoff selected by fresh Transition for this exact Slice:
+Rule 10 FORWARD, Rule 3 RETURN for `IMPLEMENTATION_GAP`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose matching current FAIL names Implement and this Slice as
+Return Workflow/Scope. Alternatively, accept no-Handoff Recovery only when Rule 3
+selects this Slice's current `IMPLEMENTATION_GAP`.
+
+A Rule 8 Handoff authorizes a new Implement execution directly; do not wait for
+Rule 10, re-emit the same RETURN, or relabel the FAIL as `IMPLEMENTATION_GAP`.
+Fresh resolution must still select the incoming Workflow/Scope and exact inputs.
+Before changing implementation files:
 
 1. validate Transition/Handoff and freeze one
    `Slice: F-<FeatureNumber>/S-<SliceNumber>`;
@@ -32,9 +40,11 @@ Accept only a valid Handoff or Recovery selected from current
    NONE when necessary), resolve the upstream RETURN, and stop without implementation.
    Archive and replace prior evidence in one protected transaction when allocating;
    conflict or failure authorizes no implementation. Current READY_FOR_REVIEW
-   awaits Review and cannot be restarted as implementation, except when its Attempt
-   is occupied by a valid invalid-Review history pair and fresh Transition selects
-   Implement under the Artifact Protocol allocation rule.
+   without Review awaits Review. A matching current FAIL returned by Rule 8 to
+   this Implement/Slice permits a new Attempt; archive the prior Implement and
+   retain the immutable FAIL. A valid invalid-Review history pair likewise permits
+   a new Attempt when fresh Transition selects Implement. Neither case reuses the
+   occupied Attempt, edits its Review, or grants another Slice's authority.
 
 Implement may choose filenames within approved patterns/conventions, never new
 modules, layers, responsibilities, or test topology.
@@ -163,6 +173,9 @@ is not a Review decision, and a successful irrelevant command cannot satisfy it.
 ## Process
 
 All commands follow the Framework command lifecycle.
+Before every canonical write, including entry allocation, apply the candidate
+validation below. A malformed candidate is corrected before publication, not handed
+to the next Workflow for repair.
 
 1. Confirm path/obligation mappings and persist the selected strategies and their
    rationales in the single Implement Record for the frozen Attempt.
@@ -183,7 +196,7 @@ All commands follow the Framework command lifecycle.
    changed files, File Placement Conformance, Open Issues, shared components,
    implemented decisions, and deviations with owner/resolution. Multiple strategies
    or rerunning checks do not create another Attempt or another Artifact.
-6. Perform and record the Review-ready self-check.
+6. Perform and record the Review-ready self-check and validate the complete candidate.
 7. Recheck the canonical record against the Attempt and upstream versions frozen at
    entry. Never allocate another Attempt at this step. If the record was replaced
    or the version chain changed, stop without overwriting evidence; any further
@@ -204,3 +217,28 @@ Absent/ambiguous required engineering structure is `ENGINEERING_GAP`; absent,
 overlapping, or inconsistent Planned File Placement is `SLICE_VIOLATION`; local
 path, implementation, test, or evidence failure is corrected before READY or
 persisted as `IMPLEMENTATION_GAP` when blocked across invocations.
+
+## Candidate validation
+
+Validate the complete candidate Implement Record against the loaded Artifact schema
+and frozen direct inputs before publication:
+
+- The first line is its level-one title, followed by exactly one Metadata section
+  and its table. No prose or Changed Files/placement tables precede the title.
+- Identity, Status, Attempt, upstream versions and required sections match the
+  canonical path and frozen entry. Metadata strategy lists match Selection; each
+  Selection/Evidence row has exactly one Strategy, and each Evidence row exactly
+  one Source and Result. `PASS`/`FAIL` are Review decisions, never execution results.
+- Changed Files and File Placement Conformance describe actual changes, including
+  build outputs when changed. An unplanned path is a deviation, never automatically
+  CONFORMS because it already exists or tests pass.
+- Trace each required check to concrete evidence and its passing criteria. A total
+  test count, successful suite, or generic coverage claim cannot establish an
+  untested scenario. Missing required evidence remains NOT_RUN/INCONCLUSIVE and
+  prevents READY_FOR_REVIEW; apply Verification failure choice when appropriate.
+
+This is local candidate validation, not another full-graph scan or test rerun.
+Correct formatting without changing observed outcomes, inventing coverage, or
+allocating another Attempt. If a previously published record is already malformed,
+ordinary execution follows Rule 2; the separately authorized Implement format
+recovery procedure is described in `protocol/implement-recovery.md`.

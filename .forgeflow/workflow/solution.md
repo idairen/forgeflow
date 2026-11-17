@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.14
+Version: 2.15
 
 ## Contract
 
@@ -10,7 +10,10 @@ Version: 2.14
 | Owns | Solution Plan; project engineering baseline |
 | Inputs | READY Planning and every current READY Requirement |
 
-Accept only a valid Handoff or Recovery selected from current `ENGINEERING_GAP`.
+Accept a valid Handoff selected by fresh Transition for Solution/Project:
+Rule 6 FORWARD, Rule 3 RETURN for `ENGINEERING_GAP`, or Rule 8 RETURN for
+`REVIEW_BLOCKER` whose current FAIL names Solution/Project. Alternatively, accept
+no-Handoff Recovery only from Rule 3's current `ENGINEERING_GAP`.
 Validate Transition and Handoff and require `BUSINESS_READY`; partial Requirement sets
 never authorize Solution, and historical/retired Requirements are inactive.
 
@@ -67,6 +70,8 @@ business outcome returns to Grill. Neither is deferred implicitly downstream.
 4. In canonical `solution-plan.md`, write `Artifact Protocol Version = 2.11` and
    one Solution Summary covering baseline, material cross-Feature effects, and
    verification; never create a separate summary.
+   The 2.11 value is the Artifact structure marker, not the loaded protocol's
+   document version. Check it in the candidate before persistence.
 5. Define boundaries, interfaces, data/migration, security, technical errors,
    operations, risks, and verification.
    In the Artifact Protocol Verification Requirements table, trace applicable

@@ -6,6 +6,25 @@ Earlier development notes remain available in Git history.
 
 ## [Unreleased]
 
+### Review rework and Implement format recovery
+
+- Accept fresh FORWARD and REVIEW_BLOCKER RETURN Handoffs explicitly in Implement,
+  Solution and Slice, separately from no-Handoff gap Recovery. Rule 8 authorizes
+  its receiving execution directly; Implement archives the failed Attempt and
+  allocates a new one without changing the immutable Review.
+- Require candidate validation before Implement publication, including entry writes,
+  single-valued evidence cells, title/Metadata placement, file conformance and
+  check-specific coverage. Clarify that the Planning/Solution structure marker
+  stays 2.11 independently of the protocol document version.
+- Add an explicitly authorized Implement format-repair procedure. Preserve invalid
+  originals outside standard Attempt archives; retain identity and evidence, and
+  keep conflicting archives and Review decisions protected.
+- Add runner-entry, malformed-record and repair-to-rework regressions. Tests use
+  synthetic artifacts and mocked Agent writes; they do not establish live IDE
+  compliance or repair any existing project's evidence.
+- Framework 3.10, Artifact 2.21, Transition 1.9, Implement/Solution 2.15 and Slice
+  2.14; no new Workflow, Entry mode, status enum or package release.
+
 ### Planning language and verification deferral
 
 - Persist the initial Plan language in Project Intent and inherit it across all

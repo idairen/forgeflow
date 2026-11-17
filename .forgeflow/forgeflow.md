@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.9
+Version: 3.10
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
 The versioned Artifact Graph is the sole persistent source of truth;
@@ -10,9 +10,9 @@ conversation, launchers, logs, and derived views have no authority.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.9 | `forgeflow.md` |
-| Artifact Protocol | 2.20 | `protocol/artifact.md` |
-| Transition Protocol | 1.8 | `protocol/transition.md` |
+| Framework | 3.10 | `forgeflow.md` |
+| Artifact Protocol | 2.21 | `protocol/artifact.md` |
+| Transition Protocol | 1.9 | `protocol/transition.md` |
 | Handoff Protocol | 2.15 | `protocol/handoff.md` |
 
 | Workflow | Artifact | Scope | Specification |
@@ -130,6 +130,12 @@ Only when explicitly requested to recover an invalid Review, additionally read
 operation is not Review execution or a seventh Workflow. It requires authorization
 for the concrete file disposition; ordinary Workflow commands never authorize it.
 Normal Workflows do not load this optional procedure.
+
+For an explicit request to repair an invalid Implement Record's format, instead
+load `protocol/implement-recovery.md` after the four core contracts. This is bounded
+maintenance, not Implement Entry or authority to repair code or change verification
+policy. Reuse explicit authorization covering the concrete repair and original
+preservation; normal Workflow invocations never authorize it implicitly.
 
 A new dedicated adapter is compatible only when each workspace-root-relative
 launcher reads the five canonical files below in order without copying or overriding

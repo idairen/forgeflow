@@ -1,6 +1,6 @@
 # ForgeFlow Architecture
 
-Technical Preview aligned to Framework 3.9 / Artifact 2.20 / Transition 1.8.
+Technical Preview aligned to Framework 3.10 / Artifact 2.21 / Transition 1.9.
 
 ## Authority and components
 
@@ -37,6 +37,18 @@ These are introductory summaries. Exact definitions and validity rules remain in
 the normative contracts; this glossary introduces no new state or field.
 
 ## Flow and concurrency
+
+A current FAIL's Rule 8 RETURN is a valid Handoff to its recorded owner and scope.
+Implement consumes it directly, archives the failed Attempt and allocates a new
+one; it does not first wait for Rule 10 or rewrite the Review. Solution and Slice
+also accept their Review returns independently of no-Handoff gap Recovery.
+
+Owners validate candidates before publication. Optional
+[Implement format recovery](./.forgeflow/protocol/implement-recovery.md) repairs an
+already malformed record only under explicit authorization and preserves its
+original under digest-addressed diagnostic history. Identity and counters remain
+in the canonical record; ordinary rework archives the corrected record. The CLI
+already rejects these structural errors and does not perform maintenance writes.
 
 Planning persists the initial user intent's communication language in Project Intent.
 All Workflows inherit it for questions and prose while retaining canonical protocol

@@ -437,6 +437,16 @@ class ArtifactParserTests(unittest.TestCase):
 
         self.assertEqual(errors, ["Solution Summary section is empty"])
 
+    def test_solution_structure_marker_is_not_protocol_document_version(self):
+        body = "## Solution Summary\n\nApproved design.\n\n## Implementation Structure\n\n## Test Structure\n"
+        for version in ("2.11", "2.19", "2.21"):
+            with self.subTest(version=version):
+                errors = []
+                ArtifactParser._validate_solution_summary(
+                    body, {"Artifact Protocol Version": version}, "Solution Plan", errors)
+                self.assertEqual(errors, [] if version == "2.11" else
+                                 ["unsupported Solution Artifact Protocol Version"])
+
     def test_forbids_standalone_solution_plan_summary_in_artifact_root(self):
         self._write_single_feature_planning()
         self.write("solution-plan-summary.md", "# Summary\n")

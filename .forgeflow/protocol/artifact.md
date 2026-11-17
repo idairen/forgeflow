@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.20
+Version: 2.21
 
 ## Purpose
 
@@ -47,6 +47,30 @@ advancing Attempt or replacing READY_FOR_REVIEW or BLOCKED evidence. Grill archi
 before advancing Lane Attempt or replacing its Record for a new Feature Contract
 Version. Historical files are immutable. Identical content at a required history
 path satisfies archival; different content blocks replacement.
+
+The only same-Attempt format-repair exception is the explicitly authorized
+`protocol/implement-recovery.md` procedure below. Do not copy an invalid pre-repair
+snapshot into the standard Implement Attempt archive and then rewrite its canonical
+record at that same Attempt; that creates conflicting counter evidence.
+
+### Invalid Implement originals
+
+Implement format recovery preserves original bytes at
+`history/invalid-implement/<SHA256>/<canonical-implement-filename>`, where SHA256 is
+the lowercase digest of those bytes. This immutable diagnostic copy is not an
+Artifact, Attempt archive, counter source, or readiness evidence. Only the exact
+repair's original may be read for recovery verification; do not scan this directory
+for progression or counter allocation. Identical bytes at the exact destination
+may be reused; conflicting bytes block the repair.
+
+The repaired canonical Implement retains its identity, Attempt and upstream version
+references. Its existing Open Issues section records the original path/digest,
+explicit authorization and actual formatting corrections. The canonical record
+remains the counter source; later authorized reimplementation archives the repaired
+record at the ordinary Attempt history path before allocating NewAttempt.
+No revision-suffixed standard Attempt archives are introduced. Existing conflicting
+standard archives require separate evidence-preserving reconciliation; this
+procedure never overwrites or silently moves them.
 
 ### Invalid Review history
 
@@ -329,6 +353,17 @@ scope, currentness, and selection follow the Transition Protocol. Conversation a
 Handoff text never replace blocker metadata.
 
 ## Type contracts
+
+### Candidate structure validation
+
+`Artifact Protocol Version = 2.11` in Planning and Solution is the supported
+structure marker. It is independent of this specification's `Version` header;
+upgrading the framework never replaces that marker with the document version.
+Before publication, each Artifact owner validates the complete candidate's title,
+Metadata, required sections, enums, references and type-specific structure using
+the loaded schema and direct inputs. Do not publish a malformed draft as canonical
+and rely on the next Workflow to repair it. Preserve actual evidence and decisions
+when correcting presentation.
 
 ### Planning
 
@@ -621,6 +656,11 @@ Strategies resolve to the selection table. Source is TOOL_EXECUTION,
 HUMAN_ACCEPTANCE, or MODEL_ASSESSMENT. Result is SUCCEEDED, FAILED, NOT_RUN,
 INCONCLUSIVE, or NOT_APPLICABLE; these are check results, never Review Decisions or
 overall Status. Unexecuted selected checks are NOT_RUN, never success.
+Each Selection row and Evidence row has exactly one Strategy identifier. Each
+Evidence row has exactly one Source and one Result; semicolon lists belong only
+in explicitly plural fields such as metadata Verification Strategies. Split a
+multi-strategy or multi-source observation into separately supported rows, retaining
+the original execution reference rather than claiming extra executions.
 Unresolved-selection BLOCKED records may leave this table empty but must record
 the gap in Blocker Evidence.
 
