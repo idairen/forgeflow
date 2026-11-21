@@ -9,6 +9,7 @@ import pathlib as plib
 
 from .yaml_parser import YAMLParser, ForgeflowConfig
 from .handoff_parser import HandoffParser
+from .handoff_files import HandoffFiles
 from .artifact_parser import ArtifactParser
 from .project_knowledge import ProjectKnowledgeBuilder
 from .state_resolver import StateResolver
@@ -71,7 +72,7 @@ class ForgeRunner:
         Each iteration:
            1. Detect artifact state for the current workflow.
            2. Execute the workflow via LLM (with retries).
-           3. Parse handoff from output.
+           3. Read and validate a newly published Handoff file.
            4. Apply transition rules (FORWARD / RETURN / TERMINAL).
            5. Stop as blocked after persistent execution or handoff failure.
 
@@ -92,8 +93,8 @@ class ForgeRunner:
             self.artifacts_dir
         )
         initial_resolution = StateResolver.resolve(initial_artifact_state)
-        if initial_resolution.get("entry_mode") == "bootstrap" and self._reports_require_reset():
-            return self._finish_run({"result": "PIPELINE_WAITING", "error": "non_empty_reports_require_explicit_reset"}, run_started_at, history_start)
+        if initial_resolution.get("entry_mode") == "bootstrap" and self._evidence_requires_reset():
+            return self._finish_run({"result": "PIPELINE_WAITING", "error": "non_empty_evidence_requires_explicit_reset"}, run_started_at, history_start)
         initial_entry_error = None
         initial_has_planning = (
             initial_artifact_state.get("artifacts", {}).get("planning.md")
@@ -118,9 +119,11 @@ class ForgeRunner:
                 history_start,
             )
         if initial_resolution["pipeline_status"] != "ACTIVE":
+            path = self._publish_correction(initial_resolution)
             return self._finish_run(
                 {
                     "result": f"PIPELINE_{initial_resolution['pipeline_status']}",
+                    "handoff_path": path,
                     "resolution": initial_resolution,
                 },
                 run_started_at,
@@ -161,6 +164,15 @@ class ForgeRunner:
                 if lane and lane["status"] == "ACTIVE":
                     return self._finish_run({"result": "PIPELINE_WAITING", "error": "explicit_lane_inactivity_confirmation_required", "resolution": step_resolution}, run_started_at, history_start)
 
+            if step_resolution.get("entry_mode") is None:
+                incoming = self._receive_handoff(artifact_state, step_resolution)
+                if incoming is None:
+                    path = self._publish_correction(step_resolution)
+                    entry = {"result": "PIPELINE_WAITING", "error": "routing_correction", "handoff_path": path}
+                    await self._record_step(entry)
+                    return self._finish_run(entry, run_started_at, history_start)
+                step_resolution = {**step_resolution, "handoff_path": incoming["path"]}
+
             logger.info(
                   "[%s/%d] Executing: %s (%s) at %s "
                   "| adapter=%s | artifacts=%s",
@@ -181,8 +193,10 @@ class ForgeRunner:
             validation_errors = None
             post_resolution = None
             waiting_without_handoff = False
+            published_path = None
 
             while exec_failures < per_wf_max:
+                before_handoffs = self._handoff_files().paths()
                 try:
                     llm_output = await self._execute_llm(
                         source_workflow,
@@ -242,7 +256,7 @@ class ForgeRunner:
                            )
                     continue
 
-                if llm_output is None or not isinstance(llm_output, str):
+                if (llm_output is None or not isinstance(llm_output, str)) and not (self._handoff_files().paths() - before_handoffs):
                     exec_failures += 1
                     last_failure = "empty_or_non_text_output"
                     post_artifact_state = ArtifactParser.detect_artifact_state(
@@ -268,12 +282,8 @@ class ForgeRunner:
                        )
                     continue
 
-                # Try parsing handoff
-                handoff = self.handoff_parser.parse(
-                    llm_output,
-                    expected_source_workflow=source_workflow,
-                    expected_source_scope=source_scope,
-                )
+                handoff, published_path, publication_error = self._published_handoff(
+                    before_handoffs, source_workflow, source_scope)
                 post_artifact_state = ArtifactParser.detect_artifact_state(
                     self.artifacts_dir
                 )
@@ -291,7 +301,7 @@ class ForgeRunner:
                     last_failure = "handoff_graph_mismatch"
                     break
 
-                if not self.handoff_parser.has_handoff_attempt(llm_output):
+                if not publication_error and not self.handoff_parser.has_handoff_attempt(llm_output):
                     if post_resolution["pipeline_status"] == "WAITING":
                         waiting_without_handoff = True
                         break
@@ -315,7 +325,7 @@ class ForgeRunner:
                     break
 
                 exec_failures += 1
-                last_failure = "invalid_handoff"
+                last_failure = publication_error or "response_only_handoff"
                 graph_changed = (
                     post_artifact_state != artifact_state
                     if is_subsequent_plan
@@ -342,6 +352,8 @@ class ForgeRunner:
                   "source_scope": source_scope,
                   "timestamp": datetime.now(timezone.utc).isoformat(),
                  }
+            if published_path:
+                log_entry["handoff_path"] = published_path
             if step_resolution.get("entry_mode") is not None:
                 log_entry["entry_mode"] = step_resolution["entry_mode"]
 
@@ -444,7 +456,7 @@ class ForgeRunner:
         workflow_name,
         user_input=None,
         incremental=False,
-        handoff_text=None,
+        handoff_path=None,
         confirm_inactive=False,
         feature=None,
     ):
@@ -466,12 +478,12 @@ class ForgeRunner:
              )
         workflow_resolution = StateResolver.resolve(artifact_state)
         if feature is not None:
-            if workflow_name != "grill" or handoff_text:
+            if workflow_name != "grill" or handoff_path:
                 raise ValueError("--feature is a no-Handoff Grill Lane/Recovery entry")
             workflow_resolution = StateResolver.grill_entry(artifact_state, feature, confirm_inactive)
-        if workflow_resolution.get("entry_mode") == "bootstrap" and self._reports_require_reset():
-            await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "non_empty_reports_require_explicit_reset"})
-            return "Reports Root is non-empty; explicit reset authorization is required before Plan."
+        if workflow_resolution.get("entry_mode") == "bootstrap" and self._evidence_requires_reset():
+            await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "non_empty_evidence_requires_explicit_reset"})
+            return "Reports or Handoff Root is non-empty; explicit reset authorization is required before Plan."
         has_planning = (
             artifact_state.get("artifacts", {}).get("planning.md") is not None
         )
@@ -493,11 +505,12 @@ class ForgeRunner:
 
         no_handoff_entry = workflow_resolution.get("entry_mode") in {"bootstrap", "subsequent_plan", "recovery", "lane"}
         if subsequent_error is None and not no_handoff_entry:
-            incoming = HandoffParser.parse(handoff_text) if handoff_text else None
-            errors = self._handoff_graph_errors(incoming, artifact_state, workflow_resolution, None, "Project") if incoming else ["missing_or_invalid_handoff"]
-            if errors or workflow_resolution.get("current_workflow") != workflow_name:
-                await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "routing_correction", "graph_resolution": workflow_resolution})
-                return HandoffParser.render_resolution(workflow_resolution) or json.dumps(workflow_resolution, indent=2)
+            incoming = self._receive_handoff(artifact_state, workflow_resolution, handoff_path)
+            if incoming is None or workflow_resolution.get("current_workflow") != workflow_name:
+                path = self._publish_correction(workflow_resolution)
+                await self._record_step({"workflow": workflow_name, "timestamp": datetime.now(timezone.utc).isoformat(), "result": "STEP_WAITING", "error": "routing_correction", "handoff_path": path, "graph_resolution": workflow_resolution})
+                return f"Handoff: {path}" if path else json.dumps(workflow_resolution, indent=2)
+            workflow_resolution = {**workflow_resolution, "handoff_path": incoming["path"]}
         if workflow_name == "grill" and workflow_resolution.get("entry_mode") == "recovery":
             feature = workflow_resolution["target_scope"].removeprefix("Feature: ")
             lane = artifact_state.get("artifacts", {}).get(f"lane-feature-{feature[2:]}.md")
@@ -541,6 +554,7 @@ class ForgeRunner:
         self.current_scope = source_scope
         logger.info("[manual] Executing %s at %s", workflow_name, source_scope)
 
+        before_handoffs = self._handoff_files().paths()
         try:
             llm_output = await self._execute_llm(
                 workflow_name,
@@ -589,15 +603,8 @@ class ForgeRunner:
                 return json.dumps(entry, indent=2)
             raise
 
-        handoff = (
-            self.handoff_parser.parse(
-                llm_output,
-                expected_source_workflow=workflow_name,
-                expected_source_scope=source_scope,
-            )
-            if llm_output
-            else None
-        )
+        handoff, published_path, publication_error = self._published_handoff(
+            before_handoffs, workflow_name, source_scope)
         post_artifact_state = ArtifactParser.detect_artifact_state(
             self.artifacts_dir
         )
@@ -610,14 +617,16 @@ class ForgeRunner:
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "graph_resolution": post_resolution,
         }
+        if published_path:
+            entry["handoff_path"] = published_path
         if workflow_resolution.get("entry_mode") is not None:
             entry["entry_mode"] = workflow_resolution["entry_mode"]
         if handoff is None:
-            has_handoff_attempt = self.handoff_parser.has_handoff_attempt(llm_output)
+            has_handoff_attempt = publication_error or self.handoff_parser.has_handoff_attempt(llm_output)
             if has_handoff_attempt:
                 entry["result"] = "STEP_BLOCKED"
                 entry["error"] = "invalid_handoff"
-                entry["validation_errors"] = ["invalid_handoff"]
+                entry["validation_errors"] = [publication_error or "response_only_handoff"]
             elif post_resolution["pipeline_status"] == "WAITING":
                 entry["result"] = "STEP_WAITING"
                 entry["output"] = llm_output
@@ -666,7 +675,7 @@ class ForgeRunner:
                 "[manual] Rejected workflow result against Artifact Graph"
             )
             return json.dumps(entry, indent=2)
-        return llm_output or ""
+        return f"Handoff: {published_path}" if published_path else (llm_output or "")
 
     def get_state(self, include_history=False):
         """Return current runner state as dict."""
@@ -704,11 +713,13 @@ class ForgeRunner:
         artifact_state = ArtifactParser.detect_artifact_state(self.artifacts_dir)
         return StateResolver.resolve(artifact_state)
 
-    def _reports_require_reset(self):
-        root = plib.Path(self.reports_dir)
-        if root.is_symlink() or (root.exists() and not root.is_dir()):
-            raise ValueError("Reports Root must be a regular directory")
-        return root.exists() and any(root.iterdir())
+    def _evidence_requires_reset(self):
+        non_empty = False
+        for root in (plib.Path(self.reports_dir), self._handoff_files().root):
+            if root.is_symlink() or (root.exists() and not root.is_dir()):
+                raise ValueError(f"Evidence root must be a regular directory: {root}")
+            non_empty = non_empty or (root.exists() and any(root.iterdir()))
+        return non_empty
 
     @staticmethod
     def _same_authorization(resolution, workflow, scope):
@@ -812,6 +823,47 @@ class ForgeRunner:
                     )
         return errors
 
+    def _handoff_files(self):
+        return HandoffFiles(self.project_root)
+
+    def _file_graph_errors(self, record, state, resolution):
+        handoff = record["handoff"]
+        return self._handoff_graph_errors(handoff, state, resolution,
+                                          record["source_workflow"], handoff["source_scope"])
+
+    def _receive_handoff(self, state, resolution, path=None):
+        files = self._handoff_files()
+        if path is not None:
+            record = files.read(path)
+            errors = self._file_graph_errors(record, state, resolution)
+            if errors:
+                raise ValueError("Invalid explicit Handoff: " + ", ".join(errors))
+            return record
+        return files.select(lambda record: self._file_graph_errors(record, state, resolution))
+
+    def _publish_correction(self, resolution):
+        block = HandoffParser.render_resolution(resolution)
+        if not block:
+            return None
+        path = self._handoff_files().publish(block)
+        return str(path.relative_to(self.project_root))
+
+    def _published_handoff(self, before, workflow, scope):
+        files = self._handoff_files()
+        paths = sorted(p for p in files.paths() - before
+                       if p.parent.name == files.directory(scope))
+        if not paths:
+            return None, None, None
+        if len(paths) != 1:
+            return None, None, "multiple_published_handoffs"
+        try:
+            record = files.read(paths[0])
+        except (ValueError, UnicodeError, OSError) as error:
+            return None, None, str(error)
+        if record["source_workflow"] != workflow or record["handoff"]["source_scope"] != scope:
+            return None, None, "published_handoff_source_mismatch"
+        return record["handoff"], str(paths[0].relative_to(self.project_root)), None
+
     def print_history(self):
         if not self.history:
             print("         (empty)")
@@ -824,13 +876,14 @@ class ForgeRunner:
             print(f"           {i:3d}. {wf}: {result}{extra}")
 
     def reset_artifacts(self, now=None):
-        """Rotate project artifacts and supplemental reports as one transaction."""
+        """Rotate artifacts, reports and Handoff files as one transaction."""
         root = plib.Path(self.artifacts_dir)
         reports_root = plib.Path(self.reports_dir)
         self._validate_latest_handoff_target()
         roots = (
             ("Artifact Root", root),
             ("Reports Root", reports_root),
+            ("Handoff Root", self._handoff_files().root),
         )
         existed = {}
         non_empty = {}
@@ -864,6 +917,8 @@ class ForgeRunner:
                 "backup": None,
                 "reports_root": str(reports_root),
                 "reports_backup": None,
+                "handoffs_root": str(self._handoff_files().root),
+                "handoffs_backup": None,
             }
 
         timestamp = now or datetime.now(timezone.utc)
@@ -928,6 +983,8 @@ class ForgeRunner:
             "backup": str(artifact_backup) if artifact_backup else None,
             "reports_root": str(reports_root),
             "reports_backup": str(reports_backup) if reports_backup else None,
+            "handoffs_root": str(self._handoff_files().root),
+            "handoffs_backup": str(backups[self._handoff_files().root]) if self._handoff_files().root in backups else None,
         }
 
     # --- internal helpers ---
@@ -995,10 +1052,6 @@ class ForgeRunner:
                 f"Agent CLI exited with status {process.returncode}: "
                 f"{detail[-2000:]}"
             )
-        if not output:
-            raise RuntimeError(
-                "Agent CLI completed successfully but returned no response"
-            )
         return output
 
     @staticmethod
@@ -1054,7 +1107,7 @@ class ForgeRunner:
     def _entry_context(resolution):
         entry_mode = resolution.get("entry_mode")
         if entry_mode is None:
-            return {"entry_mode": "handoff", "handoff": HandoffParser.render_resolution(resolution),
+            return {"entry_mode": "handoff", "handoff_path": resolution["handoff_path"],
                     "workflow": resolution["current_workflow"], "target_scope": resolution["target_scope"]}
         context = {
             "entry_mode": entry_mode,
@@ -1251,21 +1304,11 @@ class ForgeRunner:
             and isinstance(entry.get("result"), str)
         )
 
-    def get_latest_handoff(self):
-        """Return the latest valid runtime handoff snapshot."""
-        target = plib.Path(self.latest_handoff_path)
-        if not target.is_file() or target.is_symlink():
-            return None
-        try:
-            snapshot = json.loads(target.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as e:
-            logger.warning("[handoff] Invalid runtime snapshot: %s", e)
-            return None
-        if not isinstance(snapshot, dict) or snapshot.get("schema_version") != 1:
-            logger.warning("[handoff] Unsupported runtime snapshot format")
-            return None
-        handoff = snapshot.get("handoff")
-        return handoff if isinstance(handoff, dict) else None
+    def get_handoffs(self):
+        """Inspect portable candidates against the current graph, without runtime state."""
+        state = ArtifactParser.detect_artifact_state(self.artifacts_dir)
+        resolution = StateResolver.resolve(state)
+        return self._handoff_files().inspect(lambda record: self._file_graph_errors(record, state, resolution))
 
     def get_latest_run(self):
         """Return the latest persisted automatic-run result."""

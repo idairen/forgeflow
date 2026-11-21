@@ -15,22 +15,22 @@ const section = (text, start, end) => {
   assert.ok(a >= 0 && b > a, `Missing contract section: ${start}`);
   return text.slice(a, b).replace(/\s+/g, ' ');
 };
-const correction = section(transition, '### Read-only routing correction',
+const correction = section(transition, '### Routing correction',
   '### Subsequent Plan and Lane validation');
 
 test('missing or rejected Handoff has a correction path, not a sixth productive Entry', () => {
-  const entry = section(transition, '## Entry authorization', '### Read-only routing correction');
+  const entry = section(transition, '## Entry authorization', '### Routing correction');
   const names = [...entry.matchAll(/\| (Bootstrap|Subsequent Plan|Handoff|Lane|Recovery) \|/g)]
     .map(match => match[1]);
   assert.deepEqual(names, ['Bootstrap', 'Subsequent Plan', 'Handoff', 'Lane', 'Recovery']);
   assert.match(correction, /Handoff is missing or fails receiving validation and no other valid Entry applies/);
   assert.match(correction, /not a sixth Entry, a new Workflow, or authority to repair Artifacts/);
-  assert.match(correction, /before application inspection, tests, plugins, or any mutation/);
+  assert.match(correction, /before application inspection, tests, plugins, or any business Artifact mutation/);
   assert.match(framework, /Valid Entries proceed normally without\s+an additional correction step/);
 });
 
 test('correction cannot execute a matching target or fabricate projection evidence', () => {
-  assert.match(correction, /existing variant and ordered projection with Source Scope `Project`, then stop/);
+  assert.match(correction, /existing variant and ordered projection with Source Scope `Project` in a canonical Handoff file, then stop/);
   assert.match(correction, /selected target equals the requested Workflow\/Scope: execution requires a later invocation/);
   assert.match(correction, /never consumes its own output, allocates an Attempt, or performs target-scope work/);
   assert.match(handoff, /rather than\s+requiring the user to restart the prior emitter/);

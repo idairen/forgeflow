@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Version: 2.22
+Version: 2.23
 
 ## Purpose
 
@@ -110,13 +110,13 @@ Artifact evidence; a subsequent Plan archives only evidence it replaces.
 Rotation is explicit reset or archive maintenance, never a classification inferred
 from User Intent. The participant applies this Markdown procedure:
 
-1. Resolve `.forgeflow/artifacts/` and `.forgeflow/reports/` without reading or
-   changing contents; neither may be a symbolic link or non-directory path. An absent
+1. Resolve `.forgeflow/artifacts/`, `.forgeflow/reports/`, and `.forgeflow/handoffs/` without reading or
+   changing contents; none may be a symbolic link or non-directory path. An absent
    root is empty.
-2. If both roots are empty, create any absent root and finish without a backup.
+2. If all roots are empty, create any absent root and finish without a backup.
 3. Otherwise capture UTC once as `yyyyMMddHHmmss`; any entry, hidden or nested,
    makes a root non-empty. Map each non-empty root to its sibling
-   `artifacts.<timestamp>` or `reports.<timestamp>`.
+   `artifacts.<timestamp>`, `reports.<timestamp>`, or `handoffs.<timestamp>`.
 4. Before mutation, require every backup path to be absent and not a symbolic link;
    never overwrite, merge, or delete a current or backup root.
 5. As one transaction, move each non-empty root in full and create new empty roots
@@ -762,8 +762,8 @@ An Implement Record contains `## Implementation Summary`, `## Verification Selec
 and File Placement Conformance where applicable. Open Issues records actual issues
 or explicit NONE. The summary identifies authorized changes and deviations; Self-check
 applies the shared review gate. Strategy-specific evidence follows the section above;
-RED/GREEN/refactor is required for TDD only. Handoff is rendered in the response under
-the Handoff Protocol, not persisted as a second routing authority in this record.
+RED/GREEN/refactor is required for TDD only. Handoff is published in a separate file under the Handoff Protocol,
+not persisted as a second routing authority in this record.
 There is no overall Review Decision or separate Result state in an Implement Record.
 Attempt is monotonic for one Feature/Slice across Solution and Slice Plan versions.
 The Canonical Artifact Path

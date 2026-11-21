@@ -71,21 +71,29 @@ advance to the next workflow merely to bypass a question.
 
 ## 4. Follow the handoff
 
-Save the full workflow response, including its final canonical Handoff, to a file
-outside the active Artifact Root. In a new invocation use the selected workflow:
+The workflow saves an immutable Markdown file under `.forgeflow/handoffs/` and
+links it in its response. In a new invocation use the graph-selected workflow:
 
 ```bash
-forge grill --handoff /absolute/path/to/plan-response.md
+forge handoff
+forge grill
 ```
 
-The filename above is a placeholder for actual captured output, not a generated
-sample to copy. Let current resolution determine subsequent commands. A correction
-response ends the invocation. Exit code `2` can mean incomplete execution, waiting,
-routing correction, or a command-line argument error; inspect the response and
-stderr to distinguish them. It never authorizes automatic progression.
-Use `forge status` to inspect the graph; use `forge handoff` only as a historical
-runtime view and revalidate it before reuse. The external `forge run --auto`
-orchestrator may execute distinct authorized steps, but waits still require action.
+`forge grill` discovers a currently valid file automatically when Handoff Entry is
+needed. To select an exact file, use `forge grill --handoff
+.forgeflow/handoffs/project/<uuid>.md` with the actual published UUID. Explicit
+invalid files are rejected; ambiguous discovery requires explicit selection.
+If no valid file exists, routing correction publishes one and stops. Invoke the
+selected workflow again to consume it. Exit code `2` means incomplete work,
+waiting, correction or argument error; inspect the result. `forge status` inspects
+the graph; `forge handoff` lists portable files and current validation errors.
+The external `forge run --auto` orchestrator revalidates files between distinct
+executions; waits and correction still stop the run.
+
+For another developer or machine, share the matching code, framework/config,
+artifacts, required history/receipts, handoffs and referenced reports. Old chat
+and `.forgeflow/runtime/` are not required. See the
+[team delivery policy](existing-projects.md#git-and-team-handoff).
 
 ## IDE entry and verification
 
@@ -113,8 +121,8 @@ For either conversation interface:
    Artifact, Transition, Handoff and Plan contracts, in order. Plan may ask
    questions and wait; it must not switch to a generic native planning mode or
    begin implementing application code.
-5. When Plan legitimately finishes, retain its canonical Handoff. Start the next
-   authorized workflow in a new invocation with that complete context. Its target
+5. When Plan legitimately finishes, retain its saved Handoff file. Start the next
+   authorized workflow in a new invocation; it reads the file without old chat. Its target
    comes from current resolution, not from this tutorial's assumed sequence.
 
 If the host cannot find the launcher, first check the selected adapter and project

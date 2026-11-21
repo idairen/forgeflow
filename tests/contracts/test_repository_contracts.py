@@ -55,7 +55,6 @@ class RepositoryContractTests(unittest.TestCase):
         for relative in (
             "forgeflow.json",
             "package.json",
-            ".forgeflow/forgeflow.schema.json",
         ):
             with self.subTest(path=relative):
                 parsed = json.loads((ROOT / relative).read_text(encoding="utf-8"))

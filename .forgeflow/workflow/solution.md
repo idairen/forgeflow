@@ -1,6 +1,6 @@
 # Solution Workflow
 
-Version: 2.16
+Version: 2.17
 
 ## Contract
 
@@ -107,7 +107,7 @@ business outcome returns to Grill. Neither is deferred implicitly downstream.
     from the saved Feature Engineering Versions under its upstream-persistence
     rule; old downstream evidence establishes completion only when its applicable
     version chain is current. Do not retain the pre-revision execution target.
-    Emit any exact Handoff as final content, and stop.
+    Emit any exact Handoff in its canonical separate file and link it in the response, and stop.
 
 Solution never changes Requirements, decomposes Slices, writes code, or leaves
 multi-role source/test placement unspecified.

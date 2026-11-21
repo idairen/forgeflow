@@ -24,7 +24,7 @@ Python interface; options are not automatically shared between commands.
 | `forge run` | `--auto` / `--auto-mode`; `--manual` / `--no-auto`; `--intent` / `-i`; `--reset` | Auto mode invokes separate authorized steps until completion or a stop condition. Manual mode invokes only Plan. The two mode options are mutually exclusive. |
 | `forge status` | No command-specific options | Print JSON containing current graph status, resolution and derived knowledge. Successful inspection does not mean the project is COMPLETE. |
 | `forge knowledge` | `--feature`; `--slice`; `--history`; `--impact`; `--component`; `--format` | Query derived knowledge; see examples below. |
-| `forge handoff` | No command-specific options | Print the last runtime Handoff as JSON. It is historical context and must be revalidated; this JSON is not a substitute for the canonical response supplied to `--handoff`. |
+| `forge handoff` | No command-specific options | List persisted Handoff files as JSON with current graph validation errors; this view does not execute a workflow. |
 | `forge reset` | `--force` | Without the flag, print guidance without rotating anything. With it, rotate active artifacts and reports into timestamped sibling directories and create empty evidence roots. |
 
 The shared workflow parser exposes `--confirm-inactive` on Grill through Review.
@@ -33,12 +33,16 @@ has stopped. It is not a general approval, a way to override a blocker, or a sub
 for a required Handoff. The graph and core recovery procedure still determine entry.
 For an interrupted Lane, identify it with `forge grill --feature F-01 --confirm-inactive`.
 
-`--handoff FILE` reads a UTF-8 file containing the complete prior response with its
-final canonical block. Missing, invalid or stale input may produce read-only routing
-correction and stop. Save that response and use a fresh invocation; do not consume a
-workflow's own Handoff inside the same call.
+`--handoff FILE` selects a UTF-8 canonical document inside
+`.forgeflow/handoffs/<source-scope>/<uuid>.md`. An invalid explicit file reports an
+error without selecting another one. Without the option, eligible no-Handoff
+Entries remain unchanged; required Handoff Entry discovers files and validates
+them against the current graph. Equivalent candidates execute once; conflicting
+valid candidates require explicit selection. No valid candidate causes routing
+correction to publish a file and stop. A new invocation may consume it; the
+producer never consumes its own file in the same execution.
 
-**Evidence rotation:** `forge run --reset` rotates evidence before executing, without
+**Evidence rotation:** Artifact, report and Handoff roots rotate together.  `forge run --reset` rotates evidence before executing, without
 an additional `--force` flag or interactive confirmation. Use it only for an explicit
 archive/reset decision. Neither reset form is a routine repair for HALTED, BLOCKED,
 missing verification, or a failed Review. Refresh and evidence migration are separate;
@@ -112,7 +116,7 @@ Structural validation does not establish the truth or coverage of execution clai
 | Code | Meaning |
 | --- | --- |
 | `0` | Command completed successfully; for queries, this describes the query, not project readiness. |
-| `1` | Caught execution/configuration/validation error, or no valid runtime Handoff for `forge handoff`. |
+| `1` | Caught execution/configuration/validation error, or no persisted Handoff files for `forge handoff`. |
 | `2` | Incomplete workflow/pipeline execution, waiting, routing correction, or an argument parsing error such as an unknown subcommand. Inspect stdout and stderr. |
 | `130` | User interruption. |
 

@@ -19,7 +19,6 @@ FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "python-project"
 RESULTS_PATH = Path(__file__).resolve().parent / "results" / "current"
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",
-    "forgeflow.schema.json",
     "adapter",
     "protocol",
     "rules",

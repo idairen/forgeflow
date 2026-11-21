@@ -1,6 +1,6 @@
 # Implement Workflow
 
-Version: 2.16
+Version: 2.17
 
 ## Contract
 
@@ -212,7 +212,7 @@ to the next Workflow for repair.
    its owner/Scope; do not defer mandatory verification to Review.
 9. Resolve Transition. READY_FOR_REVIEW normally forwards to Review; upstream RETURN,
    blocker waiting, and graph HALTED follow the same protocols. Emit any required
-   exact Handoff as final response content and stop; do not store a parallel Handoff
+   exact Handoff in its canonical separate file, link it in the response, and stop; do not store a parallel Handoff
    inside the Implement Record.
 
 Implement never invents policy, redesigns contracts, changes Slice boundaries, implements

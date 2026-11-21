@@ -298,6 +298,7 @@ class RunnerProtocolTests(unittest.TestCase):
             (reports / "security.md").write_text("report", encoding="utf-8")
 
             runner = object.__new__(ForgeRunner)
+            runner.project_root = str(root)
             runner.artifacts_dir = str(artifacts)
             runner.reports_dir = str(reports)
             runner.runtime_dir = str(runtime)
@@ -343,6 +344,9 @@ class RunnerSubsequentPlanTests(unittest.IsolatedAsyncioTestCase):
         runner.history = []
         runner.current_workflow = "grill"
         runner.current_scope = "Feature: F-02"
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        runner.project_root = temp.name
         runner.artifacts_dir = "/unused"
         runner.handoff_parser = MagicMock()
         runner.handoff_parser.parse.return_value = None
@@ -412,6 +416,9 @@ class RunnerSubsequentPlanTests(unittest.IsolatedAsyncioTestCase):
         runner.history = []
         runner.current_workflow = "grill"
         runner.current_scope = "Feature: F-01"
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        runner.project_root = temp.name
         runner.artifacts_dir = "/unused"
         runner.handoff_parser = MagicMock()
         runner.handoff_parser.parse.return_value = None

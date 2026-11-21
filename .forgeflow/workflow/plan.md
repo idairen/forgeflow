@@ -1,6 +1,6 @@
 # Plan Workflow
 
-Version: 2.13
+Version: 2.14
 
 ## Contract
 
@@ -108,7 +108,7 @@ after every answer before continuing.
     old Solution and requires Empty Feature Approval. Persist canonical Planning
     only when ready, rolling back the entire transaction on failure.
 11. Resolve Transition. If it selects another Scope or terminal result, emit the
-    exact Handoff as final content and stop.
+    exact Handoff in its canonical separate file and link it in the response and stop.
 
 ## Ready
 

@@ -1,6 +1,6 @@
 # ForgeFlow Framework
 
-Version: 3.11
+Version: 4.0
 
 ForgeFlow is an Artifact-driven delivery framework for humans and AI agents.
 The versioned Artifact Graph is the sole persistent source of truth;
@@ -10,10 +10,10 @@ conversation, launchers, logs, and derived views have no authority.
 
 | Contract | Version | Path |
 | --- | --- | --- |
-| Framework | 3.11 | `forgeflow.md` |
-| Artifact Protocol | 2.22 | `protocol/artifact.md` |
-| Transition Protocol | 1.9 | `protocol/transition.md` |
-| Handoff Protocol | 2.15 | `protocol/handoff.md` |
+| Framework | 4.0 | `forgeflow.md` |
+| Artifact Protocol | 2.23 | `protocol/artifact.md` |
+| Transition Protocol | 1.10 | `protocol/transition.md` |
+| Handoff Protocol | 3.0 | `protocol/handoff.md` |
 
 | Workflow | Artifact | Scope | Specification |
 | --- | --- | --- | --- |
@@ -172,15 +172,16 @@ only at that same authorization. A later Workflow, Feature, Slice, or attempt is
 future Scope.
 
 When required Handoff authorization is missing or invalid and no other valid Entry
-applies, Transition permits read-only routing correction before productive work.
+applies, Transition permits routing correction (read-only for business Artifacts) before productive work.
 This is not a Workflow Entry: it writes no Artifacts, runs no application tests or
 plugins, and never starts the target Workflow. It emits the fresh routing result
 and stops under Transition/Handoff rules. Valid Entries proceed normally without
 an additional correction step.
 
-When Transition selects a future Scope, emit one Canonical Handoff and stop. A direct
+When Transition selects a future Scope, publish one canonical Handoff file and stop. A direct
 IDE invocation cannot consume its own Handoff. Only an external orchestrator may
-start a distinct execution after revalidating the Handoff and fresh graph. The
+start a distinct execution after revalidating the Handoff and fresh graph. The response links the saved file; chat and runtime caches are not Handoff Entry.
+The
 no-Handoff parallel exceptions are an eligible Grill Lane Entry and a valid Grill
 Lane Recovery under the Transition Protocol, each isolated to one Feature with an
 atomic claim. Release-only Recovery authorizes no business work. CLI mode, model

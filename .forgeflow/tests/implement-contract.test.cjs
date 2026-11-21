@@ -162,7 +162,7 @@ test('static: four canonical Handoff template shapes stay unchanged', () => {
     ['Transition','Terminal Status','Source Scope','Completed Scope','Input Artifacts','Reason'],
     ['Transition','Terminal Status','Source Scope','Affected Scope','Blocker Category','Input Artifacts','Reason']
   ]);
-  assert.match(artifact,/Handoff is rendered in the response/);
+  assert.match(artifact,/Handoff is published in a separate file/);
 });
 
 test('static: existing Lane recovery and Solution staleness safeguards remain', () => {

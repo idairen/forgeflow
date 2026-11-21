@@ -77,7 +77,7 @@ at that Attempt. Do not edit Implement, upstream plans, source, tests or plugin 
 
 Rebuild the current graph and use the ordinary Rule precedence and projection.
 For a Handoff-producing result emit the canonical block with Source Scope Project
-and stop, using the same no-executing-Workflow semantics as read-only routing
+and stop, using the same no-executing-Workflow semantics as routing
 correction. A remaining contradiction emits HALTED; report existing no-Handoff
 wait/entry conditions without inventing a block. Do not start the selected Workflow.
 

@@ -27,6 +27,8 @@ These guides explain it and never override it. Start with the
 - [Contributing and support](../CONTRIBUTING.md).
 - [Security policy](../SECURITY.md).
 - [Release process](maintainers/releasing.md).
+- [Persistent Handoff design (中文)](maintainers/persistent-handoff-design.zh-CN.md):
+  portable workflow handoff files, delivery rules and implementation scope.
 
 Run `python3 scripts/check_docs.py` from the source checkout before submitting
 public documentation changes. CI checks local link targets, Markdown heading

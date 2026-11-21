@@ -6,6 +6,23 @@ Earlier development notes remain available in Git history.
 
 ## [Unreleased]
 
+### Portable Handoff files
+
+- Replace response-only Handoff Entry with immutable, source-scoped Markdown files
+  under `.forgeflow/handoffs/`. Responses link the saved file; fresh sessions need
+  the complete project evidence, not prior chat or local runtime snapshots.
+- CLI single-step and automatic execution validate published files and discover
+  valid incoming candidates. Explicit invalid files fail; missing candidates
+  produce a persisted routing correction and stop. Conflicting candidates require
+  explicit selection. `forge handoff` lists files with current validation errors.
+- Rotate Handoff Root together with artifacts and reports during explicit reset.
+  Preserve no-Handoff Entries, graph/Attempt gates and existing concurrency rules.
+- Breaking protocol upgrade: Framework 4.0 / Handoff 3.0 requires updating the
+  installed framework and CLI together. Old response captures are not accepted;
+  preserve artifacts and generate a fresh correction file when needed.
+- Automated file/runner regressions are included; real IDE cross-session acceptance
+  remains pending and is not implied by automated checks.
+
 ### TDD required by default for behavioral changes
 
 - Require TDD for new or changed executable behavior, including bug fixes and the

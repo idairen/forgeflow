@@ -8,7 +8,6 @@ from setuptools.command.build_py import build_py as _build_py
 
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",
-    "forgeflow.schema.json",
     "adapter",
     "protocol",
     "rules",

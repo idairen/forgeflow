@@ -51,8 +51,8 @@ forge init --adapter codex
 
 Open this project in the selected IDE. Launcher discovery follows the host's setup;
 installed files do not guarantee automatic slash-command registration. Execute one
-authorized workflow at a time. Preserve the full response/Handoff outside the active
-Artifact Root and pass it to the next independent invocation. If a material question
+authorized workflow at a time. Preserve the generated `.forgeflow/handoffs/` files with their referenced
+artifacts; the next independent invocation discovers and validates the saved file. If a material question
 arises, answer it at its owner; the table below is a guide, not a pre-approved graph.
 
 | Step | Action and expected checkpoint |

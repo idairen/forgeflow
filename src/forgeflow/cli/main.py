@@ -43,7 +43,7 @@ def cmd_plan(args):
             "plan",
             user_input=intent,
             incremental=incremental,
-            handoff_text=Path(args.handoff).read_text(encoding="utf-8") if getattr(args, "handoff", None) else None,
+            handoff_path=getattr(args, "handoff", None),
         )
     )
     print(result)
@@ -53,8 +53,8 @@ def cmd_plan(args):
 def cmd_workflow(args):
     """Execute one entry, or emit a read-only correction when authorization is absent."""
     runner = _make_runner()
-    incoming = Path(args.handoff).read_text(encoding="utf-8") if args.handoff else None
-    result = asyncio.run(runner.execute_single(args.command, handoff_text=incoming,
+    incoming = args.handoff
+    result = asyncio.run(runner.execute_single(args.command, handoff_path=incoming,
                                               confirm_inactive=args.confirm_inactive,
                                               feature=getattr(args, "feature", None)))
     print(result)
@@ -154,11 +154,11 @@ def cmd_init(args):
     return EXIT_SUCCESS
 
 def cmd_handoff(args):
-    """Display the latest handoff produced by the CLI runner."""
+    """Inspect persisted Handoff files and their current graph validity."""
     runner = _make_runner()
-    handoff = runner.get_latest_handoff()
-    if handoff is None:
-        print("[info] No valid runtime handoff found.")
+    handoff = runner.get_handoffs()
+    if not handoff:
+        print("[info] No persisted Handoff files found.")
         return EXIT_ERROR
     print(json.dumps(handoff, ensure_ascii=False, indent=2))
     return EXIT_SUCCESS
@@ -309,7 +309,7 @@ def main_cli(argv=None):
 
     # handoff (debug tool)
     p_handoff = subparsers.add_parser(
-        "handoff", help="Show the latest handoff produced by the CLI runner"
+        "handoff", help="Inspect persisted Handoff files and current validity"
      )
     p_handoff.set_defaults(func=cmd_handoff)
 

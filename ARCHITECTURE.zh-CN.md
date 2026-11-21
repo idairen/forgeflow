@@ -14,7 +14,7 @@ Handoff 不会让 Artifact 自动变为真实，真实 IDE Acceptance 必须独�
 | Feature | Planning 中具有稳定标识的业务成果。 |
 | Slice | Feature 内由 Slice Plan 定义的交付单元。 |
 | Artifact | 持久化的规范记录，需结合产物图校验有效性、版本和当前性。 |
-| Handoff | 发给下一次调用的最终路由消息，本身不能证明引用证据有效。 |
+| Handoff | 保存在 `.forgeflow/handoffs/`、交给下一次调用的不可变 Markdown 文件，本身不能证明引用证据有效。 |
 | Lane | 对一个 eligible Feature 的 Grill 执行范围领取，不是 Implement 交付通道。 |
 | Attempt | 与版本引用一起区分当前执行、重试及历史的执行标识。 |
 | Barrier | 对相关完整集合的就绪条件，例如全部 Requirement READY 后才能进入 Solution。 |
@@ -90,8 +90,10 @@ Artifact、Attempt 或审批，也不改变业务政策、工程契约和 Slice 
 
 Transition 定义 Bootstrap、Subsequent Plan、Handoff、Lane、Recovery 五种入口。
 Review 仅接受 Handoff。缺少或无效的 Handoff 且无其他合法入口时，只读解析当前路由
-并停止，不授权实施或修复产物。接收方重新核验完整当前图和精确有序输入投影；
-发出 Handoff 即结束本次执行。
+，发布独立交接文件后停止，不授权实施或修复产物。接收方重新核验完整当前图和精确有序输入投影；
+发布 Handoff 文件即结束本次执行，对话仅链接文件。
+`HandoffFiles` 负责文件格式、不可覆盖发布和发现，Runner 重新核对当前图；
+新会话无需旧聊天或 runtime，项目交付必须同时包含被引用的产物与证据。
 
 无效 Review 恢复是单独授权的维护操作。仅符合条件的格式缺陷可在受保护事务中保留
 原始字节和 SHA256 回执后移出活动路径；已知阻塞或有效 PASS/FAIL 不适用。

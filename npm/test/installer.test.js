@@ -112,6 +112,8 @@ test("force refreshes managed files and preserves project-owned evidence and con
   writeFileSync(join(frameworkRoot, "artifacts", "planning.md"), "project evidence\n");
   mkdirSync(join(frameworkRoot, "reports", "custom"), { recursive: true });
   writeFileSync(join(frameworkRoot, "reports", "custom", "report.md"), "report evidence\n");
+  mkdirSync(join(frameworkRoot, "handoffs", "project"), { recursive: true });
+  writeFileSync(join(frameworkRoot, "handoffs", "project", "evidence.md"), "handoff evidence\n");
   mkdirSync(join(frameworkRoot, "runtime"), { recursive: true });
   writeFileSync(join(frameworkRoot, "runtime", "state.json"), "{}\n");
   mkdirSync(join(frameworkRoot, "rules", "reviews", "custom-plugin"), { recursive: true });
@@ -149,6 +151,7 @@ test("force refreshes managed files and preserves project-owned evidence and con
   assert.equal(readFileSync(join(frameworkRoot, "artifacts", "planning.md"), "utf8"), "project evidence\n");
   assert.equal(readFileSync(join(frameworkRoot, "reports", "custom", "report.md"), "utf8"), "report evidence\n");
   assert.equal(readFileSync(join(frameworkRoot, "runtime", "state.json"), "utf8"), "{}\n");
+  assert.equal(readFileSync(join(frameworkRoot, "handoffs", "project", "evidence.md"), "utf8"), "handoff evidence\n");
   assert.equal(
     readFileSync(join(frameworkRoot, "rules", "reviews", "custom-plugin", "rules.md"), "utf8"),
     "# Custom rules\n",

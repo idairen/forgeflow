@@ -47,6 +47,7 @@ are not a universal ignore policy for downstream application projects.
 | --- | --- |
 | Installed framework and `forgeflow.json` | Version together so collaborators use a known contract/config baseline; review upgrades separately from application changes where practical. |
 | Current artifacts and required immutable history/receipts | Preserve and share the complete evidence needed to resolve the graph. If committed, review for sensitive data. If kept outside Git, provide an access-controlled, retrievable shared record. |
+| `.forgeflow/handoffs/` | Share immutable handoff files with the matching code and complete Artifact evidence; new sessions discover these without prior chat or runtime. |
 | Review plugin reports | Preserve required attempt-scoped reports and revisions with their referenced evidence; report publication alone is not a canonical PASS. |
 | `.forgeflow/runtime/`, optional logs, temporary profiles | Treat as local diagnostics, normally ignored. Capture a redacted subset only when needed for diagnosis. |
 | Credentials and private host configuration | Keep outside committed content. Share only the non-secret host setup needed by collaborators. |
@@ -66,3 +67,9 @@ parallel Implement/Review permission from multiple branches or available agents.
 For a worked exercise, use the [delivery tutorial](../examples/complete-delivery/README.md).
 For observed execution rather than teaching fixtures, see the
 [historical task-manager case](testing/evidence/task-manager/README.md).
+
+After upgrading to Handoff Protocol 3.0, old response-only Handoffs no longer
+satisfy Entry. Preserve existing artifacts and history. If no file exists, invoke
+the resolved workflow once to publish routing correction, then use a separate
+invocation to continue. Explicit invalid files are rejected; inspect diagnostics
+with `forge handoff`. Do not fabricate files from incomplete chat summaries.

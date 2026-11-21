@@ -17,7 +17,6 @@ import { fileURLToPath } from "node:url";
 
 export const FRAMEWORK_ENTRIES = Object.freeze([
   "forgeflow.md",
-  "forgeflow.schema.json",
   "adapter",
   "protocol",
   "rules",

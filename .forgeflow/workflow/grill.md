@@ -1,6 +1,6 @@
 # Grill Workflow
 
-Version: 2.10
+Version: 2.11
 
 ## Contract
 
@@ -79,7 +79,7 @@ claim for explicit Recovery. Independent Lanes remain eligible.
 6. Verify that no other Feature's Requirement changed; otherwise stop without a
    forward Handoff.
 7. Resolve Transition. On join-pending, report Lane completion without a Handoff and
-   stop. Otherwise emit any exact Handoff as final content and stop.
+   stop. Otherwise emit any exact Handoff in its canonical separate file and link it in the response and stop.
 
 ## Ready
 

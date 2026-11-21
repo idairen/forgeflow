@@ -11,7 +11,6 @@ from .engine.yaml_parser import YAMLParser
 
 FRAMEWORK_ENTRIES = (
     "forgeflow.md",
-    "forgeflow.schema.json",
     "adapter",
     "protocol",
     "rules",

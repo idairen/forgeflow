@@ -1,6 +1,6 @@
 # Handoff Protocol
 
-Version: 2.15
+Version: 3.0
 
 ## Purpose
 
@@ -10,7 +10,7 @@ it transfers no artifact ownership and never replaces the Artifact Graph.
 Transition determines the result and exact ordered Input Artifact projection;
 this protocol defines only their representation and validation.
 
-Transition's read-only routing correction may emit a Handoff without Workflow
+Transition's routing correction may emit a Handoff without Workflow
 execution, under the same variant, projection, rendering, and stop rules.
 
 ## Canonical variants
@@ -30,7 +30,8 @@ the same Scope. TERMINAL / COMPLETE carries Rule 11. TERMINAL / HALTED carries R
 
 ## Canonical rendering
 
-A Handoff-producing Workflow MUST render exactly one block that:
+A Handoff-producing Workflow MUST publish one immutable Markdown file under
+`.forgeflow/handoffs/` containing exactly one block that:
 
 1. begins with the exact heading `### Handoff`;
 2. uses the selected template's exact field names, capitalization, row order, and
@@ -38,7 +39,7 @@ A Handoff-producing Workflow MUST render exactly one block that:
 3. replaces every metavariable with a non-empty value;
 4. contains no fields outside the selected variant;
 5. is not enclosed in a code fence;
-6. is the final non-whitespace content of the response; and
+6. is the final non-whitespace content of the published Handoff file; and
 7. contains no duplicate Input Artifact filename.
 
 Read-only routing correction uses exactly Source Scope `Project` for the routing operation,
@@ -54,7 +55,7 @@ empty projection or `INVALID_VERSION` under that Rule's version requirement.
 Rule 2's explicit legacy-path diagnostic may name the exact retired TDD filename
 selected by Transition; it is never a non-terminal input or implementation authority.
 
-Rendering the block terminates the current Workflow execution; the emitter MUST NOT consume its own
+Publishing the file terminates the current Workflow execution; the emitter MUST NOT consume its own
 Handoff, start the target Workflow, perform target-scope work, or create target-owned evidence.
 An external orchestrator may start a distinct execution after validating the completed
 Handoff and fresh Artifact Graph, or one eligible Grill Feature through Transition
@@ -63,6 +64,88 @@ Lane Entry and its atomic claim.
 Lane Entry, Rule 5 join-pending, and same-authorization waiting emit no Handoff and
 MUST NOT synthesize an empty block; Feature Lane changes authorization, not
 the four canonical variants or their rendering.
+
+## Persistent file envelope
+
+The Handoff Root is `.forgeflow/handoffs/`, relative to the project root. It is
+portable project evidence, not a business Artifact or a local runtime cache.
+The canonical path is `<source-directory>/<UUID>.md`. Source directories are
+`project`, `feature-<FeatureNumber>`, or
+`feature-<FeatureNumber>-slice-<SliceNumber>`, matching Source Scope. UUID must use
+canonical lowercase hyphenated form. Paths and their parents MUST NOT be symlinks.
+Do not create a global latest pointer or a mutable consumed flag.
+
+Each file begins with exactly this envelope, followed immediately by one selected
+canonical block. Replace metavariables; do not emit a code fence in the actual file:
+
+```markdown
+# ForgeFlow Handoff
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| Schema Version | 1.0 |
+| Handoff ID | {{UUID matching filename}} |
+| Producer | {{Workflow or Routing Correction}} |
+| Source Workflow | {{Plan, Grill, Solution, Slice, Implement, Review, or NONE}} |
+
+```
+
+Producer `Workflow` requires the actual authorized emitting Workflow. Producer
+`Routing Correction` requires Source Workflow `NONE` and Source Scope `Project`.
+Validate Source Workflow's Scope as well as the routing block. Metadata grants no
+new authority. Reason uses Planning's Communication Language; canonical fields stay
+English. Refer to persisted decisions and evidence rather than copying chat history.
+
+Save Workflow-owned evidence first, freshly resolve Transition, validate the complete
+candidate against that graph, then publish the file atomically without replacing any
+existing file. Write a temporary non-Markdown file in the same directory and publish
+with an exclusive operation (for example a hard link to the final name), then remove
+the temporary name. A collision is an error, not permission to overwrite. Never
+modify published files; retries and corrections create new IDs. Publication failure
+must be reported as incomplete delivery, preserving the saved Artifact evidence.
+The later invocation can use routing correction; it cannot pretend publication passed.
+
+The response summarizes the result and links the project-relative file path. It
+MUST NOT supply a second canonical routing block. A response-only Handoff is not
+an Entry. The CLI validates the newly published file rather than parsing chat as
+authority. Local `.forgeflow/runtime/last-handoff.json` is only a derived diagnostic.
+
+## Discovery and delivery
+
+For an explicit input file, validate that exact canonical path and content; if
+invalid, report its errors without silently selecting another file. Without an
+explicit file, first preserve the existing no-Handoff Entries. When Handoff Entry
+is required, validate current graph resolution and inspect published files for the
+exact target Workflow/Scope. Ignore temporary files. Invalid or stale records remain
+historical evidence, never execution authority. Report diagnostics through file
+inspection; do not choose by modification time or UUID chronology.
+
+Use one valid candidate. Multiple candidates with identical Producer, Source
+Workflow and canonical Handoff fields are equivalent; select the lexicographically
+first path for display and execute only once. Non-equivalent valid candidates are
+ambiguous: stop and require explicit selection or correction. Every selection still
+requires fresh graph validation, including current versions, Attempts, dependencies,
+Lane state and completion. The existing execution/claim rules prevent completed
+work from being reauthorized; files introduce no same-Scope concurrency permission.
+
+If no valid candidate exists and no other Entry applies, use the existing routing
+correction procedure to publish a new file and stop. Explicit reset rotates Handoff
+Root with Artifact and Reports Roots; rotated files are excluded from discovery.
+Subsequent Plan retains history but must freshly validate changed versions and graph.
+
+Deliver code at the matching baseline, installed framework/config, current Artifacts,
+required immutable history/receipts, Handoff files and referenced verification reports
+together through the project's reviewed Git or controlled bundle policy. Runtime and
+old conversations are not required. Never infer missing evidence from a summary.
+Mid-Workflow transfer preserves allowed progress and Open Issues, stops old processes,
+and uses existing recovery rules; it does not manufacture a FORWARD or release an
+ACTIVE Lane without confirmation. File IDs do not authenticate the author.
+
+This protocol version replaces response-only Entry. Upgrade the installed framework
+and CLI together. Do not rewrite old Artifacts or manufacture historical files from
+chat. Use fresh routing correction where new-format files are absent.
 
 ## FORWARD template
 
@@ -158,11 +241,11 @@ following are true:
    Protocol; FORWARD and COMPLETE contain none.
 7. Target Workflow and Scope equal a fresh Transition Protocol result and are not
    widened by conversation or launcher context.
-8. Exactly one Handoff block exists and it is the response's final content.
+8. Exactly one Handoff block exists and it is the file's final content.
 
 An invalid Handoff grants no execution authority. The receiver MUST NOT infer its
 missing fields, normalize malformed content, or replace version values to make it
-appear valid. When no other valid Entry applies, use Transition's read-only routing
+appear valid. When no other valid Entry applies, use Transition's routing
 correction to generate a new result solely from the current graph, rather than
 requiring the user to restart the prior emitter. Validate the new block against
 that result and stop; even a matching requested target grants no same-invocation

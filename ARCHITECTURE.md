@@ -27,7 +27,7 @@ render disposable views. Neither a view nor runtime history authorizes progressi
 | Feature | A declared business outcome with a stable identity in Planning. |
 | Slice | A delivery unit within a Feature, defined by its Slice Plan. |
 | Artifact | A canonical persisted record whose validity, versions and currentness are checked against the graph. |
-| Handoff | The final routing message for a new invocation; it is not proof that its referenced evidence is valid. |
+| Handoff | An immutable Markdown file under `.forgeflow/handoffs/` for a new invocation; it is not proof that its referenced evidence is valid. |
 | Lane | A claimed Grill execution scope for one eligible Feature, not an Implement delivery lane. |
 | Attempt | An execution identity used with version references to distinguish current work from retries and history. |
 | Barrier | A readiness condition over the relevant complete set, such as all Requirements READY before Solution. |
@@ -131,10 +131,12 @@ They cannot change business policy, engineering contracts or Slice boundaries.
 ## Entry and recovery
 
 Transition defines five entries: Bootstrap, Subsequent Plan, Handoff, Lane and
-Recovery. Review accepts only Handoff. Missing/invalid Handoff permits read-only
-routing correction when no valid alternative entry applies; it authorizes no
+Recovery. Review accepts only Handoff. Missing/invalid Handoff permits routing correction (read-only for business Artifacts) when no valid alternative entry applies; it authorizes no
 implementation or artifact repair. A receiver validates the complete fresh graph
-and exact ordered input projection. Emitting a Handoff ends the invocation.
+and exact ordered input projection. Publishing a Handoff file ends the invocation; the response links it.
+`HandoffFiles` validates the file envelope, publishes without replacement and
+discovers candidates; `ForgeRunner` revalidates their contents against the graph.
+Runtime snapshots and conversation text are not Entry authority.
 
 Invalid-Review recovery is separately authorized maintenance. Only an eligible
 format defect may be disposed of through protected preservation of original bytes

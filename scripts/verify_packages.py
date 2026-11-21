@@ -49,8 +49,7 @@ def verify(path, kind, version):
     files = load_archive(path)
     prefix = {"wheel": "forgeflow/_template/", "sdist": f"forgeflow-{version}/",
               "npm": "package/"}[kind]
-    expected = [ROOT / "forgeflow.json", ROOT / ".forgeflow/forgeflow.md",
-                ROOT / ".forgeflow/forgeflow.schema.json"]
+    expected = [ROOT / "forgeflow.json", ROOT / ".forgeflow/forgeflow.md"]
     for directory in ("adapter", "protocol", "rules", "workflow"):
         expected.extend(sorted((ROOT / ".forgeflow" / directory).rglob("*.md")))
     expected_names = set()

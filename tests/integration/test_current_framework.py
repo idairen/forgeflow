@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 
 from forgeflow.engine.artifact_parser import ArtifactParser
 from forgeflow.engine.handoff_parser import HandoffParser
+from forgeflow.engine.handoff_files import HandoffFiles
 from forgeflow.engine.runner import ForgeRunner
 from forgeflow.engine.state_resolver import StateResolver
 from forgeflow.scaffold import initialize_project
@@ -82,6 +83,156 @@ class CurrentFrameworkTests(unittest.TestCase):
             rows = [("1", "BLOCKING", "Implement", f"Slice: {feature}/{slice_id}", "Incorrect result", "Observed failure", "Requirement acceptance")]
         self.write(f"review-feature-{feature[2:]}-slice-{slice_id[2:]}-attempt-{attempt:02d}.md", document("Review Report", "Review", extra, body=markdown_table("Findings", ("#", "Severity", "Owner Workflow", "Affected Scope", "Finding", "Evidence", "Violated Contract"), rows)))
 
+    def test_new_runner_discovers_file_without_conversation_or_runtime(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        file = HandoffFiles(self.project).publish(HandoffParser.render_resolution(self.graph()[1]))
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock(return_value="Need environment access.")
+        asyncio.run(runner.execute_single("implement"))
+        self.assertEqual(runner._execute_llm.await_count, 1)
+        self.assertEqual(runner._execute_llm.await_args.kwargs["entry_context"]["handoff_path"], str(file))
+        self.assertEqual(runner.history[-1]["result"], "STEP_WAITING")
+
+    def test_delivered_copy_discovers_handoff_without_original_machine(self):
+        import shutil
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        path = HandoffFiles(self.project).publish(HandoffParser.render_resolution(self.graph()[1]))
+        runtime = self.project / ".forgeflow/runtime"
+        runtime.mkdir()
+        (runtime / "local-only.json").write_text("{}")
+        with tempfile.TemporaryDirectory() as target:
+            copy = Path(target) / "delivered"
+            shutil.copytree(self.project, copy, ignore=shutil.ignore_patterns("runtime"))
+            runner = ForgeRunner(copy / "forgeflow.json")
+            runner._execute_llm = AsyncMock(return_value="Need environment access.")
+            asyncio.run(runner.execute_single("implement"))
+            expected = copy / path.relative_to(self.project)
+            self.assertEqual(runner._execute_llm.await_args.kwargs["entry_context"]["handoff_path"], str(expected))
+            self.assertFalse((copy / ".forgeflow/runtime/local-only.json").exists())
+
+    def test_old_handoff_root_blocks_bootstrap_until_explicit_reset(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        files = HandoffFiles(self.project)
+        files.publish(HandoffParser.render_resolution(self.graph()[1]))
+        for path in self.root.glob("*.md"):
+            path.unlink()
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock()
+        asyncio.run(runner.execute_single("plan", user_input="New project"))
+        runner._execute_llm.assert_not_called()
+        self.assertEqual(runner.history[-1]["error"], "non_empty_evidence_requires_explicit_reset")
+
+    def test_response_only_handoff_cannot_advance_workflow(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        HandoffFiles(self.project).publish(HandoffParser.render_resolution(self.graph()[1]))
+        async def response_only(*args, **kwargs):
+            self.implement()
+            return HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01")
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock(side_effect=response_only)
+        asyncio.run(runner.execute_single("implement"))
+        self.assertEqual(runner.history[-1]["result"], "STEP_BLOCKED")
+        self.assertEqual(len(HandoffFiles(self.project).paths()), 1)
+
+    def test_stale_handoff_is_rejected_after_attempt_advances(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        self.implement()
+        self.review(decision="FAIL")
+        files = HandoffFiles(self.project)
+        path = files.publish(HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01"), "review")
+        name = "implement-feature-01-slice-01.md"
+        self.write("history/implement-feature-01-slice-01-attempt-01.md", (self.root / name).read_text())
+        self.implement(attempt=2)
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock()
+        with self.assertRaisesRegex(ValueError, "Invalid explicit Handoff"):
+            asyncio.run(runner.execute_single("implement", handoff_path=path))
+        runner._execute_llm.assert_not_called()
+        self.assertTrue(runner.get_handoffs()[0]["errors"])
+
+    def test_auto_run_uses_files_between_distinct_executions(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        files = HandoffFiles(self.project)
+        files.publish(HandoffParser.render_resolution(self.graph()[1]))
+        async def agent(name, user_input=None, entry_context=None):
+            received = files.read(entry_context["handoff_path"])
+            self.assertEqual(received["handoff"]["next_workflow"], name)
+            if name == "implement":
+                self.implement()
+            else:
+                self.assertEqual(name, "review")
+                self.review()
+            files.publish(HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01"), name)
+            return "See saved handoff."
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock(side_effect=agent)
+        result = json.loads(asyncio.run(runner.run()))
+        self.assertEqual(runner._execute_llm.await_count, 2)
+        self.assertEqual(result["result"], "PIPELINE_COMPLETE")
+        self.assertEqual(len(files.paths()), 3)
+
+    def test_auto_missing_file_corrects_then_stops_before_agent(self):
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock()
+        result = json.loads(asyncio.run(runner.run()))
+        runner._execute_llm.assert_not_called()
+        self.assertEqual(result["result"], "PIPELINE_WAITING")
+        self.assertEqual(len(HandoffFiles(self.project).paths()), 1)
+
+    def test_failed_publication_preserves_artifact_and_allows_correction(self):
+        from unittest.mock import patch
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        files = HandoffFiles(self.project)
+        files.publish(HandoffParser.render_resolution(self.graph()[1]))
+        async def agent(*args, **kwargs):
+            self.implement()
+            with patch("forgeflow.engine.handoff_files.os.link", side_effect=OSError("disk full")):
+                files.publish(HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01"), "implement")
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        runner._execute_llm = AsyncMock(side_effect=agent)
+        asyncio.run(runner.execute_single("implement"))
+        self.assertEqual(runner.history[-1]["result"], "STEP_BLOCKED")
+        self.assertEqual(self.graph()[1]["current_workflow"], "review")
+        receiver = ForgeRunner(self.project / "forgeflow.json")
+        receiver._execute_llm = AsyncMock()
+        asyncio.run(receiver.execute_single("review"))
+        receiver._execute_llm.assert_not_called()
+        self.assertEqual(receiver.history[-1]["error"], "routing_correction")
+        self.assertEqual(len(files.paths()), 2)
+
+    def test_reset_archives_handoffs_and_rolls_back_failed_rotation(self):
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        initialize_project(self.project, "codex", force=True)
+        self.delivery()
+        files = HandoffFiles(self.project)
+        original = files.publish(HandoffParser.render_resolution(self.graph()[1]))
+        content = original.read_bytes()
+        runner = ForgeRunner(self.project / "forgeflow.json")
+        rename = Path.rename
+        def fail_handoff(path, target):
+            if path == files.root:
+                raise OSError("cannot move handoffs")
+            return rename(path, target)
+        with patch.object(Path, "rename", fail_handoff):
+            with self.assertRaisesRegex(RuntimeError, "prior state restored"):
+                runner.reset_artifacts()
+        self.assertEqual(original.read_bytes(), content)
+        self.assertEqual(self.graph()[1]["current_workflow"], "implement")
+        result = runner.reset_artifacts(now=datetime(2026, 11, 18, tzinfo=timezone.utc))
+        archived = Path(result["handoffs_backup"]) / original.relative_to(files.root)
+        self.assertEqual(archived.read_bytes(), content)
+        self.assertEqual(files.paths(), set())
+
     def test_real_implement_review_complete_with_exact_projection(self):
         self.delivery()
         self.assertEqual(self.graph()[1]["current_workflow"], "implement")
@@ -123,19 +274,20 @@ class CurrentFrameworkTests(unittest.TestCase):
             # Real runner/graph entry, mocked Agent writes; not live IDE acceptance.
             self.assertEqual(name, "implement")
             self.assertEqual(entry_context["entry_mode"], "handoff")
-            received = HandoffParser.parse(entry_context["handoff"])
+            received = HandoffFiles(self.project).read(entry_context["handoff_path"])["handoff"]
             self.assertEqual(received["transition"], "RETURN")
             self.assertEqual(received["blocker_category"], "REVIEW_BLOCKER")
             self.assertEqual(received["target_scope"], "Slice: F-01/S-01")
             self.write("history/implement-feature-01-slice-01-attempt-01.md", original_record)
             self.implement(attempt=2)
-            return HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01")
+            HandoffFiles(self.project).publish(HandoffParser.render_resolution(self.graph()[1], "Slice: F-01/S-01"), "implement")
+            return "Implementation complete; see handoff file."
 
         runner = ForgeRunner(self.project / "forgeflow.json")
         runner._execute_llm = AsyncMock(side_effect=rework)
-        output = asyncio.run(runner.execute_single("implement", handoff_text=incoming))
+        output = asyncio.run(runner.execute_single("implement", handoff_path=HandoffFiles(self.project).publish(incoming, "review")))
         self.assertEqual(runner._execute_llm.await_count, 1)
-        self.assertEqual(HandoffParser.parse(output)["next_workflow"], "review")
+        self.assertEqual(HandoffFiles(self.project).read(self.project / output.removeprefix("Handoff: "))["handoff"]["next_workflow"], "review")
         state, result = self.graph()
         self.assertEqual(state["errors"], [])
         self.assertEqual(result["current_workflow"], "review")
@@ -224,9 +376,9 @@ class CurrentFrameworkTests(unittest.TestCase):
             "| Target Scope | Slice: F-01/S-01 |", "| Target Scope | Slice: F-01/S-02 |")
         runner = ForgeRunner(self.project / "forgeflow.json")
         runner._execute_llm = AsyncMock()
-        output = asyncio.run(runner.execute_single("implement", handoff_text=incoming))
+        with self.assertRaisesRegex(ValueError, "target_scope_does_not_match_graph"):
+            asyncio.run(runner.execute_single("implement", handoff_path=HandoffFiles(self.project).publish(incoming)))
         runner._execute_llm.assert_not_called()
-        self.assertEqual(HandoffParser.parse(output)["target_scope"], "Slice: F-01/S-01")
 
     def test_method_cannot_replace_strategy_or_human_evidence(self):
         self.delivery(strategy="MANUAL_ACCEPTANCE")
@@ -324,8 +476,12 @@ class CurrentFrameworkTests(unittest.TestCase):
         self.write("tdd-feature-01-slice-01.md", "legacy evidence")
         legacy = self.project / ".forgeflow/workflow/tdd.md"
         legacy.write_text("retired launcher")
+        self.delivery()
+        handoff = HandoffFiles(self.project).publish(HandoffParser.render_resolution(self.graph()[1]))
+        handoff_bytes = handoff.read_bytes()
         initialize_project(self.project, "codex", force=True)
         self.assertFalse(legacy.exists())
+        self.assertEqual(handoff.read_bytes(), handoff_bytes)
         self.assertTrue((self.project / ".forgeflow/protocol/transition.md").is_file())
         self.assertEqual((self.root / "tdd-feature-01-slice-01.md").read_text(), "legacy evidence")
 
@@ -336,7 +492,7 @@ class CurrentFrameworkTests(unittest.TestCase):
         runner._execute_llm = AsyncMock()
         output = asyncio.run(runner.execute_single("implement"))
         runner._execute_llm.assert_not_called()
-        self.assertEqual(HandoffParser.parse(output)["next_workflow"], "implement")
+        self.assertEqual(HandoffFiles(self.project).read(self.project / output.removeprefix("Handoff: "))["handoff"]["next_workflow"], "implement")
 
     def test_valid_handoff_executes_exactly_one_agent(self):
         initialize_project(self.project, "codex", force=True)
@@ -344,7 +500,7 @@ class CurrentFrameworkTests(unittest.TestCase):
         incoming = HandoffParser.render_resolution(self.graph()[1])
         runner = ForgeRunner(self.project / "forgeflow.json")
         runner._execute_llm = AsyncMock(return_value="Need required environment.")
-        asyncio.run(runner.execute_single("implement", handoff_text=incoming))
+        asyncio.run(runner.execute_single("implement", handoff_path=HandoffFiles(self.project).publish(incoming)))
         self.assertEqual(runner._execute_llm.await_count, 1)
         self.assertEqual(runner.history[-1]["result"], "STEP_WAITING")
 

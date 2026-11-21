@@ -26,7 +26,10 @@
 | IDE-REV-101 | 当前 Implement READY_FOR_REVIEW | 独立执行检查和插件，生成一个合法不可变 Review，交接后停止 | P0 |
 | IDE-REV-102 | Review FAIL 指向上游 | 返回正确 owner/scope，不执行修复；记录无法闭合的返工路径 | P0 |
 | IDE-REV-104 | 当前 READY_FOR_REVIEW 有匹配 FAIL；下一次调用 Implement 消费 Rule 8 RETURN；另测错误 Scope | 正确交接直接进入新 Attempt，不等 Rule 10、不改成 IMPLEMENTATION_GAP，保留 FAIL；错误 Scope 只纠正路由；新 Attempt 后旧 FAIL 不阻塞新记录 | P0 |
-| IDE-HO-101 | 缺失、过期或乱序 Handoff | 只读纠正并停止，不执行匹配目标；下一调用才能消费 | P0 |
+| IDE-HO-101 | 缺失、过期或乱序 Handoff 文件 | 自动发现无有效候选时保存纠正文件并停止；显式无效文件报错，不执行匹配目标 | P0 |
+| IDE-HO-102 | 换开发者并清空会话，交付代码、框架、artifacts/history、handoffs 和报告，不含 runtime | 从独立文件恢复下一 Workflow，无需聊天；验证过期版本和 Attempt | P0 |
+| IDE-HO-103 | Review FAIL 后保存 RETURN，在新会话重新 Implement 并发布下一交接 | 创建新 Attempt，保留失败证据，旧交接不可重复启动已完成工作 | P0 |
+| IDE-HO-104 | 并行 Grill Feature 各自发布文件；构造等价和冲突候选 | 不互相覆盖；等价只执行一次，冲突要求显式选择，等待不伪造文件 | P0 |
 | IDE-HIS-101 | 明确授权处置格式无效且无阻塞的 Review | 原字节与 SHA256 receipt 保留，旧 Attempt 占号，重走 Implement | P0 |
 | IDE-HIS-102 | 隔离快照中破坏 Implement 格式，明确授权仅格式恢复，随后正常返工；另测匹配 PASS 和标准历史冲突 | 原件按摘要保存在 invalid-implement，保持身份与 Attempt，不改 FAIL；后续正常归档无同号冲突；匹配 PASS 或既有冲突不自动修复 | P0 |
 | IDE-GRAPH-101 | 活动 TDD 文件或 TDD 路由 | HALTED，不自动迁移或丢弃证据 | P0 |

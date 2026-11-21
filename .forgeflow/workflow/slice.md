@@ -1,6 +1,6 @@
 # Slice Workflow
 
-Version: 2.15
+Version: 2.16
 
 ## Contract
 
@@ -73,7 +73,7 @@ and fresh routing, never patch the old Implement record or reuse its PASS eviden
    rule, recomputing this Feature's Slice evidence currentness. Do not return directly
    to the requesting Slice or retain an old completion prefix after a plan revision.
    Transition alone selects the next target under the complete Rule order; emit any
-   exact Handoff as final content, and stop.
+   exact Handoff in its canonical separate file and link it in the response, and stop.
 
 Slice Plans store no runtime cursor, state, blocker projection, or Review result.
 Slice does not alter business behavior, redesign Solution, write code, or select an

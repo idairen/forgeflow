@@ -9,7 +9,6 @@
   },
   "files": [
     ".forgeflow/forgeflow.md",
-    ".forgeflow/forgeflow.schema.json",
     ".forgeflow/adapter",
     ".forgeflow/protocol",
     ".forgeflow/rules",

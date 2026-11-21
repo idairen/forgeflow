@@ -1,6 +1,6 @@
 # Transition Protocol
 
-Version: 1.9
+Version: 1.10
 
 ## Purpose
 
@@ -119,8 +119,9 @@ can establish completion. The existing Rule 1–11 precedence still applies.
 
 When Planning is absent and Artifact Root is absent or empty, authorize Plan at
 `Project` through Bootstrap Entry without a Handoff. Before productive Planning,
-Plan also validates Reports Root. If it is non-empty, Plan only asks and waits for
-explicit reset authorization; it neither rotates reports nor creates Planning.
+Plan also validates Reports Root and Handoff Root. If either is non-empty, Plan
+only asks and waits for explicit reset authorization; it neither rotates evidence
+nor creates Planning.
 
 ### Rule 2 — Graph contradiction
 
@@ -315,7 +316,7 @@ There are exactly five modes:
 | --- | --- |
 | Bootstrap | No Handoff; Rule 1 authorizes only Plan/Project |
 | Subsequent Plan | No Handoff; non-empty changed User Intent after READY Planning; valid graph with no actionable blocker or current FAIL; authorizes only Plan/Project |
-| Handoff | One canonical Handoff passes the Handoff Protocol and fresh resolution |
+| Handoff | One persisted canonical Handoff file passes the Handoff Protocol and fresh resolution |
 | Lane | No Handoff; Grill claims exactly one Feature from the current eligible set |
 | Recovery | No Handoff; exact blocker recovery selected by Rule 3, or the narrowly authorized interrupted Grill Lane recovery below |
 
@@ -329,13 +330,14 @@ procedure in `protocol/implement-recovery.md`. It is not an Entry or permission 
 execute a halted Workflow. Normal graph validation still precedes productive work;
 maintenance cannot consume its own routing result.
 
-### Read-only routing correction
+### Routing correction
 
 For an invocation requiring Handoff, if the Handoff is missing or fails receiving
-validation and no other valid Entry applies, perform read-only routing correction.
+validation and no other valid Entry applies, perform routing correction. This may publish a Handoff file only;
+it remains read-only for business Artifacts.
 This is not a sixth Entry, a new Workflow, or authority to repair Artifacts.
 Reject the old Handoff as execution authority; resolve the complete active graph
-under Rule 1–11 before application inspection, tests, plugins, or any mutation.
+under Rule 1–11 before application inspection, tests, plugins, or any business Artifact mutation.
 The requested Workflow/Scope and old Handoff cannot override the result.
 
 Reuse this invocation's fresh graph validation and resolution when the graph has
@@ -343,8 +345,8 @@ not changed; correction adds no unconditional second full-graph scan. Do not reu
 pre-revision currentness or an unverified result from a previous invocation. If
 graph changes are observed before rendering, revalidate and resolve the new graph.
 
-For a Handoff-producing result, emit exactly its existing variant and ordered
-projection with Source Scope `Project`, then stop. This also applies when the
+For a Handoff-producing result, publish exactly its existing variant and ordered
+projection with Source Scope `Project` in a canonical Handoff file, then stop. This also applies when the
 selected target equals the requested Workflow/Scope: execution requires a later
 invocation with valid Entry. Rule 2 emits HALTED rather than a guessed forward
 target. Correction has no authorized Workflow; for Rule 3 it applies global
@@ -424,7 +426,7 @@ upstream owner without implementation.
 A later upstream change or another required Attempt ends this authorization rather
 than advancing the Attempt again; Review consumes the frozen current Implement Attempt.
 
-When resolution selects another Workflow or Scope, emit its Handoff and stop without
+When resolution selects another Workflow or Scope, publish its Handoff file and stop without
 analyzing, questioning, inspecting, changing, commanding, implementing, reviewing, or
 delegating in that future Scope. A join-pending Lane likewise stops after its
 transaction, without Handoff, polling, or another Lane; only fresh resolution after

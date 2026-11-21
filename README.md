@@ -6,8 +6,8 @@ local tests and package checks do not establish host compatibility. See the
 [compatibility and evidence table](docs/testing/compatibility.md) for the inspected real-project
 case, its version baseline and remaining host metadata.
 
-The normative source is [`.forgeflow/`](.forgeflow/forgeflow.md): Framework 3.8,
-Artifact 2.19, Transition 1.8, Handoff 2.15, and Implement 2.13. The CLI follows
+The normative source is [`.forgeflow/`](.forgeflow/forgeflow.md): Framework 4.0,
+Artifact 2.23, Transition 1.10, Handoff 3.0, and Implement 2.17. The CLI follows
 those contracts; it does not supersede them or decide whether a model's evidence is true.
 
 ## When to use ForgeFlow
@@ -111,13 +111,14 @@ separate maintainer action; these instructions do not claim a published release.
 | `forge status` | Current graph, resolution, ordered input projection and knowledge view |
 | `forge knowledge --feature F-01 --format markdown` | Derived, non-authoritative Feature view |
 | `forge knowledge --slice F-01/S-01 --history` | Slice view with optional history index |
-| `forge handoff` | Last runtime Handoff; always revalidate before reuse |
-| `forge reset --force` | Explicitly rotate both artifact and supplemental-report evidence roots |
+| `forge handoff` | Persisted Handoff files and current graph validation errors |
+| `forge reset --force` | Explicitly rotate artifact, report and Handoff evidence roots |
 
 The slash-separated names in the table are alternatives, not a literal command.
-`FILE` contains the complete previous response with its final canonical Handoff.
-Missing or invalid Handoff input produces read-only routing correction and stops;
-a later invocation consumes the corrected block. Eligible Bootstrap, Subsequent
+`FILE` is a canonical `.forgeflow/handoffs/<source-scope>/<uuid>.md` document.
+Without `--handoff`, discover files against the fresh graph. An explicit invalid
+file reports an error; no valid discovered file triggers routing correction that
+publishes a file and stops. A later invocation consumes that file. Eligible Bootstrap, Subsequent
 Plan and blocker Recovery do not need a synthetic incoming Handoff.
 
 Use `forge grill --feature F-02` to request one eligible Lane directly. For an

@@ -23,5 +23,6 @@ validate every block through Handoff.
 Invocation input may provide context or answers, never override ownership, graph evidence,
 entry, Workflow, Scope, or transition result.
 
-If Handoff is required, render exactly one canonical block as final content
-and stop without consuming its target.
+Handoff Entry uses the persisted file defined by the Handoff Protocol. Discover or
+validate that file against the fresh graph; never require prior chat context. On
+completion publish the file and link it in the response, then stop.

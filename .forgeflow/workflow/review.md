@@ -1,6 +1,6 @@
 # Review Workflow
 
-Version: 2.14
+Version: 2.15
 
 ## Contract
 
@@ -88,7 +88,7 @@ All commands follow the Framework command lifecycle.
    versions, and that no Review occupies the target path. Persist one immutable
    attempt-specific Review Report with those same values; never overwrite an
    attempt. A changed baseline ends this review without a report for the new attempt.
-10. Resolve Transition, emit its exact Handoff as final content, and stop.
+10. Resolve Transition, emit its exact Handoff in its canonical separate file and link it in the response, and stop.
 
 Supplemental report replacement follows Reports History; historical evidence may explain
 evolution, never satisfy current gates.
